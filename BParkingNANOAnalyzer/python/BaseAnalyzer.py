@@ -1,6 +1,8 @@
 #! /usr/bin/env python
 
 import ROOT
+from array import array
+from collections import OrderedDict
 
 class BParkingNANOAnalyzer(object):
   def __init__(self, tchain, outputfile):
@@ -12,23 +14,31 @@ class BParkingNANOAnalyzer(object):
     for branch in branches:
       self.tree.SetBranchStatus(branch, 1)
 
-  def build_outputbranches(self, nameOfTree, branches):
-    output = "struct {} {{".format(nameOfTree)
-    output += "".join(["Float_t {};".format(nameOfBranch) for nameOfBranch in branches])
-    output += "};"
-    ROOT.gROOT.ProcessLine(output)
+  def initialize_outputdict(self):
+    self.output_list = OrderedDict(zip(self.outputbranches, [-99.]*len(self.outputbranches)))
+
+  def fill_hist(self):
+    for hist_name, var in self.output_list.items():
+      self.hist_list[hist_name].Fill(var)
+    self.initialize_outputdict()
+
+  def fill_tree(self):
+    self.outputtree.Fill(array('f',self.output_list.values()))
+    self.initialize_outputdict()
 
   def initialization(self, inputbranches, outputbranches, hist=False):
     self.tree.SetBranchStatus("*", 0)
     self.set_branchstatus(inputbranches)
+    self.outputbranches = outputbranches
+    self.initialize_outputdict()
+
     if hist:
-      pass
+      self.hist_list = {}
+      for hist_name, hist_bins in outputbranches.items():
+        self.hist_list[hist_name] = ROOT.TH1D(hist_name, "", hist_bins[0], hist_bins[1], hist_bins[2])
+
     else:
-      self.build_outputbranches("outputbranch_t", outputbranches)
-      self.outputbranch = ROOT.outputbranch_t()
-      self.outputtree = ROOT.TTree('tree', 'tree')
-      for var in outputbranches:
-        self.outputtree.Branch(var, ROOT.AddressOf(self.outputbranch, var), var+'/F')
+      self.outputtree = ROOT.TNtuple('tree', 'tree', ':'.join(outputbranches))
 
 
 
