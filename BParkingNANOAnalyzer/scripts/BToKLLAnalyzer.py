@@ -37,7 +37,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
     self.initialization(inputbranches_BToKEE, outputbranches, hist)
 
 
-  def loop(self, max_nevents=-1, first_event=0, hist=False):
+  def run(self, max_nevents=-1, first_event=0, hist=False):
     self.start(hist)
     current_file_name = self._tree.GetCurrentFile().GetName()
     print("Loading file: {}".format(current_file_name))
@@ -49,7 +49,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
 
     n_checkpoints = 5
     print_every = int(ceil(1. * limit_nevents / n_checkpoints))
-    print "[PedestalAnalysis::run] INFO : Running loop over tree from event {} to {}".format(first_event, limit_nevents - 1)
+    print("[PedestalAnalysis::run] INFO : Running loop over tree from event {} to {}".format(first_event, limit_nevents - 1))
     self.start_timer()
 
     for ievent,event in enumerate(self._tree):
@@ -57,12 +57,12 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       if ievent > max_nevents and max_nevents != -1: break
       self.print_progress(ievent, first_event, limit_nevents, print_every)
       #if ievent % 100 == 0: print('Processing entry {}'.format(ievent))
-      self.analyze(event, hist)
+      self.loop(event, hist)
     
     self.write_outputfile()
 
 
-  def analyze(self, event, hist):
+  def loop(self, event, hist):
     for i in range(event.nBToKEE):
       l1Idx = event.BToKEE_l1Idx[i]
       l2Idx = event.BToKEE_l2Idx[i]

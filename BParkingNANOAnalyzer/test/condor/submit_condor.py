@@ -1,9 +1,16 @@
 import os,glob
-import sys, commands, os, fnmatch
-from optparse import OptionParser
+import sys, os, fnmatch
+import ROOT
+
+import argparse
+parser = argparse.ArgumentParser(description="A simple ttree plotter")
+parser.add_argument("-i", "--inputfiles", dest="inputfiles", default="DoubleMuonNtu_Run2016B.list", help="List of input ggNtuplizer files")
+parser.add_argument("-o", "--outputfile", dest="outputfile", default="plots.root", help="Output file containing plots")
+parser.add_argument("-m", "--maxevents", dest="maxevents", type=int, default=ROOT.TTree.kMaxEntries, help="Maximum number events to loop over")
+args = parser.parse_args()
 
 def exec_me(command, dryRun=False):
-    print command
+    print(command)
     if not dryRun:
         os.system(command)
 
@@ -43,6 +50,13 @@ def write_bash(temp = 'runjob.sh', command = ''):
     out += 'cd BParkingNANOAnalysis\n'
     out += 'scram b clean; scram b\n'
     out += 'cd BParkingNANOAnalyzer/test\n'
+    #out += 'source /cvmfs/cms.cern.ch/cmsset_default.sh\n'
+    #out += 'cd ${MAINDIR}\n'
+    #out += 'source /cvmfs/sft.cern.ch/lcg/views/LCG_94python3/x86_64-slc6-gcc7-opt/setup.sh\n'
+    #out += 'git clone git://github.com/ottolau/BParkingNANOAnalyzer.git\n'
+    #out += 'cd BParkingNANOAnalyzer\n'
+    #out += '. setup.sh\n'
+    #out += 'cd test\n'
     out += command + '\n'
     out += 'echo "List all root files = "\n'
     out += 'ls *.root\n'
@@ -68,6 +82,7 @@ def write_bash(temp = 'runjob.sh', command = ''):
     out += 'ls\n'
     out += 'echo "DELETING..."\n'
     out += 'rm -rf CMSSW_10_2_15\n'
+    #out += 'rm -rf BParkingNANOAnalyzer\n'
     out += 'ls\n'
     out += 'date\n'
     with open(temp, 'w') as f:
@@ -76,32 +91,51 @@ def write_bash(temp = 'runjob.sh', command = ''):
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
-    for i in xrange(0, len(l), n):
+    for i in range(0, len(l), n):
         yield l[i:i + n]
+
 
 if __name__ == '__main__':
     basePath = "."
     sampleFolders = os.listdir(basePath)    
     outputBase = "test"
-    dryRun  = False
+    dryRun  = True
     subdir  = os.path.expandvars("$PWD")
-    group   = 1
-    files = ["test.list"]
-   
-    for i in range(group):
+    group   = 2
+    #files = ["test.list"]
+    files = []
+
+    fileList = []
+    with open(args.inputfiles) as filenames:
+        fileList = [f.rstrip('\n') for f in filenames]
+
+    # stplie files in to n(group) of chunks
+    fChunks= list(chunks(fileList,group))
+    print("writing %s jobs"%(len(fChunks)))
+
+    #for i in range(group):
+    for i, fChunk in enumerate(fChunks):
         outpath  = "%s/sub_%d/"%(outputBase,i)
         if not os.path.exists(outpath):
             exec_me("mkdir -p %s"%(outpath), False)
         os.chdir(os.path.join(subdir,outpath))
-        print  os.getcwd()
+        print(os.getcwd())
         for f in files:
             exec_me("cp %s/%s ."%(subdir,f), False)
-        cmd = "cp ${MAINDIR}/test.list .; python runBToKEEAnalyzer.py -i test.list" 
+
+        inputfileList = open('inputfile_%d.list'%(i), 'w+')
+
+        for f in fChunk:
+            inputfileList.write('%s\n'%(f))
+        inputfileList.close()
+
+        cmd = "cp ${MAINDIR}/inputfile_%d.list .; python runBToKEEAnalyzer.py -i inputfile_%d.list -o outputfile_%d.root"%(i,i,i)
 
         args =  []
         f_sh = "runjob_%s.sh"%i
         cwd    = os.getcwd()
         write_bash(f_sh, cmd)
-        write_condor(f_sh ,args, files, dryRun)
+        write_condor(f_sh ,args, files + ['inputfile_%d.list'%(i)], dryRun)
         os.chdir(subdir)
+
 

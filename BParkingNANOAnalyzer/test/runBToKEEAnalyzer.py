@@ -33,7 +33,7 @@ def chunks(l, n):
 
 def analyze(tchain, outputfile, hist):
     analyzer = BToKLLAnalyzer(tchain, outputfile)
-    analyzer.loop(-1, 0, hist)
+    analyzer.run(-1, 0, hist)
 
 def analyzeParallel(enumfChunk):
     ich, fChunk = enumfChunk

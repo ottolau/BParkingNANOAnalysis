@@ -66,22 +66,22 @@ class BParkingNANOAnalyzer(object):
 
   def start_timer(self):
     self._ts_start = time.time()
-    print "[BParkingNANOAnalysis::start_timer] INFO : Start time: {}".format(datetime.datetime.fromtimestamp(self._ts_start).strftime('%Y-%m-%d %H:%M:%S'))
+    print("[BParkingNANOAnalysis::start_timer] INFO : Start time: {}".format(datetime.datetime.fromtimestamp(self._ts_start).strftime('%Y-%m-%d %H:%M:%S')))
 
 
   def print_progress(self, this_event, first_event, last_event, print_every):
     if this_event % print_every == 0:
-      print "[BParkingNANOAnalysis::print_progress] INFO : Processing event {} / {}".format(this_event + 1, last_event)
+      print("[BParkingNANOAnalysis::print_progress] INFO : Processing event {} / {}".format(this_event + 1, last_event))
       if this_event != first_event:
         if self._ts_start > 0 :
           elapsed_time = time.time() - self._ts_start
           estimated_completion = self._ts_start + (1. * elapsed_time * (last_event - first_event) / (this_event - first_event))
           m, s = divmod(elapsed_time, 60)
           h, m = divmod(m, 60)
-          print "[BParkingNANOAnalysis::print_progress] INFO : \tElapsed time: {} : {} : {:.3}".format(int(round(h, 0)), int(round(m, 0)), s)
-          print "[BParkingNANOAnalysis::print_progress] INFO : \tEstimated finish time: {}".format(datetime.datetime.fromtimestamp(estimated_completion).strftime('%Y-%m-%d %H:%M:%S'))
+          print("[BParkingNANOAnalysis::print_progress] INFO : \tElapsed time: {} : {} : {:.3}".format(int(round(h, 0)), int(round(m, 0)), s))
+          print("[BParkingNANOAnalysis::print_progress] INFO : \tEstimated finish time: {}".format(datetime.datetime.fromtimestamp(estimated_completion).strftime('%Y-%m-%d %H:%M:%S')))
         else:
-          print "[BParkingNANOAnalysis::print_progress] INFO : \tFor time estimates, call self.start_timer() right before starting the event loop"
+          print("[BParkingNANOAnalysis::print_progress] INFO : \tFor time estimates, call self.start_timer() right before starting the event loop")
 
 
   # Anything before looping over the tree
@@ -92,13 +92,13 @@ class BParkingNANOAnalyzer(object):
 
   # Main event loop
   @abstractmethod
-  def loop(self, max_nevents=-1, first_event=0, hist=False):
+  def run(self, max_nevents=-1, first_event=0, hist=False):
     pass
 
   # Analyze within one event
   # Selection and filling histograms go here
   @abstractmethod
-  def analyze(self, event, hist):
+  def loop(self, event, hist):
     pass
 
 
