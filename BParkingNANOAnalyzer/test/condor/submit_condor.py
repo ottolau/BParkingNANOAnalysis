@@ -33,7 +33,7 @@ def write_condor(exe='runjob.sh', arguments = [], files = [],dryRun=True):
     if not dryRun:
         os.system("condor_submit %s"%job_name)
 
-def write_bash(temp = 'runjob.sh', command = ''):
+def write_bash(temp = 'runjob.sh', command = '', outputdir = ''):
     out = '#!/bin/bash\n'
     out += 'date\n'
     out += 'MAINDIR=`pwd`\n'
@@ -48,22 +48,16 @@ def write_bash(temp = 'runjob.sh', command = ''):
     out += 'eval `scramv1 runtime -sh` # cmsenv\n'
     out += 'git clone git://github.com/ottolau/BParkingNANOAnalysis.git\n'
     out += 'cd BParkingNANOAnalysis\n'
+    out += '. BParkingNANOAnalyzer/setup.sh\n'
     out += 'scram b clean; scram b\n'
     out += 'cd BParkingNANOAnalyzer/test\n'
-    #out += 'source /cvmfs/cms.cern.ch/cmsset_default.sh\n'
-    #out += 'cd ${MAINDIR}\n'
-    #out += 'source /cvmfs/sft.cern.ch/lcg/views/LCG_94python3/x86_64-slc6-gcc7-opt/setup.sh\n'
-    #out += 'git clone git://github.com/ottolau/BParkingNANOAnalyzer.git\n'
-    #out += 'cd BParkingNANOAnalyzer\n'
-    #out += '. setup.sh\n'
-    #out += 'cd test\n'
     out += command + '\n'
     out += 'echo "List all root files = "\n'
     out += 'ls *.root\n'
     out += 'echo "List all files"\n'
     out += 'ls\n'
     out += 'echo "*******************************************"\n'
-    out += 'OUTDIR=root://cmseos.fnal.gov//store/user/klau/BParkingNANO_forCondor/output\n'
+    out += 'OUTDIR='+outputdir+'\n'
     out += 'echo "xrdcp output for condor"\n'
     out += 'for FILE in *.root\n'
     out += 'do\n'
@@ -99,7 +93,8 @@ if __name__ == '__main__':
     basePath = "."
     sampleFolders = os.listdir(basePath)    
     outputBase = "test"
-    dryRun  = True
+    outputDir = 'root://cmseos.fnal.gov//store/user/klau/BParkingNANO_forCondor/output'
+    dryRun  = False
     subdir  = os.path.expandvars("$PWD")
     group   = 2
     #files = ["test.list"]
@@ -134,7 +129,7 @@ if __name__ == '__main__':
         args =  []
         f_sh = "runjob_%s.sh"%i
         cwd    = os.getcwd()
-        write_bash(f_sh, cmd)
+        write_bash(f_sh, cmd, outputDir)
         write_condor(f_sh ,args, files + ['inputfile_%d.list'%(i)], dryRun)
         os.chdir(subdir)
 

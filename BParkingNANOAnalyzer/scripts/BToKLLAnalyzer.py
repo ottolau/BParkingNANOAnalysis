@@ -2,86 +2,57 @@
 
 import ROOT
 from math import ceil
+import awkward
 from BParkingNANOAnalysis.BParkingNANOAnalyzer.BaseAnalyzer import BParkingNANOAnalyzer
 
 class BToKLLAnalyzer(BParkingNANOAnalyzer):
-  def __init__(self, tchain, outputfile):
-    super(BToKLLAnalyzer, self).__init__(tchain, outputfile)
+  def __init__(self, inputfiles, outputfile, hist=False):
+    inputbranches_BToKEE = ['BToKEE_mll_raw',
+                          'BToKEE_mass',
+                          'BToKEE_l1Idx',
+                          'BToKEE_l2Idx',
+                          'BToKEE_kIdx',
+                          'Electron_pt',
+                          'ProbeTracks_pt',
+                          ]
 
+    outputbranches_BToKEE = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 2.6, 'xmax': 3.6},
+                           'BToKEE_mass': {'nbins': 50, 'xmin': 4.0, 'xmax': 6.0},
+                           'BToKEE_l1_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 20.0},
+                           'BToKEE_l2_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 20.0},
+                           'BToKEE_k_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                           }
 
-  def start(self, hist):
-    # selected input branches to be turned on
-    inputbranches_BToKEE = ['nBToKEE',
-                            'BToKEE_kIdx',
-                            'BToKEE_l1Idx',
-                            'BToKEE_l2Idx',
-                            'BToKEE_mass',
-                            'BToKEE_mll_raw',
-                            'BToKEE_svprob',
-                            'BToKEE_l_xy',
-                            'BToKEE_l_xy_unc',
-                            'BToKEE_fit_pt',
-                            'Electron_pt',
-                            'ProbeTracks_pt',
-                            ]
+    super(BToKLLAnalyzer, self).__init__(inputfiles, outputfile, inputbranches_BToKEE, outputbranches_BToKEE, hist)
 
-    # 'Name of histogram/tree': [nbins, xmin, xmax]
-    outputbranches_BToKEE = {'m_ee': [50, 2.6, 3.6],
-                             'm_Kee': [50, 4.0, 6.0],
-                             'elePt_lead': [50, 0.0, 20.0],
-                             'elePt_sublead': [50, 0.0, 20.0],
-                             'kaonPt': [50, 0.0, 10.0],
-                             }
+  def run(self):
+    print('[BParkingNANOAnalyzer::run] INFO: Running the analyzer...')
+    self.print_timestamp()
+    #self.load_files()
 
-    outputbranches = outputbranches_BToKEE # we can append BToKMM later
-    self.initialization(inputbranches_BToKEE, outputbranches, hist)
+    while self._ifile < self._num_files:
+      self.load_branches()
+      self.init_output()
 
+      # remove cross referencing
+      for branch in self._branches.keys():
+        if 'Electron_' in branch:
+          self._branches['BToKEE_l1_'+branch.replace('Electron_','')] = self._branches[branch][self._branches['BToKEE_l1Idx']] 
+          self._branches['BToKEE_l2_'+branch.replace('Electron_','')] = self._branches[branch][self._branches['BToKEE_l2Idx']] 
+          del self._branches[branch]
 
-  def run(self, max_nevents=-1, first_event=0, hist=False):
-    self.start(hist)
-    current_file_name = self._tree.GetCurrentFile().GetName()
-    print("Loading file: {}".format(current_file_name))
+        if 'ProbeTracks_' in branch:
+          self._branches['BToKEE_k_'+branch.replace('ProbeTracks_','')] = self._branches[branch][self._branches['BToKEE_kIdx']] 
+          del self._branches[branch]
 
-    if max_nevents > 0:
-      limit_nevents = min(max_nevents, self._tot_nevents)
-    else:
-      limit_nevents = self._tot_nevents
+      # selection
 
-    n_checkpoints = 5
-    print_every = int(ceil(1. * limit_nevents / n_checkpoints))
-    print("[PedestalAnalysis::run] INFO : Running loop over tree from event {} to {}".format(first_event, limit_nevents - 1))
-    self.start_timer()
+      # fill output
+      self.fill_output()
+      self._ifile += 1
 
-    for ievent,event in enumerate(self._tree):
-      if ievent < first_event: continue
-      if ievent > max_nevents and max_nevents != -1: break
-      self.print_progress(ievent, first_event, limit_nevents, print_every)
-      #if ievent % 100 == 0: print('Processing entry {}'.format(ievent))
-      self.loop(event, hist)
-    
-    self.write_outputfile()
-
-
-  def loop(self, event, hist):
-    for i in range(event.nBToKEE):
-      l1Idx = event.BToKEE_l1Idx[i]
-      l2Idx = event.BToKEE_l2Idx[i]
-      kIdx = event.BToKEE_kIdx[i]
-  
-      # Selection
-
-
-      # Fill the output tree
-      self._output_list['m_ee'] = event.BToKEE_mll_raw[i]
-      if 2.9 < event.BToKEE_mll_raw[i] < 3.3:
-        self._output_list['m_Kee'] = event.BToKEE_mass[i]
-      self._output_list['elePt_lead'] = event.Electron_pt[l1Idx]
-      self._output_list['elePt_sublead'] = event.Electron_pt[l2Idx]
-      self._output_list['kaonPt'] = event.ProbeTracks_pt[kIdx]
-    
-      self.fill_output(hist)
-
-
-
+    self.finish()
+    print('[BParkingNANOAnalyzer::run] INFO: Finished')
+    self.print_timestamp()
 
 

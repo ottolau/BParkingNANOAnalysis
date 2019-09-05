@@ -2,9 +2,7 @@ import ROOT
 import os
 import multiprocessing as mp
 import sys
-#print(sys.path)
 sys.path.append('../')
-#print(sys.path)
 from scripts.BToKLLAnalyzer import BToKLLAnalyzer
 
 
@@ -31,36 +29,29 @@ def chunks(l, n):
     for i in range(0, len(l), n):
         yield l[i:i + n]
 
-def analyze(tchain, outputfile, hist):
-    analyzer = BToKLLAnalyzer(tchain, outputfile)
-    analyzer.run(-1, 0, hist)
+def analyze(inputfile, outputfile, hist=False):
+    analyzer = BToKLLAnalyzer(inputfile, outputfile, hist)
+    analyzer.run()
 
 def analyzeParallel(enumfChunk):
     ich, fChunk = enumfChunk
     print("Processing chunk number %i"%(ich))
-    tchain = ROOT.TChain(args.ttree)
-    for filename in fChunk:
-        tchain.Add(filename)
-
     outputfile = outpath+'/'+args.outputfile.replace('.root','')+'_subset'+str(ich)+'.root'
-    analyze(tchain, outputfile, args.hist)
+    analyze(fChunk, outputfile, args.hist)
 
 
 if __name__ == "__main__":
     if not args.runparallel:
-        tchain = ROOT.TChain(args.ttree)
         with open(args.inputfiles) as filenames:
-            for filename in filenames:
-                tchain.Add(filename.rstrip('\n'))
-                #break
-        #tchain.Add('testBParkNANO_data_10215.root')
+            fileList = [f.rstrip('\n') for f in filenames]
+        inputfile = fileList
         outputfile = args.outputfile.replace('.root','')+'.root'
-        analyze(tchain, outputfile, args.hist)
+        analyze(inputfile, outputfile, args.hist)
 
     else:
         outputBase = "/eos/uscms/store/user/klau/BsPhiLL_output/LowPtElectronSculpting"
         outputFolder = "BsPhiEE_CutBasedEvaluation"
-        global outputpath
+        global outpath
         #outpath  = "%s/%s"%(outputBase,outputFolder)
         outpath = '.'
         if not os.path.exists(outpath):
@@ -68,7 +59,7 @@ if __name__ == "__main__":
 
         with open(args.inputfiles) as filenames:
             fileList = [f.rstrip('\n') for f in filenames]
-        group   = 15
+        group   = 1
         # stplie files in to n(group) of chunks
         fChunks= list(chunks(fileList,group))
         print ("writing %s jobs for %s"%(len(fChunks),outputFolder))
