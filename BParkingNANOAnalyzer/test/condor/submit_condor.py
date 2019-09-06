@@ -26,6 +26,7 @@ def write_condor(exe='runjob.sh', arguments = [], files = [],dryRun=True):
     out += 'Log    = job_%s.log\n'   %job_name
     #out += 'request_memory = 8000\n'
     out += 'use_x509userproxy = true\n'
+    #out += 'x509userproxy = $ENV(X509_USER_PROXY)\n' # for lxplus
     out += 'Arguments = %s\n'%(' '.join(arguments))
     out += 'Queue 1\n'
     with open(job_name, 'w') as f:
@@ -37,6 +38,7 @@ def write_bash(temp = 'runjob.sh', command = '', outputdir = ''):
     out = '#!/bin/bash\n'
     out += 'date\n'
     out += 'MAINDIR=`pwd`\n'
+    out += 'export HOME=${MAINDIR}\n'
     out += 'ls\n'
     out += '#CMSSW from scratch (only need for root)\n'
     out += 'export CWD=${PWD}\n'
@@ -45,10 +47,12 @@ def write_bash(temp = 'runjob.sh', command = '', outputdir = ''):
     out += 'export SCRAM_ARCH=slc6_amd64_gcc700\n'
     out += 'scramv1 project CMSSW CMSSW_10_2_15\n'
     out += 'cd CMSSW_10_2_15/src\n'
+    out += 'virtualenv myenv\n'
+    out += 'source myenv/bin/activate\n'
     out += 'eval `scramv1 runtime -sh` # cmsenv\n'
     out += 'git clone git://github.com/ottolau/BParkingNANOAnalysis.git\n'
     out += 'cd BParkingNANOAnalysis\n'
-    out += '. BParkingNANOAnalyzer/setup.sh\n'
+    out += '. BParkingNANOAnalyzer/setup_condor.sh\n'
     out += 'scram b clean; scram b\n'
     out += 'cd BParkingNANOAnalyzer/test\n'
     out += command + '\n'
@@ -76,7 +80,6 @@ def write_bash(temp = 'runjob.sh', command = '', outputdir = ''):
     out += 'ls\n'
     out += 'echo "DELETING..."\n'
     out += 'rm -rf CMSSW_10_2_15\n'
-    #out += 'rm -rf BParkingNANOAnalyzer\n'
     out += 'ls\n'
     out += 'date\n'
     with open(temp, 'w') as f:
@@ -97,7 +100,6 @@ if __name__ == '__main__':
     dryRun  = False
     subdir  = os.path.expandvars("$PWD")
     group   = 2
-    #files = ["test.list"]
     files = []
 
     fileList = []
