@@ -67,11 +67,13 @@ class BParkingNANOAnalyzer(object):
     print('[BParkingNANOAnalyzer::fill_output] INFO: FILE: {}/{}. Filling the output {}...'.format(self._ifile+1, self._num_files, 'histograms' if self._hist else 'tree'))
     if self._hist:
       for hist_name, hist_bins in self._outputbranches.items():
-        fill_hist(self._hist_list[hist_name], self._branches[hist_name].flatten())
+        #fill_hist(self._hist_list[hist_name], self._branches[hist_name].flatten())
+        fill_hist(self._hist_list[hist_name], self._branches[hist_name])
         self._hist_list[hist_name].write()
     else:
       for branch_name in self._outputbranches.keys():
-        new_column = np.array(self._branches[branch_name].flatten(), dtype=[(branch_name, 'f4')])
+        #new_column = np.array(self._branches[branch_name].flatten(), dtype=[(branch_name, 'f4')])
+        new_column = np.array(self._branches[branch_name], dtype=[(branch_name, 'f4')])
         array2root(new_column, self._file_out_name+'_subset{}.root'.format(self._ifile), 'tree')
     self._file_out.close()
     #print('[BParkingNANOAnalyzer::fill_output] INFO: FILE: {}/{}. Finished!'.format(self._ifile+1, self._num_files))

@@ -3,6 +3,7 @@
 import ROOT
 from math import ceil
 import awkward
+import pandas as pd
 from BParkingNANOAnalysis.BParkingNANOAnalyzer.BaseAnalyzer import BParkingNANOAnalyzer
 
 class BToKLLAnalyzer(BParkingNANOAnalyzer):
@@ -17,7 +18,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                           ]
 
     outputbranches_BToKEE = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 2.6, 'xmax': 3.6},
-                           'BToKEE_mass': {'nbins': 50, 'xmin': 4.0, 'xmax': 6.0},
+                           'BToKEE_mass': {'nbins': 50, 'xmin': 5.0, 'xmax': 6.0},
                            'BToKEE_l1_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 20.0},
                            'BToKEE_l2_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 20.0},
                            'BToKEE_k_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
@@ -45,7 +46,12 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
           self._branches['BToKEE_k_'+branch.replace('ProbeTracks_','')] = self._branches[branch][self._branches['BToKEE_kIdx']] 
           del self._branches[branch]
 
+      # flatten the jagged arrays to a normal numpy array, turn the whole dictionary to pandas dataframe
+      self._branches = pd.DataFrame.from_dict({branch: array.flatten() for branch, array in self._branches.items()})
+
       # selection
+      selection = (self._branches['BToKEE_mass'] > 5) & (self._branches['BToKEE_mass'] < 6)
+      self._branches = self._branches[selection]
 
       # fill output
       self.fill_output()
