@@ -33,15 +33,12 @@ class BParkingNANOAnalyzer(object):
   def load_branches(self):
     print('[BParkingNANOAnalyzer::load_files] INFO: FILE: {}/{}. Loading files...'.format(self._ifile+1, self._num_files))
     #self._tree = uproot.open(self._file_in_name)['Events']
-    #print('[BParkingNANOAnalyzer::load_files] INFO: Selecting branches...')
     #branches = self._tree.arrays(self._inputbranches)
     # Turn all the arrays to JaggedArray (By default they are ObjectArray, although the appear to be JaggedArray
     #self._branches = {branch: awkward.fromiter(uproot.lazyarray(self._file_in_name, "Events", branch)) for branch in self._inputbranches}
     #self._branches = uproot.lazyarrays(self._file_in_name, "Events", self._inputbranches)
     self._branches = self._file_in_it.next()
     self._branches = dict((key, awkward.fromiter(branch)) for key, branch in self._branches.items())
-
-    #print('[BParkingNANOAnalyzer::load_files] INFO: FILE: {}/{}. Finished!'.format(self._ifile+1, self._num_files))
 
 
   def init_output(self):
@@ -60,23 +57,21 @@ class BParkingNANOAnalyzer(object):
       self._outputtree.create_branches({branch: 'F' for branch in self._outputbranches.keys()})
       self._outputtree.write()
       self._file_out.close()
-    #print('[BParkingNANOAnalyzer::init_output] FILE: {}/{}. INFO: Finished!'.format(self._ifile+1, self._num_files))
 
 
   def fill_output(self):
     print('[BParkingNANOAnalyzer::fill_output] INFO: FILE: {}/{}. Filling the output {}...'.format(self._ifile+1, self._num_files, 'histograms' if self._hist else 'tree'))
     if self._hist:
       for hist_name, hist_bins in self._outputbranches.items():
-        #fill_hist(self._hist_list[hist_name], self._branches[hist_name].flatten())
-        fill_hist(self._hist_list[hist_name], self._branches[hist_name])
+        if hist_name in self._branches.keys():
+          fill_hist(self._hist_list[hist_name], self._branches[hist_name])
         self._hist_list[hist_name].write()
     else:
       for branch_name in self._outputbranches.keys():
-        #new_column = np.array(self._branches[branch_name].flatten(), dtype=[(branch_name, 'f4')])
-        new_column = np.array(self._branches[branch_name], dtype=[(branch_name, 'f4')])
+        if branch_name in self._branches.keys():
+          new_column = np.array(self._branches[branch_name], dtype=[(branch_name, 'f4')])
         array2root(new_column, self._file_out_name+'_subset{}.root'.format(self._ifile), 'tree')
     self._file_out.close()
-    #print('[BParkingNANOAnalyzer::fill_output] INFO: FILE: {}/{}. Finished!'.format(self._ifile+1, self._num_files))
 
 
   def finish(self):
