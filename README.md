@@ -1,15 +1,16 @@
 # BParkingNANOAnalysis
 
-This is an analyzer for analyzing the nanoAOD output of the BParkingNANO common framework. This package is written in python and can analyze the data parallelly.
+This is an analyzer for analyzing the nanoAOD output of the BParkingNANO common framework. This package is written in python and can analyze the data parallelly. The whole framework uses uproot as ROOT files I/O, numpy and pandas for data selection.
 
 ## Getting started
-
+To open nanoAOD files without trouble, we need a CMSSW environment.
 ```shell
 cmsrel CMSSW_10_2_15
 cd CMSSW_10_2_15/src
 cmsenv
 git cms-init
 git clone https://github.com/ottolau/BParkingNANOAnalysis
+. BParkingNANOAnalyzer/setup.sh
 scram b clean; scram b
 ```
 
@@ -36,7 +37,7 @@ The descriptions of the options:
 Inside the folder `test/condor`, there is an example script to submit condor jobs. Simply do
 
 ```
-python submit_condor.py
+python submit_condor.py -i [inputFilesList]
 ```
 
 

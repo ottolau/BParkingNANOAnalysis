@@ -1,2 +1,3 @@
 ### bash --login
-pip install --user awkward
+pip install awkward --user
+pip install scikit-optimize --user
