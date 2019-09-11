@@ -95,12 +95,14 @@ def chunks(l, n):
 if __name__ == '__main__':
     basePath = "."
     sampleFolders = os.listdir(basePath)    
-    outputBase = "test"
-    outputDir = 'root://cmseos.fnal.gov//store/user/klau/BParkingNANO_forCondor/output'
+    outputBase = "output_BParkingNANO_2019Sep08_Run2018A_part2"
+    outputDir = 'root://cmseos.fnal.gov//store/user/klau/BParkingNANO_forCondor/output/BParkingNANO_2019Sep08_Run2018A_part2'
+    outputName = 'BParkingNANO_2019Sep08_Run2018A_part2'
     dryRun  = False
     subdir  = os.path.expandvars("$PWD")
-    group   = 2
-    files = []
+    group   = 50
+    files = ['../../scripts/BToKLLAnalyzer.py']
+    files_condor = [f.split('/')[-1] for f in files]
 
     fileList = []
     with open(args.inputfiles) as filenames:
@@ -126,13 +128,13 @@ if __name__ == '__main__':
             inputfileList.write('%s\n'%(f))
         inputfileList.close()
 
-        cmd = "cp ${MAINDIR}/inputfile_%d.list .; python runBToKEEAnalyzer.py -i inputfile_%d.list -o outputfile_%d.root"%(i,i,i)
+        cmd = "cp ${{MAINDIR}}/inputfile_{}.list .; cp ${{MAINDIR}}/BToKLLAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/;python runBToKEEAnalyzer.py -i inputfile_{}.list -o {}_subset{}.root -s".format(i,i,outputName,i)
 
         args =  []
         f_sh = "runjob_%s.sh"%i
         cwd    = os.getcwd()
         write_bash(f_sh, cmd, outputDir)
-        write_condor(f_sh ,args, files + ['inputfile_%d.list'%(i)], dryRun)
+        write_condor(f_sh ,args, files_condor + ['inputfile_%d.list'%(i)], dryRun)
         os.chdir(subdir)
 
 
