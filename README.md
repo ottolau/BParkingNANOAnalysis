@@ -18,7 +18,7 @@ scram b clean; scram b
 
 Inside the folder `python`, BaseAnalyzer.py contains the base class of the analyzer. The analyzer allows to output the results as tree (for further mva studies or unbinned fitting) or histograms. Any modification of the base class requires re-compiling the code.
 
-The analyzers are put in the folder `scripts`. For example, BToKLLAnalyzer is the analyzer for B -> K ll decay channel. The analyzers of other channels should also put in this folder as well.
+The analyzers are put in the folder `scripts`. For example, BToKLLAnalyzer is the analyzer for B -> K ll decay channel. The analyzers for other channels should put in this folder as well.
 
 The folder `test` is the working repository. To run the analyzer, do
 
