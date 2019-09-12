@@ -59,11 +59,11 @@ if __name__ == "__main__":
 
         with open(args.inputfiles) as filenames:
             fileList = [f.rstrip('\n') for f in filenames]
-        group   = 1
+        group   = 10
         # stplie files in to n(group) of chunks
         fChunks= list(chunks(fileList,group))
         print ("writing %s jobs for %s"%(len(fChunks),outputFolder))
-        pool = mp.Pool(processes = 8)
+        pool = mp.Pool(processes = 4)
         pool.map(analyzeParallel, enumerate(fChunks))
         outputfile = args.outputfile.replace('.root','')
         exec_me("hadd -k -f %s/%s %s/%s"%(outpath,outputfile+'.root',outpath,outputfile+'_subset*.root'))

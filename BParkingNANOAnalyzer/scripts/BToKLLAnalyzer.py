@@ -50,15 +50,15 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_l1_pt_low': {'nbins': 50, 'xmin': 0.0, 'xmax': 20.0},
                              'BToKEE_l2_pt_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
                              'BToKEE_l2_pt_low': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
-                             'BToKEE_l1_dz_pf': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
-                             'BToKEE_l1_dz_low': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
-                             'BToKEE_l2_dz_pf': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
-                             'BToKEE_l2_dz_low': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
+                             'BToKEE_l1_dz_pf': {'nbins': 50, 'xmin': -0.5, 'xmax': 0.5},
+                             'BToKEE_l1_dz_low': {'nbins': 50, 'xmin': -0.5, 'xmax': 0.5},
+                             'BToKEE_l2_dz_pf': {'nbins': 50, 'xmin': -0.5, 'xmax': 0.5},
+                             'BToKEE_l2_dz_low': {'nbins': 50, 'xmin': -0.5, 'xmax': 0.5},
                              'BToKEE_k_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
                              'BToKEE_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
                              'BToKEE_svprob': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
                              'BToKEE_cos2D': {'nbins': 50, 'xmin': 0.999, 'xmax': 1.0},
-                             'BToKEE_l_xy_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
+                             'BToKEE_l_xy_sig': {'nbins': 80, 'xmin': 0.0, 'xmax': 500.0},
                              }
 
     super(BToKLLAnalyzer, self).__init__(inputfiles, outputfile, inputbranches_BToKEE, outputbranches_BToKEE, hist)
@@ -96,11 +96,11 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       self._branches['BToKEE_l_xy_sig'] = self._branches['BToKEE_l_xy'] / self._branches['BToKEE_l_xy_unc']
 
       # general selection
-      sv_selection = (self._branches['BToKEE_pt'] > 10) & (self._branches['BToKEE_l_xy_sig'] > 6 ) & (self._branches['BToKEE_svprob'] > 0.1) & (self._branches['BToKEE_cos2D'] > 0.999)
-      l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_l1_pt'] > 1) & (self._branches['BToKEE_l1_unBiased'] > 2) & (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
-      l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_unBiased'] > 2) & (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
+      sv_selection = (self._branches['BToKEE_pt'] > 10.0) & (self._branches['BToKEE_l_xy_sig'] > 6.0 ) & (self._branches['BToKEE_svprob'] > 0.1) & (self._branches['BToKEE_cos2D'] > 0.999)
+      l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_l1_pt'] > 1.0) & (self._branches['BToKEE_l1_unBiased'] > 2.0) & (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
+      l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_unBiased'] > 2.0) & (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
       k_selection = (self._branches['BToKEE_k_pt'] > 1.5)
-      selection = sv_selection & l1_selection & l2_selection & k_selection
+      selection = sv_selection #& l1_selection & l2_selection & k_selection
 
       self._branches = self._branches[selection]
 
