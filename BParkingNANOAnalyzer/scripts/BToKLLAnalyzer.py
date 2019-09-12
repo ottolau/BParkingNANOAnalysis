@@ -11,7 +11,7 @@ from BParkingNANOAnalysis.BParkingNANOAnalyzer.BaseAnalyzer import BParkingNANOA
 
 class BToKLLAnalyzer(BParkingNANOAnalyzer):
   def __init__(self, inputfiles, outputfile, hist=False):
-    inputbranches_BToKEE = ['nBToKEE',
+    inputbranches_BToKEE = [#'nBToKEE',
                             'BToKEE_mll_raw',
                             'BToKEE_mass',
                             'BToKEE_fit_mass',
@@ -23,21 +23,21 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'BToKEE_pt',
                             'BToKEE_svprob',
                             'BToKEE_cos2D',
-                            'Electron_pt',
-                            'Electron_eta',
-                            'Electron_phi',
-                            'Electron_dz',
-                            'Electron_unBiased',
-                            'Electron_convVeto',
-                            'Electron_isLowPt',
-                            'Electron_isPF',
-                            'Electron_isPFoverlap',
-                            'ProbeTracks_pt',
-                            'ProbeTracks_eta',
-                            'ProbeTracks_phi',
-                            'ProbeTracks_dz',
-                            'ProbeTracks_isLostTrk',
-                            'ProbeTracks_isPacked',
+                            #'Electron_pt',
+                            #'Electron_eta',
+                            #'Electron_phi',
+                            #'Electron_dz',
+                            #'Electron_unBiased',
+                            #'Electron_convVeto',
+                            #'Electron_isLowPt',
+                            #'Electron_isPF',
+                            #'Electron_isPFoverlap',
+                            #'ProbeTracks_pt',
+                            #'ProbeTracks_eta',
+                            #'ProbeTracks_phi',
+                            #'ProbeTracks_dz',
+                            #'ProbeTracks_isLostTrk',
+                            #'ProbeTracks_isPacked',
                             #'HLT_Mu9_IP6_*',
                             ]
 
@@ -81,6 +81,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       self.load_branches()
       self.init_output()
 
+      '''
       # remove cross referencing
       for branch in self._branches.keys():
         if 'Electron_' in branch:
@@ -107,32 +108,37 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
 
       self._branches['BToKEE_mll_raw'] = (l1_p4 + l2_p4).mass
       self._branches['BToKEE_mass'] = (l1_p4 + l2_p4 + k_p4).mass
+      '''
 
       # flatten the jagged arrays to a normal numpy array, turn the whole dictionary to pandas dataframe
       self._branches = pd.DataFrame.from_dict({branch: array.flatten() for branch, array in self._branches.items()})
 
       # add additional branches
-      self._branches['BToKEE_l_xy_sig'] = self._branches['BToKEE_l_xy'] / self._branches['BToKEE_l_xy_unc']
+      #self._branches['BToKEE_l_xy_sig'] = self._branches['BToKEE_l_xy'] / self._branches['BToKEE_l_xy_unc']
 
       # general selection
-      sv_selection = (self._branches['BToKEE_pt'] > 6.0) & (self._branches['BToKEE_l_xy_sig'] > 6.0 ) & (self._branches['BToKEE_svprob'] > 0.01) & (self._branches['BToKEE_cos2D'] > 0.9)
-      l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_l1_pt'] > 1.0) & (self._branches['BToKEE_l1_unBiased'] > 3.0) & (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
-      l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_unBiased'] > 2.0) & (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
-      k_selection = (self._branches['BToKEE_k_pt'] > 1.5)
-      selection = sv_selection & l1_selection & l2_selection & k_selection
+      #sv_selection = (self._branches['BToKEE_pt'] > 6.0) & (self._branches['BToKEE_l_xy_sig'] > 6.0 ) & (self._branches['BToKEE_svprob'] > 0.01) & (self._branches['BToKEE_cos2D'] > 0.9)
+      sv_selection = (self._branches['BToKEE_pt'] > 10.0)  & (self._branches['BToKEE_svprob'] > 0.1) & (self._branches['BToKEE_cos2D'] > 0.999)
+
+      #l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_l1_pt'] > 1.0) & (self._branches['BToKEE_l1_unBiased'] > 3.0) & (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
+      #l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_unBiased'] > 2.0) & (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
+      #k_selection = (self._branches['BToKEE_k_pt'] > 1.5)
+      selection = sv_selection #& l1_selection & l2_selection & k_selection
 
       self._branches = self._branches[selection]
 
       # additional cuts, allows various lengths
 
       self._branches['BToKEE_mll_raw_jpsi_all'] = self._branches['BToKEE_mll_raw'].copy()
-      self._branches['BToKEE_mll_raw_jpsi_pf'] = self._branches['BToKEE_mll_raw'][(self._branches['BToKEE_l1_isPF']) & (self._branches['BToKEE_l2_isPF'])]
-      self._branches['BToKEE_mll_raw_jpsi_low'] = self._branches['BToKEE_mll_raw'][((self._branches['BToKEE_l1_isLowPt']) | (self._branches['BToKEE_l2_isLowPt']))]
+      
+      #self._branches['BToKEE_mll_raw_jpsi_pf'] = self._branches['BToKEE_mll_raw'][(self._branches['BToKEE_l1_isPF']) & (self._branches['BToKEE_l2_isPF'])]
+      #self._branches['BToKEE_mll_raw_jpsi_low'] = self._branches['BToKEE_mll_raw'][((self._branches['BToKEE_l1_isLowPt']) | (self._branches['BToKEE_l2_isLowPt']))]
 
       self._branches['BToKEE_mass_all'] = self._branches['BToKEE_mass'][(self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3)]
-      self._branches['BToKEE_mass_pf'] = self._branches['BToKEE_mass'][(self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3) & (self._branches['BToKEE_l1_isPF']) & (self._branches['BToKEE_l2_isPF'])]
-      self._branches['BToKEE_mass_low'] = self._branches['BToKEE_mass'][(self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3) & ((self._branches['BToKEE_l1_isLowPt']) | (self._branches['BToKEE_l2_isLowPt']))]
+      #self._branches['BToKEE_mass_pf'] = self._branches['BToKEE_mass'][(self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3) & (self._branches['BToKEE_l1_isPF']) & (self._branches['BToKEE_l2_isPF'])]
+      #self._branches['BToKEE_mass_low'] = self._branches['BToKEE_mass'][(self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3) & ((self._branches['BToKEE_l1_isLowPt']) | (self._branches['BToKEE_l2_isLowPt']))]
 
+      '''
       self._branches['BToKEE_fit_mass_all'] = self._branches['BToKEE_fit_mass'][(self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3)]
       self._branches['BToKEE_fit_mass_pf'] = self._branches['BToKEE_fit_mass'][(self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3) & (self._branches['BToKEE_l1_isPF']) & (self._branches['BToKEE_l2_isPF'])]
       self._branches['BToKEE_fit_mass_low'] = self._branches['BToKEE_fit_mass'][(self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3) & ((self._branches['BToKEE_l1_isLowPt']) | (self._branches['BToKEE_l2_isLowPt']))]
@@ -151,6 +157,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       self._branches['BToKEE_l1_unBiased_low'] = self._branches['BToKEE_l1_unBiased'][(self._branches['BToKEE_l1_isLowPt'])]
       self._branches['BToKEE_l2_unBiased_pf'] = self._branches['BToKEE_l2_unBiased'][(self._branches['BToKEE_l2_isPF'])]
       self._branches['BToKEE_l2_unBiased_low'] = self._branches['BToKEE_l2_unBiased'][(self._branches['BToKEE_l2_isLowPt'])]
+      '''
 
       # fill output
       self.fill_output()

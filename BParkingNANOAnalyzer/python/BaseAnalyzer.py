@@ -65,7 +65,8 @@ class BParkingNANOAnalyzer(object):
     if self._hist:
       for hist_name, hist_bins in sorted(self._outputbranches.items()):
         if hist_name in self._branches.keys():
-          fill_hist(self._hist_list[hist_name], self._branches[hist_name])
+          branch_np = self._branches[hist_name].values
+          fill_hist(self._hist_list[hist_name], branch_np[np.isfinite(branch_np)])
         self._hist_list[hist_name].write()
     else:
       for branch_name in sorted(self._outputbranches.keys()):
