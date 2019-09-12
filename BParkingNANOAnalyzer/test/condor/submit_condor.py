@@ -25,7 +25,7 @@ def write_condor(exe='runjob.sh', arguments = [], files = [],dryRun=True):
     out += 'Error  = job_%s.stderr\n'%job_name
     out += 'Log    = job_%s.log\n'   %job_name
     #out += 'request_memory = 8000\n'
-    out += 'request_cpus = 8\n'
+    out += 'request_cpus = 4\n'
     out += 'use_x509userproxy = true\n'
     #out += 'x509userproxy = $ENV(X509_USER_PROXY)\n' # for lxplus
     out += 'Arguments = %s\n'%(' '.join(arguments))
@@ -96,12 +96,12 @@ def chunks(l, n):
 if __name__ == '__main__':
     basePath = "."
     sampleFolders = os.listdir(basePath)    
-    #outputBase = "output_BParkingNANO_2019Sep08_Run2018A_part2"
-    #outputDir = 'root://cmseos.fnal.gov//store/user/klau/BParkingNANO_forCondor/output/BParkingNANO_2019Sep08_Run2018A_part2'
-    #outputName = 'BParkingNANO_2019Sep08_Run2018A_part2'
-    outputBase = "output_BParkingNANO_2019Sep08_BuToKJpsi_Toee"
-    outputDir = 'root://cmseos.fnal.gov//store/user/klau/BParkingNANO_forCondor/output/BParkingNANO_2019Sep08_BuToKJpsi_Toee'
-    outputName = 'BParkingNANO_2019Sep08_BuToKJpsi_Toee'
+    outputBase = "output_{}".format(args.inputfiles.replace('.list',''))
+    outputDir = 'root://cmseos.fnal.gov//store/user/klau/BParkingNANO_forCondor/output/{}'.format(args.inputfiles.replace('.list',''))
+    outputName = args.inputfiles.replace('.list','')
+    #outputBase = "output_BParkingNANO_2019Sep08_BuToKJpsi_Toee"
+    #outputDir = 'root://cmseos.fnal.gov//store/user/klau/BParkingNANO_forCondor/output/BParkingNANO_2019Sep08_BuToKJpsi_Toee'
+    #outputName = 'BParkingNANO_2019Sep08_BuToKJpsi_Toee'
 
     dryRun  = False
     subdir  = os.path.expandvars("$PWD")
