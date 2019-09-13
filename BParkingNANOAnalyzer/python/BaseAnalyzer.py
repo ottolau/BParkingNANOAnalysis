@@ -26,25 +26,13 @@ class BParkingNANOAnalyzer(object):
     self._num_files = len(self._file_in_name)
     self._inputbranches = inputbranches
     self._outputbranches = outputbranches
-    self._file_in_it = uproot.iterate(self._file_in_name, 'Events', branches=self._inputbranches)
     self._hist = hist
     self._ifile = 0
 
 
-  def load_branches(self):
-    print('[BParkingNANOAnalyzer::load_files] INFO: FILE: {}/{}. Loading files...'.format(self._ifile+1, self._num_files))
-    #self._tree = uproot.open(self._file_in_name)['Events']
-    #branches = self._tree.arrays(self._inputbranches)
-    # Turn all the arrays to JaggedArray (By default they are ObjectArray, although the appear to be JaggedArray
-    #self._branches = {branch: awkward.fromiter(uproot.lazyarray(self._file_in_name, "Events", branch)) for branch in self._inputbranches}
-    #self._branches = uproot.lazyarrays(self._file_in_name, "Events", self._inputbranches)
-    self._branches = self._file_in_it.next()
-    self._branches = dict((key, awkward.fromiter(branch)) for key, branch in self._branches.items())
-
-
   def init_output(self):
     print('[BParkingNANOAnalyzer::init_output] INFO: FILE: {}/{}. Initializing output {}...'.format(self._ifile+1, self._num_files, 'histograms' if self._hist else 'tree'))
-    self._file_out = root_open(self._file_out_name+'_subset{}.root'.format(self._ifile), 'recreate')
+    self._file_out = root_open(self._file_out_name+'.root', 'recreate')
     # can choose output to be histograms or a tree
     if self._hist:
       self._hist_list = {}
@@ -67,19 +55,24 @@ class BParkingNANOAnalyzer(object):
         if hist_name in self._branches.keys():
           branch_np = self._branches[hist_name].values
           fill_hist(self._hist_list[hist_name], branch_np[np.isfinite(branch_np)])
-        self._hist_list[hist_name].write()
     else:
       for branch_name in sorted(self._outputbranches.keys()):
         if branch_name in self._branches.keys():
-          new_column = np.array(self._branches[branch_name], dtype=[(branch_name, 'f4')])
-        array2root(new_column, self._file_out_name+'_subset{}.root'.format(self._ifile), 'tree')
-    self._file_out.close()
+          branch_np = self._branches[branch_name].values
+          new_column = np.array(branch_np, dtype=[(branch_name, 'f4')])
+          array2root(new_column, self._file_out_name+'_subset{}.root'.format(self._ifile), 'tree')
 
 
   def finish(self):
     print('[BParkingNANOAnalyzer::finish] INFO: Merging the output files...')
-    os.system("hadd -k -f {}.root {}_subset*.root".format(self._file_out_name, self._file_out_name))
-    os.system("rm {}_subset*.root".format(self._file_out_name))
+    #os.system("hadd -k -f {}.root {}_subset*.root".format(self._file_out_name, self._file_out_name))
+    #os.system("rm {}_subset*.root".format(self._file_out_name))
+    if self._hist:
+      for hist_name, hist in sorted(self._hist_list.items()):
+        hist.write()
+    else:
+      pass
+    self._file_out.close()
 
 
   def print_timestamp(self):
