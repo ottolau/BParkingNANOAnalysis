@@ -26,7 +26,8 @@ def exec_me(command, dryRun=False):
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l."""
-    for i in range(0, len(l), n):
+    n = max(1, n)
+    for i in xrange(0, len(l), n):
         yield l[i:i + n]
 
 def analyze(inputfile, outputfile, hist=False):
@@ -59,7 +60,7 @@ if __name__ == "__main__":
 
         with open(args.inputfiles) as filenames:
             fileList = [f.rstrip('\n') for f in filenames]
-        group   = 10
+        group   = 2
         # stplie files in to n(group) of chunks
         fChunks= list(chunks(fileList,group))
         print ("writing %s jobs for %s"%(len(fChunks),outputFolder))

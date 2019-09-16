@@ -105,7 +105,7 @@ if __name__ == '__main__':
 
     dryRun  = False
     subdir  = os.path.expandvars("$PWD")
-    group   = 50
+    group   = 10
     files = ['../../scripts/BToKLLAnalyzer.py']
     files_condor = [f.split('/')[-1] for f in files]
 

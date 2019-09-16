@@ -14,6 +14,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
   def __init__(self, inputfiles, outputfile, hist=False):
     inputbranches_BToKEE = ['nBToKEE',
                             'BToKEE_mll_raw',
+                            'BToKEE_mll_fullfit',
                             'BToKEE_mass',
                             'BToKEE_fit_mass',
                             'BToKEE_l1Idx',
@@ -25,17 +26,19 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'BToKEE_svprob',
                             'BToKEE_cos2D',
                             'Electron_pt',
-                            'Electron_eta',
-                            'Electron_phi',
+                            #'Electron_eta',
+                            #'Electron_phi',
                             #'Electron_dz',
                             'Electron_unBiased',
                             'Electron_convVeto',
                             'Electron_isLowPt',
                             'Electron_isPF',
                             'Electron_isPFoverlap',
+                            'Electron_mvaId',
+                            #'Electron_lostHits',
                             'ProbeTracks_pt',
-                            'ProbeTracks_eta',
-                            'ProbeTracks_phi',
+                            #'ProbeTracks_eta',
+                            #'ProbeTracks_phi',
                             #'ProbeTracks_dz',
                             #'ProbeTracks_isLostTrk',
                             #'ProbeTracks_isPacked',
@@ -46,10 +49,16 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_mll_raw_jpsi_all': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
                              'BToKEE_mll_raw_jpsi_pf': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
                              'BToKEE_mll_raw_jpsi_low': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
+                             'BToKEE_mll_fullfit_jpsi_all': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
+                             'BToKEE_mll_fullfit_jpsi_pf': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
+                             'BToKEE_mll_fullfit_jpsi_low': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
                              'BToKEE_mass': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_mass_all': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_mass_pf': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                             'BToKEE_mass_low': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
+                             'BToKEE_mass_low_unbdt3': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
+                             'BToKEE_mass_low_unbdt4': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
+                             'BToKEE_mass_low_unbdt5': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
+                             'BToKEE_mass_low_unbdt6': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_fit_mass_all': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_fit_mass_pf': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_fit_mass_low': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
@@ -61,10 +70,12 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              #'BToKEE_l1_dz_low': {'nbins': 50, 'xmin': -0.5, 'xmax': 0.5},
                              #'BToKEE_l2_dz_pf': {'nbins': 50, 'xmin': -0.5, 'xmax': 0.5},
                              #'BToKEE_l2_dz_low': {'nbins': 50, 'xmin': -0.5, 'xmax': 0.5},
-                             'BToKEE_l1_unBiased_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 21.0},
+                             #'BToKEE_l1_unBiased_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 21.0},
                              'BToKEE_l1_unBiased_low': {'nbins': 50, 'xmin': 0.0, 'xmax': 21.0},
-                             'BToKEE_l2_unBiased_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 21.0},
+                             #'BToKEE_l2_unBiased_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 21.0},
                              'BToKEE_l2_unBiased_low': {'nbins': 50, 'xmin': 0.0, 'xmax': 21.0},
+                             'BToKEE_l1_mavId_low': {'nbins': 50, 'xmin': -10.0, 'xmax': 10.0},
+                             'BToKEE_l2_mvaId_low': {'nbins': 50, 'xmin': -10.0, 'xmax': 10.0},
                              'BToKEE_k_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
                              'BToKEE_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
                              'BToKEE_svprob': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
@@ -107,12 +118,12 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
         del self._branches['nBToKEE']
 
 
-        l1_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_l1_pt'], self._branches['BToKEE_l1_eta'], self._branches['BToKEE_l1_phi'], ELECTRON_MASS)
-        l2_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_l2_pt'], self._branches['BToKEE_l2_eta'], self._branches['BToKEE_l2_phi'], ELECTRON_MASS)
-        k_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_k_pt'], self._branches['BToKEE_k_eta'], self._branches['BToKEE_k_phi'], K_MASS)
+        #l1_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_l1_pt'], self._branches['BToKEE_l1_eta'], self._branches['BToKEE_l1_phi'], ELECTRON_MASS)
+        #l2_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_l2_pt'], self._branches['BToKEE_l2_eta'], self._branches['BToKEE_l2_phi'], ELECTRON_MASS)
+        #k_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_k_pt'], self._branches['BToKEE_k_eta'], self._branches['BToKEE_k_phi'], K_MASS)
 
-        self._branches['BToKEE_mll_raw'] = (l1_p4 + l2_p4).mass
-        self._branches['BToKEE_mass'] = (l1_p4 + l2_p4 + k_p4).mass
+        #self._branches['BToKEE_mll_raw'] = (l1_p4 + l2_p4).mass
+        #self._branches['BToKEE_mass'] = (l1_p4 + l2_p4 + k_p4).mass
 
         # flatten the jagged arrays to a normal numpy array, turn the whole dictionary to pandas dataframe
         self._branches = pd.DataFrame.from_dict({branch: array.flatten() for branch, array in self._branches.items()})
@@ -133,35 +144,50 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
 
         # additional cuts, allows various lengths
 
+        jpsi_selection = (self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3)
+        l1_pf_selection = (self._branches['BToKEE_l1_isPF'])
+        l2_pf_selection = (self._branches['BToKEE_l2_isPF'])
+        #general_low_selection = 
+        l1_low_selection = (self._branches['BToKEE_l1_isLowPt'])
+        l2_low_selection = (self._branches['BToKEE_l2_isLowPt'])
+
+
         self._branches['BToKEE_mll_raw_jpsi_all'] = self._branches['BToKEE_mll_raw'].copy()
+        self._branches['BToKEE_mll_raw_jpsi_pf'] = self._branches['BToKEE_mll_raw'][l1_pf_selection & l2_pf_selection]
+        self._branches['BToKEE_mll_raw_jpsi_low'] = self._branches['BToKEE_mll_raw'][(l1_low_selection | l2_low_selection)]
+
+        self._branches['BToKEE_mll_fullfit_jpsi_all'] = self._branches['BToKEE_mll_fullfit'].copy()
+        self._branches['BToKEE_mll_fullfit_jpsi_pf'] = self._branches['BToKEE_mll_fullfit'][l1_pf_selection & l2_pf_selection]
+        self._branches['BToKEE_mll_fullfit_jpsi_low'] = self._branches['BToKEE_mll_fullfit'][(l1_low_selection | l2_low_selection)]
+
+        self._branches['BToKEE_mass_all'] = self._branches['BToKEE_mass'][jpsi_selection]
+        self._branches['BToKEE_mass_pf'] = self._branches['BToKEE_mass'][jpsi_selection & l1_pf_selection & l2_pf_selection]
+        for i in range(3, 7):
+          self._branches['BToKEE_mass_low_unbdt{}'.format(i)] = self._branches['BToKEE_mass'][jpsi_selection & (l1_low_selection | l2_low_selection) & (self._branches['BToKEE_l1_unBiased'] > i) & (self._branches['BToKEE_l2_unBiased'] > i)]
+
         
-        self._branches['BToKEE_mll_raw_jpsi_pf'] = self._branches['BToKEE_mll_raw'][(self._branches['BToKEE_l1_isPF']) & (self._branches['BToKEE_l2_isPF'])]
-        self._branches['BToKEE_mll_raw_jpsi_low'] = self._branches['BToKEE_mll_raw'][((self._branches['BToKEE_l1_isLowPt']) | (self._branches['BToKEE_l2_isLowPt']))]
+        self._branches['BToKEE_fit_mass_all'] = self._branches['BToKEE_fit_mass'][jpsi_selection]
+        self._branches['BToKEE_fit_mass_pf'] = self._branches['BToKEE_fit_mass'][jpsi_selection & l1_pf_selection & l2_pf_selection]
+        self._branches['BToKEE_fit_mass_low'] = self._branches['BToKEE_fit_mass'][jpsi_selection & (l1_low_selection | l2_low_selection)]
 
-        self._branches['BToKEE_mass_all'] = self._branches['BToKEE_mass'][(self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3)]
-        self._branches['BToKEE_mass_pf'] = self._branches['BToKEE_mass'][(self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3) & (self._branches['BToKEE_l1_isPF']) & (self._branches['BToKEE_l2_isPF'])]
-        self._branches['BToKEE_mass_low'] = self._branches['BToKEE_mass'][(self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3) & ((self._branches['BToKEE_l1_isLowPt']) | (self._branches['BToKEE_l2_isLowPt']))]
+        self._branches['BToKEE_l1_pt_pf'] = self._branches['BToKEE_l1_pt'][l1_pf_selection]
+        self._branches['BToKEE_l1_pt_low'] = self._branches['BToKEE_l1_pt'][l1_low_selection]
+        self._branches['BToKEE_l2_pt_pf'] = self._branches['BToKEE_l2_pt'][l2_pf_selection]
+        self._branches['BToKEE_l2_pt_low'] = self._branches['BToKEE_l2_pt'][l2_low_selection]
 
+        #self._branches['BToKEE_l1_dz_pf'] = self._branches['BToKEE_l1_dz'][l1_pf_selection]
+        #self._branches['BToKEE_l1_dz_low'] = self._branches['BToKEE_l1_dz'][l1_low_selection]
+        #self._branches['BToKEE_l2_dz_pf'] = self._branches['BToKEE_l2_dz'][l2_pf_selection]
+        #self._branches['BToKEE_l2_dz_low'] = self._branches['BToKEE_l2_dz'][l2_low_selection]
+
+        #self._branches['BToKEE_l1_unBiased_pf'] = self._branches['BToKEE_l1_unBiased'][l1_pf_selection]
+        self._branches['BToKEE_l1_unBiased_low'] = self._branches['BToKEE_l1_unBiased'][l1_low_selection]
+        #self._branches['BToKEE_l2_unBiased_pf'] = self._branches['BToKEE_l2_unBiased'][l2_pf_selection]
+        self._branches['BToKEE_l2_unBiased_low'] = self._branches['BToKEE_l2_unBiased'][l2_low_selection]
         
-        self._branches['BToKEE_fit_mass_all'] = self._branches['BToKEE_fit_mass'][(self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3)]
-        self._branches['BToKEE_fit_mass_pf'] = self._branches['BToKEE_fit_mass'][(self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3) & (self._branches['BToKEE_l1_isPF']) & (self._branches['BToKEE_l2_isPF'])]
-        self._branches['BToKEE_fit_mass_low'] = self._branches['BToKEE_fit_mass'][(self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3) & ((self._branches['BToKEE_l1_isLowPt']) | (self._branches['BToKEE_l2_isLowPt']))]
+        self._branches['BToKEE_l1_mvaId_low'] = self._branches['BToKEE_l1_mvaId'][l1_low_selection]
+        self._branches['BToKEE_l2_mvaId_low'] = self._branches['BToKEE_l2_mvaId'][l2_low_selection]
 
-        self._branches['BToKEE_l1_pt_pf'] = self._branches['BToKEE_l1_pt'][(self._branches['BToKEE_l1_isPF'])]
-        self._branches['BToKEE_l1_pt_low'] = self._branches['BToKEE_l1_pt'][(self._branches['BToKEE_l1_isLowPt'])]
-        self._branches['BToKEE_l2_pt_pf'] = self._branches['BToKEE_l2_pt'][(self._branches['BToKEE_l2_isPF'])]
-        self._branches['BToKEE_l2_pt_low'] = self._branches['BToKEE_l2_pt'][(self._branches['BToKEE_l2_isLowPt'])]
-
-        #self._branches['BToKEE_l1_dz_pf'] = self._branches['BToKEE_l1_dz'][(self._branches['BToKEE_l1_isPF'])]
-        #self._branches['BToKEE_l1_dz_low'] = self._branches['BToKEE_l1_dz'][(self._branches['BToKEE_l1_isLowPt'])]
-        #self._branches['BToKEE_l2_dz_pf'] = self._branches['BToKEE_l2_dz'][(self._branches['BToKEE_l2_isPF'])]
-        #self._branches['BToKEE_l2_dz_low'] = self._branches['BToKEE_l2_dz'][(self._branches['BToKEE_l2_isLowPt'])]
-
-        self._branches['BToKEE_l1_unBiased_pf'] = self._branches['BToKEE_l1_unBiased'][(self._branches['BToKEE_l1_isPF'])]
-        self._branches['BToKEE_l1_unBiased_low'] = self._branches['BToKEE_l1_unBiased'][(self._branches['BToKEE_l1_isLowPt'])]
-        self._branches['BToKEE_l2_unBiased_pf'] = self._branches['BToKEE_l2_unBiased'][(self._branches['BToKEE_l2_isPF'])]
-        self._branches['BToKEE_l2_unBiased_low'] = self._branches['BToKEE_l2_unBiased'][(self._branches['BToKEE_l2_isLowPt'])]
-        
 
         # fill output
         self.fill_output()

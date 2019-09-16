@@ -50,16 +50,18 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
     ROOT.gStyle.SetOptStat(000000);
     ROOT.gStyle.SetOptTitle(0)
 
-    xmin = 4.5 
-    xmax = 6.0 
-    
+    #xmin = 4.5 
+    #xmax = 6.0 
+    xmin = 2.6
+    xmax = 3.6
+
     wspace.factory('x[5.0,%f,%f]' % (xmin, xmax))
 
     #M = 15 
     #wspace.var('x').setBins(M)
 
     wspace.factory('nsig[100.0, 0.0, 100000.0]')
-    wspace.factory('nbkg[500.0, 0.0, 100000.0]')
+    wspace.factory('nbkg[500.0, 0.0, 1000000.0]')
 
     x = wspace.var('x')
     mean = wspace.var('mean')
@@ -70,15 +72,16 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
     if sigPDF == 0:
         # Voigtian
         wspace.factory('mean[5.27929e+00, 5.2e+00, 5.3e+00]')
-        wspace.factory('width[1.000e-01, 1.000e-01, 1.000e-01]')
+        wspace.factory('width[1.000e-02, 1.000e-04, 1.000e-01]')
         wspace.factory('sigma[7.1858e-02, 1.e-3, 1.e-1]')
         width = wspace.var('width')
         wspace.factory('Voigtian::sig(x,mean,width,sigma)')
 
     else:
         # Gaussian
-        wspace.factory('mean[5.2418e+00, 5.2418e+00, 5.2418e+00]')
-        wspace.factory('sigma[7.1858e-02, 1.e-3, 1.e-1]')
+        #wspace.factory('mean[5.2418e+00, 5.2418e+00, 5.2418e+00]')
+        wspace.factory('mean[3.0969+00, 3.09e+00, 3.10e+00]')
+        wspace.factory('sigma[7.1858e-02, 1.e-4, 1.e-1]')
         wspace.factory('Gaussian::sig(x,mean,sigma)')
 
     if bkgPDF == 0:
@@ -177,14 +180,16 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
     xframe.GetXaxis().SetLabelFont(42)
 
     xframe.GetYaxis().SetTitle("Events")
-    xframe.GetXaxis().SetTitle("m(K^{+}e^{+}e^{-}) [GeV/c^{2}]")
+    #xframe.GetXaxis().SetTitle("m(K^{+}e^{+}e^{-}) [GeV/c^{2}]")
+    xframe.GetXaxis().SetTitle("m(e^{+}e^{-}) [GeV/c^{2}]")
     xframe.SetStats(0)
     xframe.SetMinimum(0)
     xframe.Draw()
 
     CMS_lumi()
 
-    legend = ROOT.TLegend(0.65,0.65,0.9,0.85);
+    legend = ROOT.TLegend(0.65,0.65,0.92,0.85);
+    #legend = ROOT.TLegend(0.65,0.15,0.92,0.35);
     legend.SetTextFont(72);
     legend.SetTextSize(0.04);
     legend.AddEntry(xframe.findObject("data"),"Data","lpe");
@@ -207,5 +212,6 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--outputfile", dest="outputfile", default="", help="ROOT file contains histograms")
     args = parser.parse_args()
 
-    fit(args.inputfile, args.outputfile, 'BToKEE_mass')
+    #fit(args.inputfile, args.outputfile, 'BToKEE_mass_low', sigPDF=1, bkgPDF=1)
+    fit(args.inputfile, args.outputfile, 'BToKEE_mll_raw_jpsi_pf', sigPDF=1, bkgPDF=0)
 

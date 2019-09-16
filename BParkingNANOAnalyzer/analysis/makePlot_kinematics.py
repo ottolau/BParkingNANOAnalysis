@@ -13,6 +13,7 @@ ROOT.gStyle.SetOptStat(0)
 varUnitMap = {"k_pt": "kaon p_{T} [GeV]",
               "l1_pt": "leading electron p_{T} [GeV]",
               "l2_pt": "subleading electron p_{T} [GeV]",
+              "BToKEE_pt": "B^{+} p_{T} [GeV]",
               "mll_raw": "m(e^{+}e^{-}) [GeV/c^{2}]",
               "mass": "m(K^{+}e^{+}e^{-}) [GeV/c^{2}]",
               "eta": "#eta",
@@ -28,7 +29,7 @@ varUnitMap = {"k_pt": "kaon p_{T} [GeV]",
               "normChi2": "#chi^{2}_{track}/d.o.f.",
               "svCtxy": "ct_{xy} [cm]",
               "svLxy": "L_{xy} [cm]",
-              "svLxySig": "L_{xy} / #sigma_{L_{xy}}",
+              "l_xy_sig": "L_{xy} / #sigma_{L_{xy}}",
               "svChi2": "#chi^{2}_{SV}",
               "svProb": "P(#chi^{2}_{SV})",
               "svCosAngle": "cos #alpha_{2D}",
@@ -40,9 +41,9 @@ varUnitMap = {"k_pt": "kaon p_{T} [GeV]",
               "bsee_InvM": "m(K^{+}K^{-}e^{+}e^{-}) [GeV]",
               "q2": "q^{2} [GeV^{2}]",
               "prob": "P(#chi^{2}_{SV})",
-              "cosAngle": "cos #alpha_{2D}",
+              "cos2D": "cos #alpha_{2D}",
               "lxySig": "L_{xy} / #sigma_{L_{xy}}",
-              "UnBWP": "Low pT electron unbiased BDT",
+              "unBiased": "Low pT electron unbiased BDT",
                 }
 
 def setup_pad():
@@ -116,14 +117,17 @@ def make_plots(filename, outputFolder='Figures'):
         os.system("mkdir -p %s"%(outputFolder))
 
     saveHist = ['h_elePt_lead', 'h_elePt_sublead', 'h_kaonPt_lead', 'h_kaonPt_sublead']
+    #notSaveHist = ['BToKEE_fit_mass_all', 'BToKEE_fit_mass_pf', 'BToKEE_fit_mass_low']
+    notSaveHist = ['BToKEE_mass']
 
-    nItems = len([key for key in dir_list if key.GetClassName() == "TH1F"])
+    nItems = len([key for key in dir_list if key.GetClassName() == "TH1F" and key.ReadObj().GetName() not in notSaveHist])
     nPages = 0
 
     for key in dir_list:
         if  key.GetClassName() != "TH1F": continue
         histo = key.ReadObj()
         histo_name = histo.GetName()
+        if histo_name in notSaveHist: continue
         #if histo_name not in saveHist: continue
 
         canvas_name = "c_" + histo_name
@@ -217,8 +221,8 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--backgroundfile", dest="backgroundfile", default="", help="ROOT file contains histograms")
     args = parser.parse_args()
 
-    #make_plots(args.inputfiles)
-    make_comparisons(args.signalfile, args.backgroundfile)
+    make_plots(args.inputfile)
+    #make_comparisons(args.signalfile, args.backgroundfile)
 
 
 
