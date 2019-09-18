@@ -74,8 +74,8 @@ def CMS_lumi(pad):
     pad.Update()
 
 
-def draw_hist(histo, histo_name, x_label, y_label, norm=False, same=False):
-    histo.SetTitle(histo_name)
+def draw_hist(histo, histo_name, x_label, y_label, norm=False, same=False, err=False):
+    #histo.SetTitle(histo_name)
     histo.GetYaxis().SetTitle(y_label)
     histo.GetXaxis().SetTitle(x_label)
     histo.SetTitleFont(42)
@@ -99,14 +99,23 @@ def draw_hist(histo, histo_name, x_label, y_label, norm=False, same=False):
         if norm:
             histo.DrawNormalized("HIST SAME")       
         else:
-            histo.Draw("HIST SAME")
+            if err:
+                histo.Draw("E SAME")
+            else:
+                histo.Draw("HIST SAME")
+
     else:
         histo.SetFillColorAlpha(40,1)
         histo.SetFillStyle(4050)
         if norm:
             histo.DrawNormalized("HIST")       
         else:
-            histo.Draw("HIST")
+            if err:
+                histo.SetLineColor(4)
+                histo.SetMarkerStyle(22)
+                histo.Draw("E")
+            else:
+                histo.Draw("HIST")
 
 
 def make_plots(filename, outputFolder='Figures'):
@@ -156,6 +165,40 @@ def make_plots(filename, outputFolder='Figures'):
             c.Print("{}/{}.pdf".format(outputFolder, outputfile),"pdf") 
         nPages += 1
         c.Clear()
+
+def make_2plots(inputfile, hist_name_1, hist_name_2, outputfile):
+    f1 = ROOT.TFile(inputfile)
+    dir_list = ROOT.gDirectory.GetListOfKeys()
+    for key in dir_list:
+        if key.ReadObj().GetName() == hist_name_1: h1 = key.ReadObj()
+        if key.ReadObj().GetName() == hist_name_2: h2 = key.ReadObj()
+
+    canvas_name = "c_" + hist_name_1
+    for v in varUnitMap.keys():
+        if v in hist_name_1: var = v
+    unit = varUnitMap[var]
+   
+    c = ROOT.TCanvas(canvas_name, canvas_name, 800, 600)
+    c.cd()
+    pad = setup_pad()
+    pad.Draw()
+    pad.cd()
+
+    draw_hist(h1, hist_name_1, unit, "Events", False,  False, True)
+    draw_hist(h2, hist_name_2, unit, "Events", False,  True, True)
+
+    l1 = ROOT.TLegend(0.6,0.8,0.92,0.9)
+    l1.SetTextFont(72)
+    l1.SetTextSize(0.04)
+    l1.AddEntry(h1,hist_name_1)
+    l1.AddEntry(h2,hist_name_2)
+    l1.Draw("same")
+    pad.cd()
+    CMS_lumi(pad)
+
+    c.cd()
+    c.Update()
+    c.SaveAs(outputfile)
 
 
 def make_comparisons(signalfile, backgroundfile, outputFolder='Figures'):
@@ -223,6 +266,7 @@ if __name__ == "__main__":
 
     make_plots(args.inputfile)
     #make_comparisons(args.signalfile, args.backgroundfile)
+    #make_2plots(args.inputfile, 'BToKEE_mass_pf', 'BToKEE_fit_mass_pf', 'BToKEE_mass_comp_MC.pdf')
 
 
 

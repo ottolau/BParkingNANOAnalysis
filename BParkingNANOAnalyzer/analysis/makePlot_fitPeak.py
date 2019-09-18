@@ -50,10 +50,10 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
     ROOT.gStyle.SetOptStat(000000);
     ROOT.gStyle.SetOptTitle(0)
 
-    #xmin = 4.5 
-    #xmax = 6.0 
-    xmin = 2.6
-    xmax = 3.6
+    xmin = 4.5 
+    xmax = 6.0 
+    #xmin = 2.6
+    #xmax = 3.6
 
     wspace.factory('x[5.0,%f,%f]' % (xmin, xmax))
 
@@ -79,9 +79,9 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
 
     else:
         # Gaussian
-        #wspace.factory('mean[5.2418e+00, 5.2418e+00, 5.2418e+00]')
-        wspace.factory('mean[3.0969+00, 3.09e+00, 3.10e+00]')
-        wspace.factory('sigma[7.1858e-02, 1.e-4, 1.e-1]')
+        wspace.factory('mean[5.2418e+00, 5.20e+00, 5.35e+00]')
+        #wspace.factory('mean[3.0969+00, 3.06e+00, 3.10e+00]')
+        wspace.factory('sigma[7.1858e-02, 1.e-3, 5.e-1]')
         wspace.factory('Gaussian::sig(x,mean,sigma)')
 
     if bkgPDF == 0:
@@ -94,7 +94,12 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
         c2 = wspace.var('c2')
         wspace.factory('Chebychev::bkg(x,{c0,c1,c2})')
 
-    else:
+    if bkgPDF == 1:
+        wspace.factory('c1[0.0, -100.0, 100.0]')
+        c1 = wspace.var('c1')
+        wspace.factory('Polynomial::bkg(x,{c1})')
+
+    if bkgPDF == 2:
         # Exponential
         wspace.factory('alpha[-1.0, -100.0, 0.0]')
         alpha = wspace.var('alpha')
@@ -180,8 +185,8 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
     xframe.GetXaxis().SetLabelFont(42)
 
     xframe.GetYaxis().SetTitle("Events")
-    #xframe.GetXaxis().SetTitle("m(K^{+}e^{+}e^{-}) [GeV/c^{2}]")
-    xframe.GetXaxis().SetTitle("m(e^{+}e^{-}) [GeV/c^{2}]")
+    xframe.GetXaxis().SetTitle("m(K^{+}e^{+}e^{-}) [GeV/c^{2}]")
+    #xframe.GetXaxis().SetTitle("m(e^{+}e^{-}) [GeV/c^{2}]")
     xframe.SetStats(0)
     xframe.SetMinimum(0)
     xframe.Draw()
@@ -212,6 +217,6 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--outputfile", dest="outputfile", default="", help="ROOT file contains histograms")
     args = parser.parse_args()
 
-    #fit(args.inputfile, args.outputfile, 'BToKEE_mass_low', sigPDF=1, bkgPDF=1)
-    fit(args.inputfile, args.outputfile, 'BToKEE_mll_raw_jpsi_pf', sigPDF=1, bkgPDF=0)
+    fit(args.inputfile, args.outputfile, 'BToKEE_mass_low_unbdt4', sigPDF=1, bkgPDF=2)
+    #fit(args.inputfile, args.outputfile, 'BToKEE_mll_raw_jpsi_pf', sigPDF=1, bkgPDF=1)
 

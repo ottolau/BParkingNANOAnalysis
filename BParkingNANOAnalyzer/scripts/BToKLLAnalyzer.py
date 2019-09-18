@@ -29,7 +29,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             #'Electron_eta',
                             #'Electron_phi',
                             #'Electron_dz',
-                            'Electron_unBiased',
+                            #'Electron_unBiased',
                             'Electron_convVeto',
                             'Electron_isLowPt',
                             'Electron_isPF',
@@ -37,6 +37,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'Electron_mvaId',
                             #'Electron_lostHits',
                             'ProbeTracks_pt',
+                            'ProbeTracks_DCASig',
                             #'ProbeTracks_eta',
                             #'ProbeTracks_phi',
                             #'ProbeTracks_dz',
@@ -48,33 +49,25 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
     outputbranches_BToKEE = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
                              'BToKEE_mll_raw_jpsi_all': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
                              'BToKEE_mll_raw_jpsi_pf': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
+                             'BToKEE_mll_raw_jpsi_mix': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
                              'BToKEE_mll_raw_jpsi_low': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
                              'BToKEE_mll_fullfit_jpsi_all': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
                              'BToKEE_mll_fullfit_jpsi_pf': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
+                             'BToKEE_mll_fullfit_jpsi_mix': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
                              'BToKEE_mll_fullfit_jpsi_low': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                             'BToKEE_mass': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_mass_all': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_mass_pf': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                             'BToKEE_mass_low_unbdt3': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                             'BToKEE_mass_low_unbdt4': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                             'BToKEE_mass_low_unbdt5': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                             'BToKEE_mass_low_unbdt6': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
+                             'BToKEE_mass_mix': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
+                             'BToKEE_mass_low': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_fit_mass_all': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_fit_mass_pf': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
+                             'BToKEE_fit_mass_mix': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_fit_mass_low': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_l1_pt_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 20.0},
                              'BToKEE_l1_pt_low': {'nbins': 50, 'xmin': 0.0, 'xmax': 20.0},
                              'BToKEE_l2_pt_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
                              'BToKEE_l2_pt_low': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
-                             #'BToKEE_l1_dz_pf': {'nbins': 50, 'xmin': -0.5, 'xmax': 0.5},
-                             #'BToKEE_l1_dz_low': {'nbins': 50, 'xmin': -0.5, 'xmax': 0.5},
-                             #'BToKEE_l2_dz_pf': {'nbins': 50, 'xmin': -0.5, 'xmax': 0.5},
-                             #'BToKEE_l2_dz_low': {'nbins': 50, 'xmin': -0.5, 'xmax': 0.5},
-                             #'BToKEE_l1_unBiased_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 21.0},
-                             'BToKEE_l1_unBiased_low': {'nbins': 50, 'xmin': 0.0, 'xmax': 21.0},
-                             #'BToKEE_l2_unBiased_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 21.0},
-                             'BToKEE_l2_unBiased_low': {'nbins': 50, 'xmin': 0.0, 'xmax': 21.0},
-                             'BToKEE_l1_mavId_low': {'nbins': 50, 'xmin': -10.0, 'xmax': 10.0},
+                             'BToKEE_l1_mvaId_low': {'nbins': 50, 'xmin': -10.0, 'xmax': 10.0},
                              'BToKEE_l2_mvaId_low': {'nbins': 50, 'xmin': -10.0, 'xmax': 10.0},
                              'BToKEE_k_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
                              'BToKEE_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
@@ -133,11 +126,11 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
         self._branches['BToKEE_l_xy_sig'] = self._branches['BToKEE_l_xy'] / self._branches['BToKEE_l_xy_unc']
 
         # general selection
-        sv_selection = (self._branches['BToKEE_pt'] > 10.0) & (self._branches['BToKEE_l_xy_sig'] > 6.0 ) & (self._branches['BToKEE_svprob'] > 0.1) & (self._branches['BToKEE_cos2D'] > 0.999)
+        sv_selection = (self._branches['BToKEE_pt'] > 3.0) & (self._branches['BToKEE_l_xy_sig'] > 6.0 ) & (self._branches['BToKEE_svprob'] > 0.1) & (self._branches['BToKEE_cos2D'] > 0.999)
 
-        l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_l1_pt'] > 1.0) & (self._branches['BToKEE_l1_unBiased'] > 3.0) & (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
-        l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_unBiased'] > 3.0) & (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
-        k_selection = (self._branches['BToKEE_k_pt'] > 1.5)
+        l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_l1_pt'] > 1.5) & (self._branches['BToKEE_l1_mvaId'] > 3.96) #& (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
+        l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_mvaId'] > 3.96) #& (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
+        k_selection = (self._branches['BToKEE_k_pt'] > 3.0) & (self._branches['BToKEE_k_DCASig'] > 2.0)
         selection = sv_selection & l1_selection & l2_selection & k_selection
 
         self._branches = self._branches[selection]
@@ -147,44 +140,42 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
         jpsi_selection = (self._branches['BToKEE_mll_raw'] > 2.9) & (self._branches['BToKEE_mll_raw'] < 3.3)
         l1_pf_selection = (self._branches['BToKEE_l1_isPF'])
         l2_pf_selection = (self._branches['BToKEE_l2_isPF'])
-        #general_low_selection = 
-        l1_low_selection = (self._branches['BToKEE_l1_isLowPt'])
-        l2_low_selection = (self._branches['BToKEE_l2_isLowPt'])
+        l1_low_selection = (self._branches['BToKEE_l1_isLowPt']) #& (self._branches['BToKEE_l1_pt'] < 5.0)
+        l2_low_selection = (self._branches['BToKEE_l2_isLowPt']) #& (self._branches['BToKEE_l2_pt'] < 5.0)
+
+        pf_selection = l1_pf_selection & l2_pf_selection
+        mix_selection = (l1_pf_selection & l2_low_selection) | (l2_pf_selection & l1_low_selection)
+        low_selection = l1_low_selection & l2_low_selection
+        overlap_veto_selection = np.logical_not(self._branches['BToKEE_l1_isPFoverlap']) & np.logical_not(self._branches['BToKEE_l2_isPFoverlap'])
 
 
-        self._branches['BToKEE_mll_raw_jpsi_all'] = self._branches['BToKEE_mll_raw'].copy()
-        self._branches['BToKEE_mll_raw_jpsi_pf'] = self._branches['BToKEE_mll_raw'][l1_pf_selection & l2_pf_selection]
-        self._branches['BToKEE_mll_raw_jpsi_low'] = self._branches['BToKEE_mll_raw'][(l1_low_selection | l2_low_selection)]
+        self._branches['BToKEE_mll_raw_jpsi_all'] = self._branches['BToKEE_mll_raw'][overlap_veto_selection]
+        self._branches['BToKEE_mll_raw_jpsi_pf'] = self._branches['BToKEE_mll_raw'][pf_selection]
+        self._branches['BToKEE_mll_raw_jpsi_mix'] = self._branches['BToKEE_mll_raw'][mix_selection]
+        self._branches['BToKEE_mll_raw_jpsi_low'] = self._branches['BToKEE_mll_raw'][low_selection]
 
-        self._branches['BToKEE_mll_fullfit_jpsi_all'] = self._branches['BToKEE_mll_fullfit'].copy()
-        self._branches['BToKEE_mll_fullfit_jpsi_pf'] = self._branches['BToKEE_mll_fullfit'][l1_pf_selection & l2_pf_selection]
-        self._branches['BToKEE_mll_fullfit_jpsi_low'] = self._branches['BToKEE_mll_fullfit'][(l1_low_selection | l2_low_selection)]
+        self._branches['BToKEE_mll_fullfit_jpsi_all'] = self._branches['BToKEE_mll_fullfit'][overlap_veto_selection]
+        self._branches['BToKEE_mll_fullfit_jpsi_pf'] = self._branches['BToKEE_mll_fullfit'][pf_selection]
+        self._branches['BToKEE_mll_fullfit_jpsi_mix'] = self._branches['BToKEE_mll_fullfit'][mix_selection]
+        self._branches['BToKEE_mll_fullfit_jpsi_low'] = self._branches['BToKEE_mll_fullfit'][low_selection]
 
-        self._branches['BToKEE_mass_all'] = self._branches['BToKEE_mass'][jpsi_selection]
-        self._branches['BToKEE_mass_pf'] = self._branches['BToKEE_mass'][jpsi_selection & l1_pf_selection & l2_pf_selection]
-        for i in range(3, 7):
-          self._branches['BToKEE_mass_low_unbdt{}'.format(i)] = self._branches['BToKEE_mass'][jpsi_selection & (l1_low_selection | l2_low_selection) & (self._branches['BToKEE_l1_unBiased'] > i) & (self._branches['BToKEE_l2_unBiased'] > i)]
+
+        self._branches['BToKEE_mass_all'] = self._branches['BToKEE_mass'][jpsi_selection & overlap_veto_selection]
+        self._branches['BToKEE_mass_pf'] = self._branches['BToKEE_mass'][jpsi_selection & pf_selection]
+        self._branches['BToKEE_mass_mix'] = self._branches['BToKEE_mass'][jpsi_selection & mix_selection]
+        self._branches['BToKEE_mass_low'] = self._branches['BToKEE_mass'][jpsi_selection & low_selection]
 
         
-        self._branches['BToKEE_fit_mass_all'] = self._branches['BToKEE_fit_mass'][jpsi_selection]
-        self._branches['BToKEE_fit_mass_pf'] = self._branches['BToKEE_fit_mass'][jpsi_selection & l1_pf_selection & l2_pf_selection]
-        self._branches['BToKEE_fit_mass_low'] = self._branches['BToKEE_fit_mass'][jpsi_selection & (l1_low_selection | l2_low_selection)]
+        self._branches['BToKEE_fit_mass_all'] = self._branches['BToKEE_fit_mass'][jpsi_selection & overlap_veto_selection]
+        self._branches['BToKEE_fit_mass_pf'] = self._branches['BToKEE_fit_mass'][jpsi_selection & pf_selection]
+        self._branches['BToKEE_fit_mass_mix'] = self._branches['BToKEE_fit_mass'][jpsi_selection & mix_selection]
+        self._branches['BToKEE_fit_mass_low'] = self._branches['BToKEE_fit_mass'][jpsi_selection & low_selection]
 
         self._branches['BToKEE_l1_pt_pf'] = self._branches['BToKEE_l1_pt'][l1_pf_selection]
         self._branches['BToKEE_l1_pt_low'] = self._branches['BToKEE_l1_pt'][l1_low_selection]
         self._branches['BToKEE_l2_pt_pf'] = self._branches['BToKEE_l2_pt'][l2_pf_selection]
         self._branches['BToKEE_l2_pt_low'] = self._branches['BToKEE_l2_pt'][l2_low_selection]
 
-        #self._branches['BToKEE_l1_dz_pf'] = self._branches['BToKEE_l1_dz'][l1_pf_selection]
-        #self._branches['BToKEE_l1_dz_low'] = self._branches['BToKEE_l1_dz'][l1_low_selection]
-        #self._branches['BToKEE_l2_dz_pf'] = self._branches['BToKEE_l2_dz'][l2_pf_selection]
-        #self._branches['BToKEE_l2_dz_low'] = self._branches['BToKEE_l2_dz'][l2_low_selection]
-
-        #self._branches['BToKEE_l1_unBiased_pf'] = self._branches['BToKEE_l1_unBiased'][l1_pf_selection]
-        self._branches['BToKEE_l1_unBiased_low'] = self._branches['BToKEE_l1_unBiased'][l1_low_selection]
-        #self._branches['BToKEE_l2_unBiased_pf'] = self._branches['BToKEE_l2_unBiased'][l2_pf_selection]
-        self._branches['BToKEE_l2_unBiased_low'] = self._branches['BToKEE_l2_unBiased'][l2_low_selection]
-        
         self._branches['BToKEE_l1_mvaId_low'] = self._branches['BToKEE_l1_mvaId'][l1_low_selection]
         self._branches['BToKEE_l2_mvaId_low'] = self._branches['BToKEE_l2_mvaId'][l2_low_selection]
 
