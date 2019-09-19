@@ -32,20 +32,16 @@ class BParkingNANOAnalyzer(object):
 
   def init_output(self):
     print('[BParkingNANOAnalyzer::init_output] INFO: FILE: {}/{}. Initializing output {}...'.format(self._ifile+1, self._num_files, 'histograms' if self._hist else 'tree'))
-    self._file_out = root_open(self._file_out_name+'.root', 'recreate')
     # can choose output to be histograms or a tree
     if self._hist:
+      self._file_out = root_open(self._file_out_name+'.root', 'recreate')
       self._hist_list = {}
       for hist_name, hist_bins in self._outputbranches.items():
         # define the output histograms (assuming all of them to be TH1F)
         self._hist_list[hist_name] = Hist(hist_bins['nbins'], hist_bins['xmin'], hist_bins['xmax'], name=hist_name, title='', type='F')
 
     else:
-      # define the output tree
-      self._outputtree = Tree("tree")
-      self._outputtree.create_branches({branch: 'F' for branch in sorted(self._outputbranches.keys())})
-      self._outputtree.write()
-      self._file_out.close()
+      pass
 
 
   def fill_output(self):
@@ -56,11 +52,7 @@ class BParkingNANOAnalyzer(object):
           branch_np = self._branches[hist_name].values
           fill_hist(self._hist_list[hist_name], branch_np[np.isfinite(branch_np)])
     else:
-      for branch_name in sorted(self._outputbranches.keys()):
-        if branch_name in self._branches.keys():
-          branch_np = self._branches[branch_name].values
-          new_column = np.array(branch_np, dtype=[(branch_name, 'f4')])
-          array2root(new_column, self._file_out_name+'_subset{}.root'.format(self._ifile), 'tree')
+      self._branches.to_hdf(self._file_out_name+'.h5', 'branches', mode='a', format='table', append=True, data_columns=self._outputbranches.keys())
 
 
   def finish(self):
@@ -70,9 +62,9 @@ class BParkingNANOAnalyzer(object):
     if self._hist:
       for hist_name, hist in sorted(self._hist_list.items()):
         hist.write()
+        self._file_out.close()
     else:
       pass
-    self._file_out.close()
 
 
   def print_timestamp(self):

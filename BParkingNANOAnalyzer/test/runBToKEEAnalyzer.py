@@ -50,8 +50,8 @@ if __name__ == "__main__":
         analyze(inputfile, outputfile, args.hist)
 
     else:
-        outputBase = "/eos/uscms/store/user/klau/BsPhiLL_output/LowPtElectronSculpting"
-        outputFolder = "BsPhiEE_CutBasedEvaluation"
+        #outputBase = "/eos/uscms/store/user/klau/BsPhiLL_output/LowPtElectronSculpting"
+        #outputFolder = "BsPhiEE_CutBasedEvaluation"
         global outpath
         #outpath  = "%s/%s"%(outputBase,outputFolder)
         outpath = '.'
@@ -60,10 +60,10 @@ if __name__ == "__main__":
 
         with open(args.inputfiles) as filenames:
             fileList = [f.rstrip('\n') for f in filenames]
-        group   = 2
+        group  = 10
         # stplie files in to n(group) of chunks
         fChunks= list(chunks(fileList,group))
-        print ("writing %s jobs for %s"%(len(fChunks),outputFolder))
+        print ("writing %s jobs"%(len(fChunks)))
         pool = mp.Pool(processes = 4)
         pool.map(analyzeParallel, enumerate(fChunks))
         outputfile = args.outputfile.replace('.root','')

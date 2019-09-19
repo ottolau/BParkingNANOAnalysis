@@ -10,7 +10,7 @@ cd CMSSW_10_2_15/src
 cmsenv
 git cms-init
 git clone https://github.com/ottolau/BParkingNANOAnalysis
-. BParkingNANOAnalyzer/setup.sh
+. BParkingNANOAnalysis/BParkingNANOAnalyzer/setup.sh
 scram b clean; scram b
 ```
 
@@ -37,7 +37,9 @@ The descriptions of the options:
 Inside the folder `test/condor`, there is an example script to submit condor jobs. Simply do
 
 ```
-python submit_condor.py -i [inputFilesList]
+python submit_condor_lpc.py -i [inputFilesList]
 ```
+
+For lxplus, do `voms-proxy-init -valid 192:00 -voms cms`, and copy the proxy `/tmp/x509up_XXXXX` to `$HOME/tmp/x509up`, then set `export X509_USER_PROXY=$HOME/tmp/x509up`. This allows us to use proxy in condor.
 
 
