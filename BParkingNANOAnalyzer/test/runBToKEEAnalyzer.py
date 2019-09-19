@@ -5,7 +5,6 @@ import sys
 sys.path.append('../')
 from scripts.BToKLLAnalyzer import BToKLLAnalyzer
 
-
 import argparse
 parser = argparse.ArgumentParser(description="A simple ttree plotter")
 parser.add_argument("-i", "--inputfiles", dest="inputfiles", default="DoubleMuonNtu_Run2016B.list", help="List of input ggNtuplizer files")
@@ -60,12 +59,16 @@ if __name__ == "__main__":
 
         with open(args.inputfiles) as filenames:
             fileList = [f.rstrip('\n') for f in filenames]
-        group  = 10
+        group  = 2
         # stplie files in to n(group) of chunks
         fChunks= list(chunks(fileList,group))
         print ("writing %s jobs"%(len(fChunks)))
+
         pool = mp.Pool(processes = 4)
-        pool.map(analyzeParallel, enumerate(fChunks))
+        pool.map(analyzeParallel, list(enumerate(fChunks)))
+        pool.close()
+        pool.join()
+
         outputfile = args.outputfile.replace('.root','')
         exec_me("hadd -k -f %s/%s %s/%s"%(outpath,outputfile+'.root',outpath,outputfile+'_subset*.root'))
         exec_me("rm %s/%s"%(outpath,outputfile+'_subset*.root'))

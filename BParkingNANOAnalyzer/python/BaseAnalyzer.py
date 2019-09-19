@@ -41,7 +41,7 @@ class BParkingNANOAnalyzer(object):
         self._hist_list[hist_name] = Hist(hist_bins['nbins'], hist_bins['xmin'], hist_bins['xmax'], name=hist_name, title='', type='F')
 
     else:
-      pass
+      if os.path.isfile(self._file_out_name+'.h5'): os.system('rm {}'.format(self._file_out_name+'.h5'))
 
 
   def fill_output(self):
@@ -52,7 +52,8 @@ class BParkingNANOAnalyzer(object):
           branch_np = self._branches[hist_name].values
           fill_hist(self._hist_list[hist_name], branch_np[np.isfinite(branch_np)])
     else:
-      self._branches.to_hdf(self._file_out_name+'.h5', 'branches', mode='a', format='table', append=True, data_columns=self._outputbranches.keys())
+      self._branches = self._branches[self._outputbranches.keys()]
+      self._branches.to_hdf(self._file_out_name+'.h5', 'branches', mode='a', format='table', append=True)
 
 
   def finish(self):

@@ -45,6 +45,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             #'ProbeTracks_isLostTrk',
                             #'ProbeTracks_isPacked',
                             #'HLT_Mu9_IP6_*',
+                            #'event'
                             ]
 
     
@@ -78,7 +79,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_l_xy_sig': {'nbins': 80, 'xmin': 0.0, 'xmax': 500.0},
                              }
     '''
-    outputbranches_BToKEE = ['BToKEE_l1_pt', 'BToKEE_l2_pt', 'BToKEE_k_pt', 'BToKEE_k_DCASig', 'BToKEE_pt', 'BToKEE_eta', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig', 'BToKEE_mll_raw', 'BToKEE_mass']
+    outputbranches_BToKEE = ['BToKEE_l1_pt', 'BToKEE_l2_pt', 'BToKEE_k_pt', 'BToKEE_k_DCASig', 'BToKEE_pt', 'BToKEE_eta', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig', 'BToKEE_mll_raw', 'BToKEE_mass', 'BToKEE_event']
     outputbranches_BToKEE = {key:1 for key in outputbranches_BToKEE}
     '''
 
@@ -115,6 +116,9 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
           del self._branches[branch]
 
         if 'HLT_Mu9_IP6_' in branch:
+          self._branches['BToKEE_'+branch] = np.repeat(self._branches[branch], self._branches['nBToKEE'])
+          del self._branches[branch]
+        if branch == 'event':
           self._branches['BToKEE_'+branch] = np.repeat(self._branches[branch], self._branches['nBToKEE'])
           del self._branches[branch]
 
