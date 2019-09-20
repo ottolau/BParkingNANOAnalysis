@@ -76,12 +76,8 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
                              'BToKEE_svprob': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
                              'BToKEE_cos2D': {'nbins': 50, 'xmin': 0.999, 'xmax': 1.0},
-                             'BToKEE_l_xy_sig': {'nbins': 80, 'xmin': 0.0, 'xmax': 500.0},
+                             'BToKEE_l_xy_sig': {'nbins': 80, 'xmin': 0.0, 'xmax': 50.0},
                              }
-    '''
-    outputbranches_BToKEE = ['BToKEE_l1_pt', 'BToKEE_l2_pt', 'BToKEE_k_pt', 'BToKEE_k_DCASig', 'BToKEE_pt', 'BToKEE_eta', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig', 'BToKEE_mll_raw', 'BToKEE_mass', 'BToKEE_event']
-    outputbranches_BToKEE = {key:1 for key in outputbranches_BToKEE}
-    '''
 
     super(BToKLLAnalyzer, self).__init__(inputfiles, outputfile, inputbranches_BToKEE, outputbranches_BToKEE, hist)
 
@@ -118,6 +114,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
         if 'HLT_Mu9_IP6_' in branch:
           self._branches['BToKEE_'+branch] = np.repeat(self._branches[branch], self._branches['nBToKEE'])
           del self._branches[branch]
+
         if branch == 'event':
           self._branches['BToKEE_'+branch] = np.repeat(self._branches[branch], self._branches['nBToKEE'])
           del self._branches[branch]
@@ -137,7 +134,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       #self._branches = awkward.topandas(self._branches, flatten=True)
 
       # add additional branches
-      self._branches['BToKEE_l_xy_sig'] = self._branches['BToKEE_l_xy'] / self._branches['BToKEE_l_xy_unc']
+      self._branches['BToKEE_l_xy_sig'] = self._branches['BToKEE_l_xy'] / np.sqrt(self._branches['BToKEE_l_xy_unc'])
 
       # general selection
       sv_selection = (self._branches['BToKEE_pt'] > 3.0) & (self._branches['BToKEE_l_xy_sig'] > 6.0 ) & (self._branches['BToKEE_svprob'] > 0.1) & (self._branches['BToKEE_cos2D'] > 0.999)

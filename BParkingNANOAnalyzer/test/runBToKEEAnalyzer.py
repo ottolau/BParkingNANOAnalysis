@@ -59,13 +59,15 @@ if __name__ == "__main__":
 
         with open(args.inputfiles) as filenames:
             fileList = [f.rstrip('\n') for f in filenames]
-        group  = 2
+        group  = 6
         # stplie files in to n(group) of chunks
         fChunks= list(chunks(fileList,group))
         print ("writing %s jobs"%(len(fChunks)))
 
         pool = mp.Pool(processes = 4)
-        pool.map(analyzeParallel, list(enumerate(fChunks)))
+        input_parallel = list(enumerate(fChunks))
+        print(input_parallel)
+        pool.map(analyzeParallel, input_parallel)
         pool.close()
         pool.join()
 

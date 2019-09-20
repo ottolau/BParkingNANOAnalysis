@@ -16,7 +16,7 @@ from rootpy.plotting import Hist
 from rootpy.tree import Tree
 from root_numpy import fill_hist, array2root, array2tree
 
-ROOT.gErrorIgnoreLevel=ROOT.kError
+#ROOT.gErrorIgnoreLevel=ROOT.kError
 
 class BParkingNANOAnalyzer(object):
   def __init__(self, inputfiles, outputfile, inputbranches, outputbranches, hist=False):
@@ -36,7 +36,7 @@ class BParkingNANOAnalyzer(object):
     if self._hist:
       self._file_out = root_open(self._file_out_name+'.root', 'recreate')
       self._hist_list = {}
-      for hist_name, hist_bins in self._outputbranches.items():
+      for hist_name, hist_bins in sorted(self._outputbranches.items()):
         # define the output histograms (assuming all of them to be TH1F)
         self._hist_list[hist_name] = Hist(hist_bins['nbins'], hist_bins['xmin'], hist_bins['xmax'], name=hist_name, title='', type='F')
 
@@ -63,7 +63,7 @@ class BParkingNANOAnalyzer(object):
     if self._hist:
       for hist_name, hist in sorted(self._hist_list.items()):
         hist.write()
-        self._file_out.close()
+      self._file_out.close()
     else:
       pass
 
