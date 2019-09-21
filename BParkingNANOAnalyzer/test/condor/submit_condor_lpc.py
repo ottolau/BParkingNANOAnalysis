@@ -6,6 +6,7 @@ import argparse
 parser = argparse.ArgumentParser(description="A simple ttree plotter")
 parser.add_argument("-i", "--inputfiles", dest="inputfiles", default="DoubleMuonNtu_Run2016B.list", help="List of input ggNtuplizer files")
 parser.add_argument("-o", "--outputfile", dest="outputfile", default="plots.root", help="Output file containing plots")
+parser.add_argument("-s", "--suffix", dest="suffix", default=None, help="Suffix of the output name")
 parser.add_argument("-m", "--maxevents", dest="maxevents", type=int, default=ROOT.TTree.kMaxEntries, help="Maximum number events to loop over")
 args = parser.parse_args()
 
@@ -100,9 +101,14 @@ def chunks(l, n):
 if __name__ == '__main__':
     basePath = "."
     sampleFolders = os.listdir(basePath)    
-    outputBase = "output_{}".format(args.inputfiles.replace('.list',''))
-    outputDir = 'root://cmseos.fnal.gov//store/user/klau/BParkingNANO_forCondor/output/{}'.format(args.inputfiles.replace('.list',''))
-    outputName = args.inputfiles.replace('.list','')
+    if args.suffix is None:
+      outputBase = "output_{}".format(args.inputfiles.replace('.list',''))
+      outputDir = 'root://eosuser.cern.ch//eos/user/k/klau/BParkingNANO_forCondor/output/{}'.format(args.inputfiles.replace('.list',''))
+      outputName = args.inputfiles.replace('.list','')
+    else:
+      outputBase = "output_{}_{}".format(args.inputfiles.replace('.list',''),args.suffix)
+      outputDir = 'root://eosuser.cern.ch//eos/user/k/klau/BParkingNANO_forCondor/output/{}_{}'.format(args.inputfiles.replace('.list',''),args.suffix)
+      outputName = args.inputfiles.replace('.list','') + args.suffix
 
     dryRun  = False
     subdir  = os.path.expandvars("$PWD")

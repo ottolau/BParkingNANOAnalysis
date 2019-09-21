@@ -217,6 +217,6 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--outputfile", dest="outputfile", default="", help="ROOT file contains histograms")
     args = parser.parse_args()
 
-    fit(args.inputfile, args.outputfile, 'BToKEE_mass_low_unbdt4', sigPDF=1, bkgPDF=2)
+    fit(args.inputfile, args.outputfile, 'BToKEE_mass_mix', sigPDF=1, bkgPDF=2)
     #fit(args.inputfile, args.outputfile, 'BToKEE_mll_raw_jpsi_pf', sigPDF=1, bkgPDF=1)
 
