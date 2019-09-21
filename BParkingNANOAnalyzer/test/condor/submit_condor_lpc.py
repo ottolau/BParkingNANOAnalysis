@@ -40,6 +40,7 @@ def write_bash(temp = 'runjob.sh', command = '', outputdir = ''):
     out += 'date\n'
     out += 'MAINDIR=`pwd`\n'
     out += 'export HOME=${MAINDIR}\n'
+    out += 'export EOS_MGM_URL=root://eosuser.cern.ch\n'
     out += 'ls\n'
     out += '#CMSSW from scratch (only need for root)\n'
     out += 'export CWD=${PWD}\n'
@@ -51,9 +52,10 @@ def write_bash(temp = 'runjob.sh', command = '', outputdir = ''):
     #out += 'virtualenv myenv\n'
     #out += 'source myenv/bin/activate\n'
     out += 'eval `scramv1 runtime -sh` # cmsenv\n'
-    #out += 'git clone git://github.com/ottolau/BParkingNANOAnalysis.git\n'
     #out += 'git clone git@github.com:ottolau/BParkingNANOAnalysis.git\n'
-    out += 'git clone https://github.com/ottolau/BParkingNANOAnalysis.git\n'
+    out += 'mv ${MAINDIR}/BParkingNANOAnalysis.tgz .\n'
+    out += 'tar -xf BParkingNANOAnalysis.tgz\n'
+    out += 'rm BParkingNANOAnalysis.tgz\n'
     out += 'cd BParkingNANOAnalysis\n'
     out += '. BParkingNANOAnalyzer/setup_condor.sh\n'
     out += 'scram b clean; scram b\n'
@@ -105,8 +107,14 @@ if __name__ == '__main__':
     dryRun  = False
     subdir  = os.path.expandvars("$PWD")
     group   = 10
-    files = ['../../scripts/BToKLLAnalyzer.py', '../runBToKEEAnalyzer.py']
 
+    zipPath = 'zip'
+    if not os.path.exists(zipPath):
+      exec_me("mkdir -p {}".format(zipPath), False)
+    exec_me("git clone https://github.com/ottolau/BParkingNANOAnalysis.git {}".format(os.path.join(zipPath, "BParkingNANOAnalysis")), False)
+    exec_me("tar -zcvf BParkingNANOAnalysis.tgz -C {} {}".format(zipPath, "BParkingNANOAnalysis"), False)
+
+    files = ['../../scripts/BToKLLAnalyzer.py', '../runBToKEEAnalyzer.py', 'BParkingNANOAnalysis.tgz']
     files_condor = [f.split('/')[-1] for f in files]
 
     fileList = []

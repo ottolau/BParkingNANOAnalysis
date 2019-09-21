@@ -29,7 +29,11 @@ def write_condor(exe='runjob.sh', arguments = [], files = [],dryRun=True):
     out += 'use_x509userproxy = true\n'
     out += 'x509userproxy = $ENV(X509_USER_PROXY)\n' # for lxplus
     out += 'Arguments = %s\n'%(' '.join(arguments))
-    out += '+JobFlavour = "longlunch"\n'
+    #out += '+JobFlavour = "longlunch"\n'
+    out += '+MaxRuntime = 14400\n'
+    out += 'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)\n'
+    out += 'max_retries = 5\n'
+    out += 'requirements = Machine =!= LastRemoteHost\n'
     out += 'Queue 1\n'
     with open(job_name, 'w') as f:
         f.write(out)
@@ -50,11 +54,13 @@ def write_bash(temp = 'runjob.sh', command = '', outputdir = ''):
     out += 'export SCRAM_ARCH=slc7_amd64_gcc700\n'
     out += 'scramv1 project CMSSW CMSSW_10_2_15\n'
     out += 'cd CMSSW_10_2_15/src\n'
-    #out += 'virtualenv myenv\n'
-    #out += 'source myenv/bin/activate\n'
+    out += 'virtualenv myenv\n'
+    out += 'source myenv/bin/activate\n'
     out += 'eval `scramv1 runtime -sh` # cmsenv\n'
     #out += 'git clone git@github.com:ottolau/BParkingNANOAnalysis.git\n'
-    out += 'git clone https://github.com/ottolau/BParkingNANOAnalysis.git\n'
+    out += 'mv ${MAINDIR}/BParkingNANOAnalysis.tgz .\n'
+    out += 'tar -xf BParkingNANOAnalysis.tgz\n'
+    out += 'rm BParkingNANOAnalysis.tgz\n'
     out += 'cd BParkingNANOAnalysis\n'
     out += '. BParkingNANOAnalyzer/setup_condor.sh\n'
     out += 'scram b clean; scram b\n'
@@ -106,7 +112,14 @@ if __name__ == '__main__':
     dryRun  = False
     subdir  = os.path.expandvars("$PWD")
     group   = 50
-    files = ['../../scripts/BToKLLAnalyzer.py', '../runBToKEEAnalyzer.py']
+
+    zipPath = 'zip'
+    if not os.path.exists(zipPath):
+      exec_me("mkdir -p {}".format(zipPath), False)
+    exec_me("git clone https://github.com/ottolau/BParkingNANOAnalysis.git {}".format(os.path.join(zipPath, "BParkingNANOAnalysis")), False)
+    exec_me("tar -zcvf BParkingNANOAnalysis.tgz -C {} {}".format(zipPath, "BParkingNANOAnalysis"), False)
+
+    files = ['../../scripts/BToKLLAnalyzer.py', '../runBToKEEAnalyzer.py', 'BParkingNANOAnalysis.tgz']
     files_condor = [f.split('/')[-1] for f in files]
 
     fileList = []
@@ -142,4 +155,6 @@ if __name__ == '__main__':
         write_condor(f_sh ,args, files_condor + ['inputfile_%d.list'%(i)], dryRun)
         os.chdir(subdir)
 
+    exec_me("rm -rf {}".format(os.path.join(zipPath, "BParkingNANOAnalysis")), False)
+    exec_me("rm -rf BParkingNANOAnalysis.tgz", False)
 
