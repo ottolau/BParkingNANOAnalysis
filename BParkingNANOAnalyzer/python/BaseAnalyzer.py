@@ -35,10 +35,7 @@ class BParkingNANOAnalyzer(object):
     # can choose output to be histograms or a tree
     if self._hist:
       self._file_out = root_open(self._file_out_name+'.root', 'recreate')
-      self._hist_list = {}
-      for hist_name, hist_bins in sorted(self._outputbranches.items()):
-        # define the output histograms (assuming all of them to be TH1F)
-        self._hist_list[hist_name] = Hist(hist_bins['nbins'], hist_bins['xmin'], hist_bins['xmax'], name=hist_name, title='', type='F')
+      self._hist_list = {hist_name: Hist(hist_bins['nbins'], hist_bins['xmin'], hist_bins['xmax'], name=hist_name, title='', type='F') for hist_name, hist_bins in sorted(self._outputbranches.items())}
 
     else:
       if os.path.isfile(self._file_out_name+'.h5'): os.system('rm {}'.format(self._file_out_name+'.h5'))

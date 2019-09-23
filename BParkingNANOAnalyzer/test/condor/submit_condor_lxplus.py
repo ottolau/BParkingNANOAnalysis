@@ -6,7 +6,8 @@ import argparse
 parser = argparse.ArgumentParser(description="A simple ttree plotter")
 parser.add_argument("-i", "--inputfiles", dest="inputfiles", default="DoubleMuonNtu_Run2016B.list", help="List of input ggNtuplizer files")
 parser.add_argument("-o", "--outputfile", dest="outputfile", default="plots.root", help="Output file containing plots")
-parser.add_argument("-s", "--suffix", dest="suffix", default=None, help="Suffix of the output name")
+parser.add_argument("-f", "--suffix", dest="suffix", default=None, help="Suffix of the output name")
+parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Store histograms or tree")
 parser.add_argument("-m", "--maxevents", dest="maxevents", type=int, default=ROOT.TTree.kMaxEntries, help="Maximum number events to loop over")
 args = parser.parse_args()
 
@@ -30,7 +31,7 @@ def write_condor(exe='runjob.sh', arguments = [], files = [],dryRun=True):
     out += 'use_x509userproxy = true\n'
     out += 'x509userproxy = $ENV(X509_USER_PROXY)\n' # for lxplus
     out += 'Arguments = %s\n'%(' '.join(arguments))
-    #out += '+JobFlavour = "longlunch"\n'
+    #out += '+JobFlavour = "workday"\n'
     out += '+MaxRuntime = 14400\n'
     out += 'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)\n'
     out += 'max_retries = 5\n'
@@ -74,13 +75,14 @@ def write_bash(temp = 'runjob.sh', command = '', outputdir = ''):
     out += 'echo "*******************************************"\n'
     out += 'OUTDIR='+outputdir+'\n'
     out += 'echo "xrdcp output for condor"\n'
-    out += 'for FILE in *.root\n'
+    out += 'for FILE in *.root *.h5\n'
     out += 'do\n'
     out += '  echo "xrdcp -f ${FILE} ${OUTDIR}/${FILE}"\n'
     out += '  xrdcp -f ${FILE} ${OUTDIR}/${FILE} 2>&1\n'
     out += '  XRDEXIT=$?\n'
     out += '  if [[ $XRDEXIT -ne 0 ]]; then\n'
     out += '    rm *.root\n'
+    out += '    rm *.h5\n'
     out += '    echo "exit code $XRDEXIT, failure in xrdcp"\n'
     out += '    exit $XRDEXIT\n'
     out += '  fi\n'
@@ -113,9 +115,9 @@ if __name__ == '__main__':
     else:
       outputBase = "output_{}_{}".format(args.inputfiles.replace('.list',''),args.suffix)
       outputDir = 'root://eosuser.cern.ch//eos/user/k/klau/BParkingNANO_forCondor/output/{}_{}'.format(args.inputfiles.replace('.list',''),args.suffix)
-      outputName = args.inputfiles.replace('.list','') + args.suffix
+      outputName = args.inputfiles.replace('.list','') + '_' +  args.suffix
 
-    dryRun  = True
+    dryRun  = False
     subdir  = os.path.expandvars("$PWD")
     group   = 50
 
@@ -152,13 +154,16 @@ if __name__ == '__main__':
             inputfileList.write('%s\n'%(f))
         inputfileList.close()
 
-        cmd = "cp ${{MAINDIR}}/inputfile_{}.list .; cp ${{MAINDIR}}/BToKLLAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/; cp ${{MAINDIR}}/runBToKEEAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/test/; python runBToKEEAnalyzer.py -i inputfile_{}.list -o {}_subset{}.root -s -r".format(i,i,outputName,i)
+        if args.hist:
+          cmd = "cp ${{MAINDIR}}/inputfile_{}.list .; cp ${{MAINDIR}}/BToKLLAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/; cp ${{MAINDIR}}/runBToKEEAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/test/; python runBToKEEAnalyzer.py -i inputfile_{}.list -o {}_subset{}.root -s -r".format(i,i,outputName,i)
+        else:
+          cmd = "cp ${{MAINDIR}}/inputfile_{}.list .; cp ${{MAINDIR}}/BToKLLAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/; cp ${{MAINDIR}}/runBToKEEAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/test/; python runBToKEEAnalyzer.py -i inputfile_{}.list -o {}_subset{}.root -r".format(i,i,outputName,i)
 
-        args =  []
+        inputargs =  []
         f_sh = "runjob_%s.sh"%i
         cwd    = os.getcwd()
         write_bash(f_sh, cmd, outputDir)
-        write_condor(f_sh ,args, files_condor + ['inputfile_%d.list'%(i)], dryRun)
+        write_condor(f_sh ,inputargs, files_condor + ['inputfile_%d.list'%(i)], dryRun)
         os.chdir(subdir)
 
     exec_me("rm -rf {}".format(os.path.join(zipPath, "BParkingNANOAnalysis")), False)

@@ -1,7 +1,7 @@
 import os
 import sys
 import ROOT
-from itertools import combinations, product
+from itertools import combinations, product, groupby
 import numpy as np
 from array import array
 
@@ -75,7 +75,7 @@ def CMS_lumi(pad):
 
 
 def draw_hist(histo, histo_name, x_label, y_label, norm=False, same=False, err=False):
-    #histo.SetTitle(histo_name)
+    histo.SetTitle(histo_name)
     histo.GetYaxis().SetTitle(y_label)
     histo.GetXaxis().SetTitle(x_label)
     histo.SetTitleFont(42)
@@ -149,7 +149,7 @@ def make_plots(filename, outputFolder='Figures'):
         for var in varUnitMap.keys():
             if var in histo_name: unit = varUnitMap[var]
        
-        draw_hist(histo, histo_name, unit, "Events")
+        draw_hist(histo, histo_name, unit, "Events", err=True)
 
         pad.cd()
         CMS_lumi(pad)
@@ -255,6 +255,140 @@ def make_comparisons(signalfile, backgroundfile, outputFolder='Figures'):
         nPages += 1
         c.Clear()
 
+def make_eleStack(inputfile, outputfile):
+    f1 = ROOT.TFile(inputfile)
+    dir_list = ROOT.gDirectory.GetListOfKeys()
+    for key in dir_list:
+        if key.ReadObj().GetName() == 'BToKEE_mass_pf': h_pf = key.ReadObj()
+        if key.ReadObj().GetName() == 'BToKEE_mass_low_pfveto': h_low = key.ReadObj()
+        if key.ReadObj().GetName() == 'BToKEE_mass_mix_net': h_mix = key.ReadObj()
+        if key.ReadObj().GetName() == 'BToKEE_mass_all': h_all = key.ReadObj()
+
+    canvas_name = "c_" + h_pf.GetName().replace('_pf', '')
+    for v in varUnitMap.keys():
+        if v in h_pf.GetName(): var = v
+    unit = varUnitMap[var]
+   
+    c = ROOT.TCanvas(canvas_name, canvas_name, 800, 600)
+    c.cd()
+    pad = setup_pad()
+    pad.Draw()
+    pad.cd()
+
+    h_pf.SetFillColorAlpha(42,1)
+    h_pf.SetFillStyle(4050)
+    h_low.SetFillColorAlpha(46,1)
+    h_low.SetFillStyle(4050)
+    h_mix.SetFillColorAlpha(40,1)
+    h_mix.SetFillStyle(4050)
+
+    h_all.SetFillColorAlpha(1,1)
+    h_all.SetLineColor(1)
+    h_all.SetFillStyle(3335)
+    h_all.SetMarkerStyle(1)
+
+    h_stack = ROOT.THStack("h_stack", "")
+    h_stack.Add(h_pf)
+    h_stack.Add(h_mix)
+    h_stack.Add(h_low)
+    h_stack.Draw("HIST")
+    h_all.Draw('E2 SAME')
+
+    h_stack.GetYaxis().SetTitle('Events')
+    h_stack.GetXaxis().SetTitle(unit)
+    h_stack.GetYaxis().SetTitleOffset(0.9)
+    h_stack.GetYaxis().SetTitleFont(42)
+    h_stack.GetYaxis().SetTitleSize(0.05)
+    h_stack.GetYaxis().SetLabelSize(0.065)
+    h_stack.GetYaxis().SetLabelSize(0.04)
+    h_stack.GetYaxis().SetLabelFont(42)
+    h_stack.GetXaxis().SetTitleOffset(0.9)
+    h_stack.GetXaxis().SetTitleFont(42)
+    h_stack.GetXaxis().SetTitleSize(0.05)
+    h_stack.GetXaxis().SetLabelSize(0.065)
+    h_stack.GetXaxis().SetLabelSize(0.04)
+    h_stack.GetXaxis().SetLabelFont(42)
+    #h_stack.SetMaximum(400)
+
+    l1 = ROOT.TLegend(0.6,0.75,0.92,0.9)
+    l1.SetTextFont(42)
+    l1.SetTextSize(0.04)
+    l1.SetLineColor(ROOT.kWhite)
+    l1.SetFillStyle(0)
+    l1.AddEntry(h_pf, 'PF electron', 'f')
+    l1.AddEntry(h_mix, 'PF + Low pT electron', 'f')
+    l1.AddEntry(h_low, 'Low pT electron', 'f')
+    l1.AddEntry(h_all, 'Uncertainty', 'f')
+    l1.Draw("same")
+    pad.cd()
+    CMS_lumi(pad)
+
+    c.cd()
+    c.Update()
+    c.SaveAs(outputfile)
+
+def make_subtraction(inputfile, outputfile, outputFolder='Figures'):
+    sub_list = ['BToKEE_l1_pt_pf', 'BToKEE_l2_pt_pf', 'BToKEE_l1_pt_low', 'BToKEE_l2_pt_low']
+    f1 = ROOT.TFile(inputfile)
+    dir_list = ROOT.gDirectory.GetListOfKeys()
+    h_list = [key.ReadObj() for key in dir_list if ('_sb' in key.ReadObj().GetName() or '_sig' in key.ReadObj().GetName()) and key.ReadObj().GetName().replace('_sb','').replace('_sig','') in sub_list]
+
+    nItems = len(h_list)/2
+    nPages = 0
+
+    for key, group in groupby(h_list, lambda x: x.GetName().replace('_sb','').replace('_sig','')):
+      for h in group:
+        if '_sig' in h.GetName():
+          h_sig = h
+        if '_sb' in h.GetName():
+          h_sb = h
+
+      # do the subtraction
+      h_sub = h_sig.Clone()
+      h_sub.Add(h_sb, -1.0)
+
+      canvas_name = "c_" + key
+      for v in varUnitMap.keys():
+          if v in key: var = v
+      unit = varUnitMap[var]
+
+      c = ROOT.TCanvas(canvas_name, canvas_name, 800, 600)
+      c.cd()
+      pad = setup_pad()
+      pad.Draw()
+      pad.cd()
+
+      draw_hist(h_sig, key, unit, "Events", err=True)
+      h_sub.SetMarkerStyle(20)
+      h_sub.SetLineColor(2)
+      h_sb.SetMarkerStyle(21)
+      h_sb.SetLineColor(3)
+      h_sub.Draw('E SAME')
+      h_sb.Draw('E SAME')
+
+      l1 = ROOT.TLegend(0.6,0.7,0.92,0.9)
+      l1.SetTextFont(42)
+      l1.SetTextSize(0.04)
+      l1.AddEntry(h_sub,'Subtracted','lp')
+      l1.AddEntry(h_sig,'Signal','lp')
+      l1.AddEntry(h_sb,'Sideband','lp')
+      l1.Draw("same")
+      pad.cd()
+      CMS_lumi(pad)
+
+      c.cd()
+      c.Update()
+
+      if nPages == 0:
+          c.Print("{}/{}.pdf(".format(outputFolder, outputfile),"pdf")
+      elif nPages == (nItems - 1):
+          c.Print("{}/{}.pdf)".format(outputFolder, outputfile),"pdf")
+      else:
+          c.Print("{}/{}.pdf".format(outputFolder, outputfile),"pdf")
+      nPages += 1
+      c.Clear()
+
+
 
 if __name__ == "__main__":
     import argparse
@@ -264,9 +398,10 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--backgroundfile", dest="backgroundfile", default="", help="ROOT file contains histograms")
     args = parser.parse_args()
 
-    make_plots(args.inputfile)
+    #make_plots(args.inputfile)
     #make_comparisons(args.signalfile, args.backgroundfile)
     #make_2plots(args.inputfile, 'BToKEE_mass_pf', 'BToKEE_fit_mass_pf', 'BToKEE_mass_comp_MC.pdf')
-
+    #make_eleStack(args.inputfile, 'test.pdf')
+    make_subtraction(args.inputfile, 'test.pdf')
 
 
