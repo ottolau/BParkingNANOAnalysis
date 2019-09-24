@@ -78,8 +78,17 @@ if __name__ == "__main__":
           exec_me("rm %s/%s"%(outpath,outputfile+'_subset*.root'))
 
         else:
-          allHDF = [pd.read_hdf(f, 'branches')  for f in ['{}/{}'.format(outpath, outputfile+'_subset{}.h5'.format(i)) for i in range(len(fChunks))]]
-          outputHDF = pd.concat(allHDF, ignore_index=True)
+          #allHDF = [pd.read_hdf(f, 'branches')  for f in ['{}/{}'.format(outpath, outputfile+'_subset{}.h5'.format(i)) for i in range(len(fChunks))]]
+          allHDF = []
+          for f in ['{}/{}'.format(outpath, outputfile+'_subset{}.h5'.format(i)) for i in range(len(fChunks))]
+            try:
+              allHDF.append(pd.read_hdf(f))
+            except ValueError:
+              print('Empty HDF file')
+          if len(allHDF) != 0:
+            outputHDF = pd.concat(allHDF, ignore_index=True)
+          else:
+            outputHDF = pd.DataFrame()
           outputHDF.to_hdf('{}/{}.h5'.format(outpath, outputfile), 'branches', mode='a', format='table', append=True)
           exec_me("rm %s/%s"%(outpath,outputfile+'_subset*.h5'))
 

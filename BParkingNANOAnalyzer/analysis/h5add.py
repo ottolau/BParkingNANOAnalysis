@@ -8,9 +8,19 @@ parser.add_argument("-i", "--inputpath", dest="inputpath", default="", help="Inp
 parser.add_argument("-o", "--outputfile", dest="outputfile", default="test.h5", help="Output h5 file")
 args = parser.parse_args()
 
-filelist = [join(args.inputpath, f) for f in listdir(args.inputpath) if isfile(join(args.inputpath, f)) and '.h5' in f]
-allHDF = [pd.read_hdf(f, 'branches')  for f in filelist]
-outputHDF = pd.concat(allHDF, ignore_index=True)
+allHDF = []
+for f in filelist = [join(args.inputpath, f) for f in listdir(args.inputpath) if isfile(join(args.inputpath, f)) and '.h5' in f]
+  try:
+    allHDF.append(pd.read_hdf(f))
+  except ValueError:
+    print('Empty HDF file')
+if len(allHDF) != 0:
+  outputHDF = pd.concat(allHDF, ignore_index=True)
+else:
+  outputHDF = pd.DataFrame()
+
+#allHDF = [pd.read_hdf(f, 'branches')  for f in filelist]
+#outputHDF = pd.concat(allHDF, ignore_index=True)
 outputHDF.to_hdf('{}.h5'.format(outputfile.replace('.h5','')), 'branches', mode='a', format='table', append=True)
 
 

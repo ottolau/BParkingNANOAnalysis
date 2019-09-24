@@ -21,7 +21,7 @@ from root_numpy import fill_hist, array2root, array2tree
 class BParkingNANOAnalyzer(object):
   def __init__(self, inputfiles, outputfile, inputbranches, outputbranches, hist=False):
     __metaclass__ = ABCMeta
-    self._file_out_name = outputfile.replace('.root','')
+    self._file_out_name = outputfile.replace('.root','').replace('.h5','')
     self._file_in_name = inputfiles
     self._num_files = len(self._file_in_name)
     self._inputbranches = inputbranches

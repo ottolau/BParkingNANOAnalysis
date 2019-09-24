@@ -34,7 +34,7 @@ def write_condor(exe='runjob.sh', arguments = [], files = [],dryRun=True):
     #out += '+JobFlavour = "workday"\n'
     out += '+MaxRuntime = 14400\n'
     out += 'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)\n'
-    out += 'max_retries = 5\n'
+    out += 'max_retries = 3\n'
     out += 'requirements = Machine =!= LastRemoteHost\n'
     out += 'Queue 1\n'
     with open(job_name, 'w') as f:
@@ -68,21 +68,21 @@ def write_bash(temp = 'runjob.sh', command = '', outputdir = ''):
     out += 'scram b clean; scram b\n'
     out += 'cd BParkingNANOAnalyzer/test\n'
     out += command + '\n'
-    out += 'echo "List all root files = "\n'
-    out += 'ls *.root\n'
+    if args.hist:
+      out += 'echo "List all root files = "\n'
+      out += 'ls *.root\n'
     out += 'echo "List all files"\n'
     out += 'ls\n'
     out += 'echo "*******************************************"\n'
     out += 'OUTDIR='+outputdir+'\n'
     out += 'echo "xrdcp output for condor"\n'
-    out += 'for FILE in *.root *.h5\n'
+    out += 'for FILE in *.{}\n'.format('root' if args.hist else 'h5')
     out += 'do\n'
     out += '  echo "xrdcp -f ${FILE} ${OUTDIR}/${FILE}"\n'
     out += '  xrdcp -f ${FILE} ${OUTDIR}/${FILE} 2>&1\n'
     out += '  XRDEXIT=$?\n'
     out += '  if [[ $XRDEXIT -ne 0 ]]; then\n'
-    out += '    rm *.root\n'
-    out += '    rm *.h5\n'
+    out += '    rm *.{}\n'.format('root' if args.hist else 'h5')
     out += '    echo "exit code $XRDEXIT, failure in xrdcp"\n'
     out += '    exit $XRDEXIT\n'
     out += '  fi\n'
@@ -157,7 +157,7 @@ if __name__ == '__main__':
         if args.hist:
           cmd = "cp ${{MAINDIR}}/inputfile_{}.list .; cp ${{MAINDIR}}/BToKLLAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/; cp ${{MAINDIR}}/runBToKEEAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/test/; python runBToKEEAnalyzer.py -i inputfile_{}.list -o {}_subset{}.root -s -r".format(i,i,outputName,i)
         else:
-          cmd = "cp ${{MAINDIR}}/inputfile_{}.list .; cp ${{MAINDIR}}/BToKLLAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/; cp ${{MAINDIR}}/runBToKEEAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/test/; python runBToKEEAnalyzer.py -i inputfile_{}.list -o {}_subset{}.root -r".format(i,i,outputName,i)
+          cmd = "cp ${{MAINDIR}}/inputfile_{}.list .; cp ${{MAINDIR}}/BToKLLAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/; cp ${{MAINDIR}}/runBToKEEAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/test/; python runBToKEEAnalyzer.py -i inputfile_{}.list -o {}_subset{}.h5 -r".format(i,i,outputName,i)
 
         inputargs =  []
         f_sh = "runjob_%s.sh"%i
