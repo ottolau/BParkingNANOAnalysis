@@ -9,7 +9,7 @@ parser.add_argument("-o", "--outputfile", dest="outputfile", default="test.h5", 
 args = parser.parse_args()
 
 allHDF = []
-for f in filelist = [join(args.inputpath, f) for f in listdir(args.inputpath) if isfile(join(args.inputpath, f)) and '.h5' in f]
+for f in [join(args.inputpath, f) for f in listdir(args.inputpath) if isfile(join(args.inputpath, f)) and '.h5' in f]:
   try:
     allHDF.append(pd.read_hdf(f))
   except ValueError:
@@ -21,7 +21,7 @@ else:
 
 #allHDF = [pd.read_hdf(f, 'branches')  for f in filelist]
 #outputHDF = pd.concat(allHDF, ignore_index=True)
-outputHDF.to_hdf('{}.h5'.format(outputfile.replace('.h5','')), 'branches', mode='a', format='table', append=True)
+outputHDF.to_hdf('{}.h5'.format(args.outputfile.replace('.h5','')), 'branches', mode='a', format='table', append=True)
 
 
 

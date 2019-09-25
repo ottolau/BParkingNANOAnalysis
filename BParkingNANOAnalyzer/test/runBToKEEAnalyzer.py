@@ -37,7 +37,7 @@ def analyze(inputfile, outputfile, hist=False):
 def analyzeParallel(enumfChunk):
     ich, fChunk = enumfChunk
     print("Processing chunk number %i"%(ich))
-    outputfile = outpath+'/'+args.outputfile.replace('.root','')+'_subset'+str(ich)+'.root'
+    outputfile = outpath+'/'+args.outputfile.replace('.root','').replace('.h5','')+'_subset'+str(ich)+'.root'
     analyze(fChunk, outputfile, args.hist)
 
 
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         with open(args.inputfiles) as filenames:
             fileList = [f.rstrip('\n') for f in filenames]
         inputfile = fileList
-        outputfile = args.outputfile.replace('.root','')+'.root'
+        outputfile = args.outputfile.replace('.root','').replace('.h5','')+'.root'
         analyze(inputfile, outputfile, args.hist)
 
     else:
@@ -67,20 +67,21 @@ if __name__ == "__main__":
 
         pool = mp.Pool(processes = 4)
         input_parallel = list(enumerate(fChunks))
-        print(input_parallel)
+        #print(input_parallel)
         pool.map(analyzeParallel, input_parallel)
         pool.close()
         pool.join()
 
-        outputfile = args.outputfile.replace('.root','')
+        outputfile = args.outputfile.replace('.root','').replace('.h5','')
         if args.hist:
           exec_me("hadd -k -f %s/%s %s/%s"%(outpath,outputfile+'.root',outpath,outputfile+'_subset*.root'))
           exec_me("rm %s/%s"%(outpath,outputfile+'_subset*.root'))
 
         else:
+          if os.path.isfile('{}/{}.h5'.format(outpath, outputfile)): os.system('rm {}/{}.h5'.format(outpath, outputfile))
           #allHDF = [pd.read_hdf(f, 'branches')  for f in ['{}/{}'.format(outpath, outputfile+'_subset{}.h5'.format(i)) for i in range(len(fChunks))]]
           allHDF = []
-          for f in ['{}/{}'.format(outpath, outputfile+'_subset{}.h5'.format(i)) for i in range(len(fChunks))]
+          for f in ['{}/{}'.format(outpath, outputfile+'_subset{}.h5'.format(i)) for i in range(len(fChunks))]:
             try:
               allHDF.append(pd.read_hdf(f))
             except ValueError:

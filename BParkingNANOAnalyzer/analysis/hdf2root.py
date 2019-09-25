@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from rootpy.io import root_open
 from rootpy.plotting import Hist
 from root_numpy import fill_hist
 
@@ -58,8 +59,20 @@ outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
                   'BToKEE_l_xy_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
                   }
 
+ELECTRON_MASS = 0.000511
+K_MASS = 0.493677
+JPSI_LOW = 2.9
+JPSI_UP = 3.3
+B_LOWSB_LOW = 4.75
+B_LOWSB_UP = 5.0
+B_UPSB_LOW = 5.5
+B_UPSB_UP = 5.75
 
 branches = pd.read_hdf(args.inputfile, 'branches')
+
+jpsi_selection = (branches['BToKEE_mll_raw'] > JPSI_LOW) & (branches['BToKEE_mll_raw'] < JPSI_UP)
+
+print(branches['BToKEE_mass_pf'], branches['BToKEE_mass'][(branches['BToKEE_l1_isPF']) & (branches['BToKEE_l2_isPF']) & jpsi_selection & np.logical_not(branches['BToKEE_l1_isPFoverlap']) & np.logical_not(branches['BToKEE_l2_isPFoverlap'])])
 
 file_out = root_open(args.outputfile.replace('.root','')+'.root', 'recreate')
 hist_list = {hist_name: Hist(hist_bins['nbins'], hist_bins['xmin'], hist_bins['xmax'], name=hist_name, title='', type='F') for hist_name, hist_bins in sorted(outputbranches.items())}

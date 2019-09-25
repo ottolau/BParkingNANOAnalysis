@@ -45,7 +45,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             #'ProbeTracks_isLostTrk',
                             #'ProbeTracks_isPacked',
                             #'HLT_Mu9_IP6_*',
-                            #'event'
+                            'event'
                             ]
 
     
@@ -62,6 +62,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_mll_fullfit_jpsi_low': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
                              'BToKEE_mll_fullfit_jpsi_mix_net': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
                              'BToKEE_mll_fullfit_jpsi_low_pfveto': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
+                             'BToKEE_mass': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_mass_all': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_mass_pf': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_mass_mix': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
@@ -74,6 +75,8 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_fit_mass_low': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_fit_mass_mix_net': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_fit_mass_low_pfveto': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
+                             'BToKEE_l1_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
+                             'BToKEE_l2_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
                              'BToKEE_l1_pt_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
                              'BToKEE_l1_pt_low': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
                              'BToKEE_l2_pt_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 15.0},
@@ -93,6 +96,13 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_svprob': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
                              'BToKEE_cos2D': {'nbins': 50, 'xmin': 0.999, 'xmax': 1.0},
                              'BToKEE_l_xy_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
+                             'BToKEE_l1_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
+                             'BToKEE_l2_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
+                             'BToKEE_l1_isLowPt': {'nbins': 2, 'xmin': 0, 'xmax': 2},
+                             'BToKEE_l2_isLowPt': {'nbins': 2, 'xmin': 0, 'xmax': 2},
+                             'BToKEE_l1_isPFoverlap': {'nbins': 2, 'xmin': 0, 'xmax': 2},
+                             'BToKEE_l2_isPFoverlap': {'nbins': 2, 'xmin': 0, 'xmax': 2},
+                             'BToKEE_event': {'nbins': 10, 'xmin': 0, 'xmax': 10},
                              }
 
     super(BToKLLAnalyzer, self).__init__(inputfiles, outputfile, inputbranches_BToKEE, outputbranches_BToKEE, hist)
@@ -155,11 +165,18 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       self._branches = pd.DataFrame.from_dict({branch: array.flatten() for branch, array in self._branches.items()})
       #self._branches = awkward.topandas(self._branches, flatten=True)
 
+      if np.any(self._branches['BToKEE_l1_isPF'] & self._branches['BToKEE_l1_isLowPt']): print('l1 contains both PF and low pt')
+      if np.any(self._branches['BToKEE_l2_isPF'] & self._branches['BToKEE_l2_isLowPt']): print('l2 contains both PF and low pt')
+      if np.any(self._branches['BToKEE_l1_isPF'] & self._branches['BToKEE_l1_isPFoverlap']): print('l1 contains both PF and PFoverlap')
+      if np.any(self._branches['BToKEE_l2_isPF'] & self._branches['BToKEE_l2_isPFoverlap']): print('l2 contains both PF and PFoverlap')
+
+
+
       # add additional branches
       self._branches['BToKEE_l_xy_sig'] = self._branches['BToKEE_l_xy'] / np.sqrt(self._branches['BToKEE_l_xy_unc'])
 
       # general selection
-      sv_selection = (self._branches['BToKEE_pt'] > 9999999999.0) & (self._branches['BToKEE_l_xy_sig'] > 6.0 ) & (self._branches['BToKEE_svprob'] > 0.1) & (self._branches['BToKEE_cos2D'] > 0.999)
+      sv_selection = (self._branches['BToKEE_pt'] > 3.0) & (self._branches['BToKEE_l_xy_sig'] > 6.0 ) & (self._branches['BToKEE_svprob'] > 0.1) & (self._branches['BToKEE_cos2D'] > 0.999)
       l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_l1_pt'] > 1.5) & (self._branches['BToKEE_l1_mvaId'] > 3.96) #& (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
       l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_mvaId'] > 3.96) #& (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
       k_selection = (self._branches['BToKEE_k_pt'] > 3.0) & (self._branches['BToKEE_k_DCASig'] > 2.0)
@@ -188,6 +205,15 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       mix_selection = ((l1_pf_selection & l2_low_selection) | (l2_pf_selection & l1_low_selection)) #& overlap_veto_selection
       low_pfveto_selection = low_selection & overlap_veto_selection
       mix_net_selection = overlap_veto_selection & np.logical_not(pf_selection | low_selection)
+
+      # count the number of b candidates passes the selection
+      #count_selection = jpsi_selection 
+      #nBToKEE_selected = self._branches['BToKEE_event'][count_selection].values
+      #_, nBToKEE_selected = np.unique(nBToKEE_selected[np.isfinite(nBToKEE_selected)], return_counts=True)
+      #self._nBCand = pd.DataFrame({'BToKEE_nB': nBToKEE_selected})
+      #self._branches = pd.concat([self._branches, nBToKEE_selected], axis=1)
+
+      # put additional cuts
 
       self._branches['BToKEE_mll_raw_jpsi_all'] = self._branches['BToKEE_mll_raw'][overlap_veto_selection]
       self._branches['BToKEE_mll_raw_jpsi_pf'] = self._branches['BToKEE_mll_raw'][pf_selection]

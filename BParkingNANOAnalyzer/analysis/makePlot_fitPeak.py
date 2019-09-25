@@ -167,9 +167,9 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
     xframe = wspace.var('x').frame()
     hdata.plotOn(xframe, RooFit.Name("data"))
     model.plotOn(xframe,RooFit.Name("global"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
-    #model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.LineStyle(ROOT.kDashed),RooFit.LineColor(ROOT.kMagenta),RooFit.MoveToBack()) ;
-    #model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.DrawOption("FL"),RooFit.FillColor(9),RooFit.FillStyle(3004),RooFit.LineStyle(6),RooFit.LineColor(9)) ;
-    #model.plotOn(xframe,RooFit.VisualizeError(results), RooFit.FillColor(ROOT.kOrange), RooFit.MoveToBack()) # this will show fit overlay on canvas
+    model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.LineStyle(ROOT.kDashed),RooFit.LineColor(ROOT.kMagenta),RooFit.MoveToBack()) ;
+    model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.DrawOption("FL"),RooFit.FillColor(9),RooFit.FillStyle(3004),RooFit.LineStyle(6),RooFit.LineColor(9)) ;
+    model.plotOn(xframe,RooFit.VisualizeError(results), RooFit.FillColor(ROOT.kOrange), RooFit.MoveToBack()) # this will show fit overlay on canvas
 
     xframe.GetYaxis().SetTitleOffset(0.9)
     xframe.GetYaxis().SetTitleFont(42)
@@ -201,7 +201,7 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
     legend.AddEntry(xframe.findObject("bkg"),"Background fit","l");
     legend.AddEntry(xframe.findObject("sig"),"Signal fit","l");
     legend.AddEntry(xframe.findObject("global"),"Global Fit","l");
-    #legend.Draw();
+    legend.Draw();
 
     c2.cd()
     c2.Update()
@@ -217,6 +217,6 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--outputfile", dest="outputfile", default="", help="ROOT file contains histograms")
     args = parser.parse_args()
 
-    fit(args.inputfile, args.outputfile, 'BToKEE_mass_pf', sigPDF=1, bkgPDF=2)
+    fit(args.inputfile, args.outputfile, 'BToKEE_mass_mix_net', sigPDF=1, bkgPDF=2)
     #fit(args.inputfile, args.outputfile, 'BToKEE_mll_raw_jpsi_pf', sigPDF=1, bkgPDF=1)
 
