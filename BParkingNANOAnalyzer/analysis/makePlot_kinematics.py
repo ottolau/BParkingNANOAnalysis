@@ -256,15 +256,23 @@ def make_comparisons(signalfile, backgroundfile, outputFolder='Figures'):
         c.Clear()
 
 def make_eleStack(inputfile, outputfile):
-    f1 = ROOT.TFile(inputfile)
-    dir_list = ROOT.gDirectory.GetListOfKeys()
-    for key in dir_list:
-        if key.ReadObj().GetName() == 'BToKEE_mass_pf': h_pf = key.ReadObj()
-        if key.ReadObj().GetName() == 'BToKEE_mass_low_pfveto': h_low = key.ReadObj()
-        if key.ReadObj().GetName() == 'BToKEE_mass_mix_net': h_mix = key.ReadObj()
-        if key.ReadObj().GetName() == 'BToKEE_mass_all': h_all = key.ReadObj()
+    eleType = ['pf', 'low_pfveto', 'mix_net', 'all']
+    for eType in eleType:
+      f1 = ROOT.TFile('{}_{}.root'.format(inputfile, eType))
+      dir_list = ROOT.gDirectory.GetListOfKeys()
+      for key in dir_list:
+        if key.ReadObj().GetName() == 'BToKEE_mass':
+          if eType == 'pf':
+            h_pf = key.ReadObj()
+          if eType == 'low_pfveto':
+            h_low = key.ReadObj()
+          if eType == 'mix_net':
+            h_mix = key.ReadObj()
+          if eType == 'all':
+            h_all = key.ReadObj()
+      ROOT.gDirectory.Clear()
 
-    canvas_name = "c_" + h_pf.GetName().replace('_pf', '')
+    canvas_name = "c_" + h_pf.GetName()
     for v in varUnitMap.keys():
         if v in h_pf.GetName(): var = v
     unit = varUnitMap[var]
@@ -398,10 +406,10 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--backgroundfile", dest="backgroundfile", default="", help="ROOT file contains histograms")
     args = parser.parse_args()
 
-    #make_plots(args.inputfile)
+    make_plots(args.inputfile)
     #make_comparisons(args.signalfile, args.backgroundfile)
     #make_2plots(args.inputfile, 'BToKEE_mass_pf', 'BToKEE_fit_mass_pf', 'BToKEE_mass_comp_MC.pdf')
     #make_eleStack(args.inputfile, 'test.pdf')
-    make_subtraction(args.inputfile, 'test.pdf')
+    #make_subtraction(args.inputfile, 'test.pdf')
 
 

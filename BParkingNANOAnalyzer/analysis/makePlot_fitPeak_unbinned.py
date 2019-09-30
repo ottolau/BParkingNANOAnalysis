@@ -50,24 +50,32 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
     ROOT.gStyle.SetOptStat(000000);
     ROOT.gStyle.SetOptTitle(0)
 
-    xmin = 4.5 
+    xmin = 4.7 
     xmax = 6.0 
     #xmin = 2.6
     #xmax = 3.6
+    tree = ROOT.TChain('tree')
+    tree.AddFile(inputfile)
 
-    wspace.factory('x[5.0,%f,%f]' % (xmin, xmax))
+    bMass = ROOT.RooRealVar("BToKEE_mass", "m(K^{+}e^{+}e^{-})", 4.7, 6.0, "GeV")
+    thevars = ROOT.RooArgSet()
+    thevars.add(bMass)
 
-    #M = 15 
-    #wspace.var('x').setBins(M)
+    fulldata = ROOT.RooDataSet('fulldata', 'fulldata', tree, ROOT.RooArgSet(thevars))
+    theBMassfunc = ROOT.RooFormulaVar("x", "x", "@0", ROOT.RooArgList(bMass) )
+    theBMass     = fulldata.addColumn(theBMassfunc) ;
+    theBMass.setRange(xmin,xmax);
+    thevars.add(theBMass)
+
+    cut = ''
+
+    print cut    
+    data = fulldata.reduce(thevars, cut)
+
+    getattr(wspace,'import')(data, RooFit.Rename("data"))
 
     wspace.factory('nsig[100.0, 0.0, 100000.0]')
     wspace.factory('nbkg[500.0, 0.0, 1000000.0]')
-
-    x = wspace.var('x')
-    mean = wspace.var('mean')
-    sigma = wspace.var('sigma')
-    nsig = wspace.var('nsig')
-    nbkg = wspace.var('nbkg')
 
 
     if sigPDF == 0:
@@ -89,7 +97,7 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
         # Crystal-ball
         wspace.factory('mean[5.2418e+00, 5.20e+00, 5.35e+00]')
         wspace.factory('sigma[7.1858e-02, 1.e-3, 5.e-1]')
-        wspace.factory('alpha[-0.5, -1.0e+2, 1.0e+2]')
+        wspace.factory('alpha[1.0, 0.0, 1.0e+3]')
         wspace.factory('n[10, 0, 100]')
         wspace.factory('CBShape::sig(x,mean,sigma,alpha,n)')
 
@@ -114,6 +122,11 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
         alpha = wspace.var('alpha')
         wspace.factory('Exponential::bkg(x,exp_alpha)')
 
+    #x = wspace.var('x')
+    mean = wspace.var('mean')
+    sigma = wspace.var('sigma')
+    nsig = wspace.var('nsig')
+    nbkg = wspace.var('nbkg')
 
     #parameters = ['c0', 'c1', 'c2', 'mean', 'width', 'sigma', 'nsig', 'nbkg']
    
@@ -126,43 +139,10 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
     bkg = wspace.pdf('bkg')
     sig = wspace.pdf('sig')
 
-    # define the set obs = (x)
-    wspace.defineSet('obs', 'x')
 
-    # make the set obs known to Python
-    obs  = wspace.set('obs')
-    l = ROOT.RooArgList(obs)
-
-    f = ROOT.TFile(inputfile,"READ")
-
-    hist = f.Get(hist_name)
-    #hist.Rebin(2)
-    hist.SetStats(0)
-    hdata = ROOT.RooDataHist("hdata", "hdata", l, RooFit.Import(hist))
-
-    #hdata = RooDataHist('hdata', 'binned data', obs)
-    #hdata.add(data)  # add the data to the RooDataHist and bin them
-    print("="*40)
-    hdata.Print('verbose')
-    print("="*40)
-
-    # Do a multinomial fit to the binned data by
-    # turning off extended likelihood mode. If you
-    # want a multi-Poisson fit, change False to True.
-    # (If interested, ask what all this means!)
-    results = model.fitTo(hdata, RooFit.Save(), RooFit.Extended(True))
-    #results = model.fitTo(hdata, RooFit.Minimizer("Minutit2","Migrad"))
+    ## fit the model to the data.
+    results = model.fitTo(data, RooFit.Extended(True), RooFit.Save(), RooFit.Range(xmin,xmax))
     results.Print()
-
-    #bkgRange = ROOT.RooRealVar("bkgRange","bkgRange",5.25,5.45) ;
-    #bkgRangeArgSet = ROOT.RooArgSet(bkgRange)
-    x.setRange("window",5.25,5.45) ;
-    fracBkgRange = bkg.createIntegral(obs,obs,"window") ;
-
-    #fracBkgRange = bkg.createIntegral(bkgRangeArgSet,"window") ;
-    nbkgWindow = nbkg.getVal() * fracBkgRange.getVal()
-    print(nbkg.getVal(), fracBkgRange.getVal())
-    print("Number of signals: %f, Number of background: %f, S/sqrt(S+B): %f"%(nsig.getVal(), nbkgWindow, nsig.getVal()/math.sqrt(nsig.getVal() + nbkgWindow)))
 
 
     # Plot results of fit on a different frame
@@ -173,8 +153,8 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
     ROOT.gPad.SetRightMargin(0.05)
 
     #xframe = wspace.var('x').frame(RooFit.Title("PF electron"))
-    xframe = wspace.var('x').frame()
-    hdata.plotOn(xframe, RooFit.Name("data"))
+    xframe = theBMass.frame()
+    data.plotOn(xframe, RooFit.Binning(50), RooFit.Name("data"))
     model.plotOn(xframe,RooFit.Name("global"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
     model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.LineStyle(ROOT.kDashed),RooFit.LineColor(ROOT.kMagenta),RooFit.MoveToBack()) ;
     model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.DrawOption("FL"),RooFit.FillColor(9),RooFit.FillStyle(3004),RooFit.LineStyle(6),RooFit.LineColor(9)) ;

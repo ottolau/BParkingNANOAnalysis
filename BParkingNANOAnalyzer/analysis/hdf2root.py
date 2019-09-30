@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 from rootpy.io import root_open
 from rootpy.plotting import Hist
-from root_numpy import fill_hist
+from root_numpy import fill_hist, array2root
+from root_pandas import to_root
 
 import argparse
 parser = argparse.ArgumentParser(description="A simple ttree plotter")
@@ -13,45 +14,14 @@ args = parser.parse_args()
 
 
 
-outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
-                  'BToKEE_mll_raw_jpsi_all': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mll_raw_jpsi_pf': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mll_raw_jpsi_mix': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mll_raw_jpsi_low': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mll_raw_jpsi_mix_net': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mll_raw_jpsi_low_pfveto': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mll_fullfit_jpsi_all': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mll_fullfit_jpsi_pf': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mll_fullfit_jpsi_mix': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mll_fullfit_jpsi_low': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mll_fullfit_jpsi_mix_net': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mll_fullfit_jpsi_low_pfveto': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mass_all': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_mass_pf': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_mass_mix': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_mass_low': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_mass_mix_net': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_mass_low_pfveto': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_fit_mass_all': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_fit_mass_pf': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_fit_mass_mix': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_fit_mass_low': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_fit_mass_mix_net': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_fit_mass_low_pfveto': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_l1_pt_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_l1_pt_low': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_l2_pt_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 15.0},
-                  'BToKEE_l2_pt_low': {'nbins': 50, 'xmin': 0.0, 'xmax': 15.0},
-                  'BToKEE_l1_pt_pf_sb': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_l1_pt_low_sb': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_l2_pt_pf_sb': {'nbins': 50, 'xmin': 0.0, 'xmax': 15.0},
-                  'BToKEE_l2_pt_low_sb': {'nbins': 50, 'xmin': 0.0, 'xmax': 15.0},
-                  'BToKEE_l1_pt_pf_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_l1_pt_low_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_l2_pt_pf_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 15.0},
-                  'BToKEE_l2_pt_low_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 15.0},
-                  'BToKEE_l1_mvaId_low': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
-                  'BToKEE_l2_mvaId_low': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 2.6, 'xmax': 3.6},
+                  #'BToKEE_mll_fullfit': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
+                  'BToKEE_mass': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
+                  #'BToKEE_fit_mass': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
+                  'BToKEE_l1_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_l2_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 15.0},
+                  'BToKEE_l1_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                  'BToKEE_l2_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                   'BToKEE_k_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
                   'BToKEE_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
                   'BToKEE_svprob': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
@@ -67,20 +37,67 @@ B_LOWSB_LOW = 4.75
 B_LOWSB_UP = 5.0
 B_UPSB_LOW = 5.5
 B_UPSB_UP = 5.75
+B_MIN = 4.7
+B_MAX = 6.0
 
-branches = pd.read_hdf(args.inputfile, 'branches')
 
-jpsi_selection = (branches['BToKEE_mll_raw'] > JPSI_LOW) & (branches['BToKEE_mll_raw'] < JPSI_UP)
+if __name__ == "__main__":
+  inputfile = args.inputfile.replace('.h5','')+'.h5'
+  outputfile = args.outputfile.replace('.root','').replace('.h5','')
 
-print(branches['BToKEE_mass_pf'], branches['BToKEE_mass'][(branches['BToKEE_l1_isPF']) & (branches['BToKEE_l2_isPF']) & jpsi_selection & np.logical_not(branches['BToKEE_l1_isPFoverlap']) & np.logical_not(branches['BToKEE_l2_isPFoverlap'])])
+  ele_type = {'all': True, 'pf': True, 'low': True, 'low_pfveto': True, 'mix_net': True}
+  ele_selection = {'all': 'overlap_veto_selection', 'pf': 'pf_selection', 'low': 'low_selection', 'low_pfveto': 'low_pfveto_selection', 'mix_net': 'mix_net_selection'}
 
-file_out = root_open(args.outputfile.replace('.root','')+'.root', 'recreate')
-hist_list = {hist_name: Hist(hist_bins['nbins'], hist_bins['xmin'], hist_bins['xmax'], name=hist_name, title='', type='F') for hist_name, hist_bins in sorted(outputbranches.items())}
+  branches = pd.read_hdf(inputfile, 'branches')
+  output_branches = {}
 
-for hist_name, hist_bins in sorted(outputbranches.items()):
-  if hist_name in branches.keys():
-    branch_np = branches[hist_name].values
-    fill_hist(hist_list[hist_name], branch_np[np.isfinite(branch_np)])
-    hist_list[hist_name].write()
-file_out.close()
+  jpsi_selection = (branches['BToKEE_mll_raw'] > JPSI_LOW) & (branches['BToKEE_mll_raw'] < JPSI_UP)
+  b_selection = jpsi_selection & (branches['BToKEE_mass'] > B_LOWSB_UP) & (branches['BToKEE_mass'] < B_UPSB_LOW)
+  b_lowsb_selection = jpsi_selection & (branches['BToKEE_mass'] > B_LOWSB_LOW) & (branches['BToKEE_mass'] < B_LOWSB_UP)
+  b_upsb_selection = jpsi_selection & (branches['BToKEE_mass'] > B_UPSB_LOW) & (branches['BToKEE_mass'] < B_UPSB_UP)
+  b_sb_selection = b_lowsb_selection | b_upsb_selection
+
+  general_selection = jpsi_selection & (branches['BToKEE_pt'] > 5.0) & (branches['BToKEE_k_pt'] > 1.0) & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) 
+
+  branches = branches[general_selection]
+
+  # additional cuts, allows various lengths
+
+  l1_pf_selection = (branches['BToKEE_l1_isPF'])
+  l2_pf_selection = (branches['BToKEE_l2_isPF'])
+  l1_low_selection = (branches['BToKEE_l1_isLowPt']) #& (branches['BToKEE_l1_pt'] < 5.0)
+  l2_low_selection = (branches['BToKEE_l2_isLowPt']) #& (branches['BToKEE_l2_pt'] < 5.0)
+
+  pf_selection = l1_pf_selection & l2_pf_selection
+  low_selection = l1_low_selection & l2_low_selection
+  overlap_veto_selection = np.logical_not(branches['BToKEE_l1_isPFoverlap']) & np.logical_not(branches['BToKEE_l2_isPFoverlap'])
+  mix_selection = ((l1_pf_selection & l2_low_selection) | (l2_pf_selection & l1_low_selection)) #& overlap_veto_selection
+  low_pfveto_selection = low_selection & overlap_veto_selection
+  mix_net_selection = overlap_veto_selection & np.logical_not(pf_selection | low_selection)
+
+  # count the number of b candidates passes the selection
+  #count_selection = jpsi_selection 
+  #nBToKEE_selected = self._branches['BToKEE_event'][count_selection].values
+  #_, nBToKEE_selected = np.unique(nBToKEE_selected[np.isfinite(nBToKEE_selected)], return_counts=True)
+
+
+  for eType, eBool in ele_type.items():
+    if not eBool: continue
+    output_branches[eType] = branches[eval(ele_selection[eType])]
+
+    if args.hist:
+      file_out = root_open('{}_{}.root'.format(outputfile, eType), 'recreate')
+      hist_list = {hist_name: Hist(hist_bins['nbins'], hist_bins['xmin'], hist_bins['xmax'], name=hist_name, title='', type='F') for hist_name, hist_bins in sorted(outputbranches.items())}
+      for hist_name, hist_bins in sorted(outputbranches.items()):
+        if hist_name in branches.keys():
+          branch_np = output_branches[eType][hist_name].values
+          fill_hist(hist_list[hist_name], branch_np[np.isfinite(branch_np)])
+          hist_list[hist_name].write()
+      file_out.close()
+
+    else:
+      output_branches[eType][outputbranches.keys()].to_root('{}_{}.root'.format(outputfile, eType), key='tree')
+
+
+
 
