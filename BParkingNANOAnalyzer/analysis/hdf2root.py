@@ -13,7 +13,7 @@ parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Stor
 args = parser.parse_args()
 
 
-
+'''
 outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 2.6, 'xmax': 3.6},
                   #'BToKEE_mll_fullfit': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
                   'BToKEE_mass': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
@@ -23,6 +23,45 @@ outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 2.6, 'xmax': 3.6},
                   'BToKEE_l1_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                   'BToKEE_l2_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                   'BToKEE_k_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                  'BToKEE_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_svprob': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
+                  'BToKEE_cos2D': {'nbins': 50, 'xmin': 0.999, 'xmax': 1.0},
+                  'BToKEE_l_xy_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
+                  }
+'''
+outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
+                  'BToKEE_mll_fullfit': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
+                  'BToKEE_mll_llfit': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
+                  'BToKEE_mass': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
+                  'BToKEE_l1_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_l2_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_l1_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_l2_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_l1_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
+                  'BToKEE_l2_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
+                  'BToKEE_l1_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
+                  'BToKEE_l2_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
+                  'BToKEE_l1_dxy_sig': {'nbins': 50, 'xmin': -30.0, 'xmax': 30.0},
+                  'BToKEE_l2_dxy_sig': {'nbins': 50, 'xmin': -30.0, 'xmax': 30.0},
+                  'BToKEE_l1_dz': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
+                  'BToKEE_l2_dz': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
+                  'BToKEE_l1_unBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                  'BToKEE_l2_unBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                  'BToKEE_l1_ptBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                  'BToKEE_l2_ptBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                  'BToKEE_l1_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                  'BToKEE_l2_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                  'BToKEE_l1_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
+                  'BToKEE_l2_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
+                  'BToKEE_l1_isLowPt': {'nbins': 2, 'xmin': 0, 'xmax': 2},
+                  'BToKEE_l2_isLowPt': {'nbins': 2, 'xmin': 0, 'xmax': 2},
+                  'BToKEE_l1_isPFoverlap': {'nbins': 2, 'xmin': 0, 'xmax': 2},
+                  'BToKEE_l2_isPFoverlap': {'nbins': 2, 'xmin': 0, 'xmax': 2},
+                  'BToKEE_k_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                  'BToKEE_k_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                  'BToKEE_k_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
+                  'BToKEE_k_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
+                  'BToKEE_k_DCASig': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
                   'BToKEE_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
                   'BToKEE_svprob': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
                   'BToKEE_cos2D': {'nbins': 50, 'xmin': 0.999, 'xmax': 1.0},
@@ -45,8 +84,8 @@ if __name__ == "__main__":
   inputfile = args.inputfile.replace('.h5','')+'.h5'
   outputfile = args.outputfile.replace('.root','').replace('.h5','')
 
-  ele_type = {'all': True, 'pf': True, 'low': True, 'low_pfveto': True, 'mix_net': True}
-  ele_selection = {'all': 'overlap_veto_selection', 'pf': 'pf_selection', 'low': 'low_selection', 'low_pfveto': 'low_pfveto_selection', 'mix_net': 'mix_net_selection'}
+  ele_type = {'all': True, 'pf': True, 'low': True, 'mix': True, 'low_pfveto': True, 'mix_net': True}
+  ele_selection = {'all': 'overlap_veto_selection', 'pf': 'pf_selection', 'low': 'low_selection', 'mix': 'mix_selection', 'low_pfveto': 'low_pfveto_selection', 'mix_net': 'mix_net_selection'}
 
   branches = pd.read_hdf(inputfile, 'branches')
   output_branches = {}
@@ -57,9 +96,11 @@ if __name__ == "__main__":
   b_upsb_selection = jpsi_selection & (branches['BToKEE_mass'] > B_UPSB_LOW) & (branches['BToKEE_mass'] < B_UPSB_UP)
   b_sb_selection = b_lowsb_selection | b_upsb_selection
 
-  general_selection = jpsi_selection & (branches['BToKEE_pt'] > 5.0) & (branches['BToKEE_k_pt'] > 1.0) & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) 
+  #general_selection = jpsi_selection & (branches['BToKEE_pt'] > 5.0) & (branches['BToKEE_k_pt'] > 1.0) & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) 
+  general_selection = jpsi_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) 
 
   branches = branches[general_selection]
+  branches['BToKEE_normpt'] = branches['BToKEE_pt'] / branches['BToKEE_mass']
 
   # additional cuts, allows various lengths
 
@@ -71,7 +112,7 @@ if __name__ == "__main__":
   pf_selection = l1_pf_selection & l2_pf_selection
   low_selection = l1_low_selection & l2_low_selection
   overlap_veto_selection = np.logical_not(branches['BToKEE_l1_isPFoverlap']) & np.logical_not(branches['BToKEE_l2_isPFoverlap'])
-  mix_selection = ((l1_pf_selection & l2_low_selection) | (l2_pf_selection & l1_low_selection)) #& overlap_veto_selection
+  mix_selection = ((l1_pf_selection & l2_low_selection) | (l2_pf_selection & l1_low_selection))
   low_pfveto_selection = low_selection & overlap_veto_selection
   mix_net_selection = overlap_veto_selection & np.logical_not(pf_selection | low_selection)
 

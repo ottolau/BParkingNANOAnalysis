@@ -90,8 +90,7 @@ if __name__ == "__main__":
     filename['bkg'] = "test_bkg.root"
     filename['sig'] = "test_sig.root"
 
-    #branches = ['BToKEE_cos2D', 'BToKEE_l_xy_sig', 'BToKEE_svprob', 'BToKEE_l1_unBiased', 'BToKEE_l2_unBiased']
-    branches = ['BToKEE_l1_pt', 'BToKEE_l2_pt', 'BToKEE_k_pt']
+    branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig']
 
     input_dim = len(branches)
 
@@ -113,7 +112,7 @@ if __name__ == "__main__":
     X = dataset[:,0:input_dim]
     Y = dataset[:,input_dim]
 
-    X_train_val, X_test, Y_train_val, Y_test = train_test_split(X, Y, test_size=0.2, random_state=7)
+    X_train_val, X_test, Y_train_val, Y_test = train_test_split(X, Y, test_size=0.25, random_state=7)
 
     use_classifiers = {'Keras': True, 'GTB': True, 'XGB': True, 'SVM': True}
     model = {}

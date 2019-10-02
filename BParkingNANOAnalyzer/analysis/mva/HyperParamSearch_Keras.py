@@ -88,7 +88,7 @@ df = {}
 filename['bkg'] = "../BsPhiJpsiEE_MVATraining_Bkg_pTcuts.root"
 filename['sig'] = "../BsPhiJpsiEE_MVATraining_Sig_pTcuts.root"
 
-branches = ['BToKEE_cos2D', 'BToKEE_l_xy_sig', 'BToKEE_svprob', 'BToKEE_l1_unBiased', 'BToKEE_l2_unBiased']
+branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig']
 
 input_dim = len(branches)
 
@@ -122,7 +122,7 @@ model_checkpoint = ModelCheckpoint('dense_model.h5', monitor='val_loss',
 
 begt = time.time()
 print("Begin Bayesian optimization")
-res_gp = gp_minimize(objective, space, n_calls=200, random_state=3)
+res_gp = gp_minimize(objective, space, n_calls=200, n_random_starts=100, random_state=3)
 print("Finish optimization in {}s".format(time.time()-begt))
 
 plt.figure()
