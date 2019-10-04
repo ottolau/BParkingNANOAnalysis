@@ -17,6 +17,7 @@ from keras.callbacks import EarlyStopping
 from keras.callbacks import ModelCheckpoint
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_curve, auc
+from sklearn.utils import compute_class_weight
 
 from skopt import gp_minimize
 from skopt.space import Real, Integer
@@ -47,6 +48,7 @@ def train(model, batch_size=64):
                     epochs=200, 
                     batch_size=batch_size, 
                     verbose=0,
+                    class_weight=classWeight,
                     callbacks=[early_stopping, model_checkpoint], 
                     validation_split=0.25)
     Y_predict = model.predict(X_test)
@@ -60,7 +62,7 @@ space  = [Integer(2, 5, name='hidden_layers'),
           Integer(32, 1024, name='initial_nodes'),
           Real(10**-6, 10**-3, "log-uniform", name='l2_lambda'),
           Real(0.0,0.5,name='dropout'),
-          Integer(512,4096,name='batch_size'),
+          Integer(256,4096,name='batch_size'),
           Real(10**-5, 10**-1, "log-uniform", name='learning_rate'),
           ]
 
@@ -71,7 +73,7 @@ def objective(**X):
     model = build_custom_model(num_hiddens=X['hidden_layers'], initial_node=X['initial_nodes'], 
                       dropout=X['dropout'], l2_lambda=X['l2_lambda'])
 
-    model.compile(optimizer=Adam(lr=X['learning_rate']), loss='binary_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=Adam(lr=X['learning_rate']), loss='binary_crossentropy', metrics=['accuracy'], weighted_metrics=['accuracy'])
     model.summary()
 
     best_auc = train(model, batch_size=X['batch_size'])
@@ -85,21 +87,32 @@ upfile = {}
 params = {}
 df = {}
 
-filename['bkg'] = "../BsPhiJpsiEE_MVATraining_Bkg_pTcuts.root"
-filename['sig'] = "../BsPhiJpsiEE_MVATraining_Sig_pTcuts.root"
+filename['bkg'] = "RootTree_BParkingNANO_2019Sep12_Run2018A2A3B2B3C2C3D2_mvaTraining_bkg_pf.root"
+filename['sig'] = "RootTree_BParkingNANO_2019Sep12_BuToKJpsi_Toee_mvaTraining_sig_pf.root"
 
-branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig']
+#branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig']
+branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig']
+#branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D']
 
 input_dim = len(branches)
 
 upfile['bkg'] = uproot.open(filename['bkg'])
 upfile['sig'] = uproot.open(filename['sig'])
 
-params['bkg'] = upfile['bkg']['background'].arrays(branches)
-params['sig'] = upfile['sig']['signal'].arrays(branches)
+params['bkg'] = upfile['bkg']['tree'].arrays(branches)
+params['sig'] = upfile['sig']['tree'].arrays(branches)
 
-df['sig'] = pd.DataFrame(params['sig'])#[:1000]
-df['bkg'] = pd.DataFrame(params['bkg'])#[:1000]
+df['sig'] = pd.DataFrame(params['sig'])#[:30]
+df['bkg'] = pd.DataFrame(params['bkg'])#[:30]
+
+df['sig'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
+df['bkg'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
+
+nData = min(df['sig'].shape[0], df['bkg'].shape[0])
+
+df['sig'] = df['sig'].sample(frac=1)[:nData]
+df['bkg'] = df['bkg'].sample(frac=1)[:nData]
+
 
 # add isSignal variable
 df['sig']['isSignal'] = np.ones(len(df['sig']))
@@ -112,6 +125,10 @@ Y = dataset[:,input_dim]
 
 X_train_val, X_test, Y_train_val, Y_test = train_test_split(X, Y, test_size=0.2, random_state=7)
 
+classWeight = compute_class_weight('balanced', np.unique(Y_train_val), Y_train_val) 
+classWeight = dict(enumerate(classWeight))
+print(classWeight)
+
 early_stopping = EarlyStopping(monitor='val_loss', patience=30)
 
 model_checkpoint = ModelCheckpoint('dense_model.h5', monitor='val_loss', 
@@ -122,12 +139,12 @@ model_checkpoint = ModelCheckpoint('dense_model.h5', monitor='val_loss',
 
 begt = time.time()
 print("Begin Bayesian optimization")
-res_gp = gp_minimize(objective, space, n_calls=200, n_random_starts=100, random_state=3)
+res_gp = gp_minimize(objective, space, n_calls=5, n_random_starts=3, random_state=3)
 print("Finish optimization in {}s".format(time.time()-begt))
 
 plt.figure()
 plot_convergence(res_gp)
-plt.savefig('BayesianOptimization_BsPhiJpsiEE_ConvergencePlot_GPU_noPhiM_pTcuts.png')
+plt.savefig('BayesianOptimization_BToKJpsi_Toee_ConvergencePlot.png')
 
 
 print("Best parameters: \

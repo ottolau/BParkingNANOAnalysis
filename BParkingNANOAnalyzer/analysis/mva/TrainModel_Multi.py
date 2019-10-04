@@ -2,7 +2,7 @@
 
 from subprocess import call
 from os.path import isfile
-
+import sys
 
 from keras.models import Sequential, Model
 from keras.layers import Input, Dense, Activation, Dropout
@@ -15,6 +15,7 @@ from keras.callbacks import ModelCheckpoint
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, roc_curve, auc
 from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.utils import compute_class_weight
 import xgboost as xgb
 from sklearn import svm
 
@@ -44,7 +45,7 @@ def build_custom_model(hyper_params, classifier):
         model = xgb.XGBClassifier(max_depth=hyper_params['max_depth'], n_estimators=hyper_params['n_estimators'], learning_rate=hyper_params['learning_rate'])
     
     if classifier == 'SVM':
-        model = svm.SVC(C=hyper_params['C'], gamma=hyper_params['gamma'], verbose=1)
+        model = svm.SVC(C=hyper_params['C'], gamma=hyper_params['gamma'], verbose=1, class_weight=classWeight)
 
     return model
 
@@ -57,6 +58,7 @@ def train(model, classifier, hyper_params=None):
                         epochs=200, 
                         batch_size=hyper_params['batch_size'], 
                         verbose=1,
+                        class_weight=classWeight,
                         callbacks=[early_stopping, model_checkpoint], 
                         validation_split=0.25)
         Y_predict = model.predict(X_test)
@@ -71,9 +73,13 @@ def train(model, classifier, hyper_params=None):
 
     if classifier == 'GTB' or classifier == 'XGB' or classifier == 'SVM':
         model.fit(X_train_val, Y_train_val)
-        Y_predict = model.predict(X_test)
+        if classifier == 'GTB' or classifier == 'SVM':
+          Y_predict = model.decision_function(X_test)
+        if classifier == 'XGB':
+          Y_predict = model.predict_proba(X_test)[:,1]
         fpr, tpr, thresholds = roc_curve(Y_test, Y_predict)
         roc_auc = auc(fpr, tpr)
+        Y_predict = model.predict(X_test)
         print("Best auc: {}".format(roc_auc))
         print("Classification Report")
         print(classification_report(Y_test, Y_predict))
@@ -87,10 +93,12 @@ if __name__ == "__main__":
     params = {}
     df = {}
 
-    filename['bkg'] = "test_bkg.root"
-    filename['sig'] = "test_sig.root"
+    filename['bkg'] = "RootTree_BParkingNANO_2019Sep12_Run2018A2A3B2B3C2C3D2_mvaTraining_bkg_pf.root"
+    filename['sig'] = "RootTree_BParkingNANO_2019Sep12_BuToKJpsi_Toee_mvaTraining_sig_pf.root"
 
-    branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig']
+    #branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig']
+    branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig']
+    #branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D']
 
     input_dim = len(branches)
 
@@ -100,8 +108,19 @@ if __name__ == "__main__":
     params['bkg'] = upfile['bkg']['tree'].arrays(branches)
     params['sig'] = upfile['sig']['tree'].arrays(branches)
 
-    df['sig'] = pd.DataFrame(params['sig'])#[:1000]
-    df['bkg'] = pd.DataFrame(params['bkg'])#[:1000]
+    df['sig'] = pd.DataFrame(params['sig'])#[:30]
+    df['bkg'] = pd.DataFrame(params['bkg'])#[:30]
+    #print(df['sig'][np.logical_not(np.isfinite(df['sig']['BToKEE_l_xy_sig']))])
+
+    df['sig'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
+    df['bkg'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
+    #print(df['sig'][np.logical_not(np.isfinite(df['sig']['BToKEE_l_xy_sig']))])
+
+    nData = min(df['sig'].shape[0], df['bkg'].shape[0])
+    print(nData)
+
+    #df['sig'] = df['sig'].sample(frac=1)[:nData]
+    #df['bkg'] = df['bkg'].sample(frac=1)[:nData]
 
     # add isSignal variable
     df['sig']['isSignal'] = np.ones(len(df['sig']))
@@ -111,8 +130,13 @@ if __name__ == "__main__":
     dataset = df_all.values
     X = dataset[:,0:input_dim]
     Y = dataset[:,input_dim]
+    #print(Y)
 
-    X_train_val, X_test, Y_train_val, Y_test = train_test_split(X, Y, test_size=0.25, random_state=7)
+    X_train_val, X_test, Y_train_val, Y_test = train_test_split(X, Y, test_size=0.25, random_state=8)
+
+    classWeight = compute_class_weight('balanced', np.unique(Y_train_val), Y_train_val) 
+    classWeight = dict(enumerate(classWeight))
+    print(classWeight)
 
     use_classifiers = {'Keras': True, 'GTB': True, 'XGB': True, 'SVM': True}
     model = {}
@@ -129,7 +153,7 @@ if __name__ == "__main__":
         hyper_params = {'hidden_layers': 3, 'initial_nodes': 64, 'l2_lambda': 10.0**-4, 'dropout': 0.25, 'batch_size': 512, 'learning_rate': 10.0**-3}
 
         model['Keras'] = build_custom_model(hyper_params, 'Keras') 
-        model['Keras'].compile(optimizer=Adam(lr=hyper_params['learning_rate']), loss='binary_crossentropy', metrics=['accuracy'])
+        model['Keras'].compile(optimizer=Adam(lr=hyper_params['learning_rate']), loss='binary_crossentropy', metrics=['accuracy'], weighted_metrics=['accuracy'])
         model['Keras'].summary()
         model['Keras'], history = train(model['Keras'], 'Keras', hyper_params)
 
@@ -195,12 +219,19 @@ if __name__ == "__main__":
 
     plt.figure()
     for classifier in model.keys():
-        Y_predict = model[classifier].predict(X_test)
+        if classifier == 'Keras':
+          Y_predict = model[classifier].predict(X_test)
+        if classifier == 'GTB' or classifier == 'SVM':
+          Y_predict = model[classifier].decision_function(X_test)
+        if classifier == 'XGB':
+          Y_predict = model[classifier].predict_proba(X_test)[:,1]
+
         fpr, tpr, thresholds = roc_curve(Y_test, Y_predict)
         roc_auc = auc(fpr, tpr)
         plt.plot(fpr, tpr, lw=2, label='%s, AUC=%.3f'%(classifier, roc_auc))
-    plt.plot([0, 1], [0, 1], linestyle='--', lw=2, color='k', label='Random chance')
-    plt.xlim([0, 1.0])
+    plt.plot(np.logspace(-3, 0, 1000), np.logspace(-4, 0, 1000), linestyle='--', lw=2, color='k', label='Random chance')
+    plt.xscale('log')
+    plt.xlim([1.0e-3, 1.0])
     plt.ylim([0, 1.0])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')

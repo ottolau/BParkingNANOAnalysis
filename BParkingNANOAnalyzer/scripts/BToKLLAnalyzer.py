@@ -42,7 +42,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'Electron_isPFoverlap',
                             'Electron_mvaId',
                             'Electron_lostHits',
-                            'Electron_genPartIdx',
+                            #'Electron_genPartIdx',
                             'ProbeTracks_pt',
                             'ProbeTracks_DCASig',
                             'ProbeTracks_eta',
@@ -50,7 +50,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'ProbeTracks_dz',
                             #'ProbeTracks_isLostTrk',
                             #'ProbeTracks_isPacked',
-                            'ProbeTracks_genPartIdx',
+                            #'ProbeTracks_genPartIdx',
                             #'HLT_Mu9_IP6_*',
                             'event'
                             ]
@@ -90,6 +90,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_k_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
                              'BToKEE_k_DCASig': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
                              'BToKEE_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
+                             'BToKEE_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
                              'BToKEE_svprob': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
                              'BToKEE_cos2D': {'nbins': 50, 'xmin': 0.999, 'xmax': 1.0},
                              'BToKEE_l_xy_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
@@ -168,6 +169,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       self._branches['BToKEE_l1_normpt'] = self._branches['BToKEE_l1_pt'] / self._branches['BToKEE_mass']
       self._branches['BToKEE_l2_normpt'] = self._branches['BToKEE_l2_pt'] / self._branches['BToKEE_mass']
       self._branches['BToKEE_k_normpt'] = self._branches['BToKEE_k_pt'] / self._branches['BToKEE_mass']
+      self._branches['BToKEE_normpt'] = self._branches['BToKEE_pt'] / self._branches['BToKEE_mass']
 
       # general selection
       '''
@@ -182,14 +184,16 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       b_lowsb_selection = (self._branches['BToKEE_mass'] > B_LOWSB_LOW) & (self._branches['BToKEE_mass'] < B_LOWSB_UP)
       b_upsb_selection = (self._branches['BToKEE_mass'] > B_UPSB_LOW) & (self._branches['BToKEE_mass'] < B_UPSB_UP)
       b_sb_selection = b_lowsb_selection | b_upsb_selection
-      mc_matched_selection = (self._branches['BToKEE_l1_genPartIdx'] > -0.5) & (self._branches['BToKEE_l2_genPartIdx'] > -0.5) & (self._branches['BToKEE_k_genPartIdx'] > -0.5)
+      #mc_matched_selection = (self._branches['BToKEE_l1_genPartIdx'] > -0.5) & (self._branches['BToKEE_l2_genPartIdx'] > -0.5) & (self._branches['BToKEE_k_genPartIdx'] > -0.5)
+      b_selection = (self._branches['BToKEE_mass'] > B_LOW) & (self._branches['BToKEE_mass'] < B_UP)
 
 
-      l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_l1_pt'] > 1.5) & (self._branches['BToKEE_l1_mvaId'] > 3.0) #& (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
-      l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_mvaId'] > 3.0) #& (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
+      l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_l1_pt'] > 1.5) & (self._branches['BToKEE_l1_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
+      l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
       k_selection = (self._branches['BToKEE_k_pt'] > 1.0) #& (self._branches['BToKEE_k_DCASig'] > 2.0)
       #additional_selection = b_sb_selection
-      additional_selection = mc_matched_selection
+      #additional_selection = mc_matched_selection
+      additional_selection = b_selection
       selection = l1_selection & l2_selection & k_selection & additional_selection
 
 

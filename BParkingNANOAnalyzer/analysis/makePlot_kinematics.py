@@ -14,36 +14,27 @@ varUnitMap = {"k_pt": "kaon p_{T} [GeV]",
               "l1_pt": "leading electron p_{T} [GeV]",
               "l2_pt": "subleading electron p_{T} [GeV]",
               "BToKEE_pt": "B^{+} p_{T} [GeV]",
-              "mll_raw": "m(e^{+}e^{-}) [GeV/c^{2}]",
+              "k_normpt": "kaon normalized p_{T}",
+              "l1_normpt": "leading electron normalized p_{T}",
+              "l2_normpt": "subleading electron normalized p_{T}",
+              "BToKEE_normpt": "B^{+} normalized p_{T}",
+              "mll": "m(e^{+}e^{-}) [GeV/c^{2}]",
               "mass": "m(K^{+}e^{+}e^{-}) [GeV/c^{2}]",
               "eta": "#eta",
               "phi": "#phi",
-              "dR": "#Delta R",
-              "D0": "d_{xy} [cm]",
-              "Dz": "d_{z} [cm]",
-              "SIP": "dB/#sigma_{dB}",
-              "D0Error": "#sigma_{d_{xy}} [cm]",
-              "DzError": "#sigma_{d_{z}} [cm]",
-              "D0Sig": "d_{xy}/#sigma_{d_{xy}}",
-              "DzSig": "d_{z}/#sigma_{d_{z}}",
-              "normChi2": "#chi^{2}_{track}/d.o.f.",
-              "svCtxy": "ct_{xy} [cm]",
-              "svLxy": "L_{xy} [cm]",
+              "dxy_sig": "d_{xy}/#sigma_{d_{xy}}",
+              "dz": "d_{z} [cm]",
               "l_xy_sig": "L_{xy} / #sigma_{L_{xy}}",
-              "svChi2": "#chi^{2}_{SV}",
-              "svProb": "P(#chi^{2}_{SV})",
-              "svCosAngle": "cos #alpha_{2D}",
-              "electron_dR": "#Delta R(e^{+}, e^{-})",
-              "kaon_ee_dR": "#Delta R(K^{+}, K^{-})",
-              "jpsiPhiOpen": "#Delta R(e^{+}e^{-}, #phi)",
-              "jpsi_InvM": "m(e^{+}e^{-}) [GeV]",
-              "phiee_InvM": "m(K^{+}K^{-}) [GeV]",
-              "bsee_InvM": "m(K^{+}K^{-}e^{+}e^{-}) [GeV]",
-              "q2": "q^{2} [GeV^{2}]",
+              "svprob": "P(#chi^{2}_{SV})",
               "prob": "P(#chi^{2}_{SV})",
               "cos2D": "cos #alpha_{2D}",
-              "lxySig": "L_{xy} / #sigma_{L_{xy}}",
               "unBiased": "Low pT electron unbiased BDT",
+              "ptBiased": "Low pT electron pt biased BDT",
+              "mvaId": "Low pT electron performance id",
+              "k_DCASig": "kaon DCA significance",
+              "isLowPt": "isLowPt",
+              "isPFoverlap": "isPFoverlap",
+              "isPF": "isPF",
                 }
 
 def setup_pad():
@@ -97,7 +88,10 @@ def draw_hist(histo, histo_name, x_label, y_label, norm=False, same=False, err=F
         histo.SetLineColor(46)
         histo.SetFillStyle(3335)
         if norm:
-            histo.DrawNormalized("HIST SAME")       
+            #histo.DrawNormalized("HIST SAME")       
+            #histo.Scale(1.0/histo.Integral())
+            histo.Draw("HIST SAME")
+
         else:
             if err:
                 histo.Draw("E SAME")
@@ -108,7 +102,9 @@ def draw_hist(histo, histo_name, x_label, y_label, norm=False, same=False, err=F
         histo.SetFillColorAlpha(40,1)
         histo.SetFillStyle(4050)
         if norm:
-            histo.DrawNormalized("HIST")       
+            #histo.DrawNormalized("HIST")
+            #histo.Scale(1.0/histo.Integral())
+            histo.Draw("HIST")
         else:
             if err:
                 histo.SetLineColor(4)
@@ -209,7 +205,9 @@ def make_comparisons(signalfile, backgroundfile, outputFolder='Figures'):
     dir_list_bkg = ROOT.gDirectory.GetListOfKeys()
     outputfile = signalfile.replace('.root','') + "_comparisons"
 
-    nItems = sum(1 for prob in product(dir_list_sig, dir_list_bkg) if prob[0].GetClassName() == "TH1F" and prob[1].GetClassName() == "TH1F" and prob[0].ReadObj().GetName() == prob[1].ReadObj().GetName())
+    skipHist = ['BToKEE_l1_mvaId', 'BToKEE_l1_unBiased', 'BToKEE_l1_ptBiased', 'BToKEE_l2_mvaId', 'BToKEE_l2_unBiased', 'BToKEE_l2_ptBiased']
+
+    nItems = sum(1 for prob in product(dir_list_sig, dir_list_bkg) if prob[0].GetClassName() == "TH1F" and prob[1].GetClassName() == "TH1F" and prob[0].ReadObj().GetName() == prob[1].ReadObj().GetName() and (prob[0].ReadObj().GetName() not in skipHist))
     nPages = 0
 
     for key1, key2 in product(dir_list_sig, dir_list_bkg):
@@ -219,6 +217,8 @@ def make_comparisons(signalfile, backgroundfile, outputFolder='Figures'):
         hist_sig_name = hist_sig.GetName()
         hist_bkg_name = hist_bkg.GetName()
         if hist_sig_name != hist_bkg_name: continue
+        if hist_sig_name in skipHist: continue
+        print(hist_sig_name)
 
         canvas_name = "c_" + hist_sig_name
         for v in varUnitMap.keys():
@@ -230,6 +230,10 @@ def make_comparisons(signalfile, backgroundfile, outputFolder='Figures'):
         pad = setup_pad()
         pad.Draw()
         pad.cd()
+
+        hist_sig.Scale(1.0/hist_sig.Integral())
+        hist_bkg.Scale(1.0/hist_bkg.Integral())
+        hist_sig.SetMaximum(1.25*max(hist_sig.GetMaximum(), hist_bkg.GetMaximum()))
 
         draw_hist(hist_sig, hist_sig_name, unit, "a.u.", True,  False)
         draw_hist(hist_bkg, hist_sig_name, unit, "a.u.", True,  True)
@@ -406,8 +410,8 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--backgroundfile", dest="backgroundfile", default="", help="ROOT file contains histograms")
     args = parser.parse_args()
 
-    make_plots(args.inputfile)
-    #make_comparisons(args.signalfile, args.backgroundfile)
+    #make_plots(args.inputfile)
+    make_comparisons(args.signalfile, args.backgroundfile)
     #make_2plots(args.inputfile, 'BToKEE_mass_pf', 'BToKEE_fit_mass_pf', 'BToKEE_mass_comp_MC.pdf')
     #make_eleStack(args.inputfile, 'test.pdf')
     #make_subtraction(args.inputfile, 'test.pdf')
