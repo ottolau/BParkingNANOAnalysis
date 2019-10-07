@@ -87,18 +87,26 @@ def train(model, classifier, hyper_params=None):
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="A simple ttree plotter")
+    parser.add_argument("-s", "--signal", dest="signal", default="RootTree_BParkingNANO_2019Sep12_BuToKJpsi_Toee_mvaTraining_sig_pf.root", help="Signal file")
+    parser.add_argument("-b", "--background", dest="background", default="RootTree_BParkingNANO_2019Sep12_Run2018A2A3B2B3C2C3D2_mvaTraining_bkg_pf.root", help="Background file")
+    parser.add_argument("-f", "--suffix", dest="suffix", default=None, help="Suffix of the output name")
+    args = parser.parse_args()
 
     filename = {}
     upfile = {}
     params = {}
     df = {}
 
-    filename['bkg'] = "RootTree_BParkingNANO_2019Sep12_Run2018A2A3B2B3C2C3D2_mvaTraining_bkg_pf.root"
-    filename['sig'] = "RootTree_BParkingNANO_2019Sep12_BuToKJpsi_Toee_mvaTraining_sig_pf.root"
+    filename['bkg'] = args.background
+    filename['sig'] = args.signal
 
+    #branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l1_isPF', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_l2_isPF', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig']
     #branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig']
-    branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig']
+    branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
     #branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D']
+    #branches = sorted(['BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
 
     input_dim = len(branches)
 
@@ -108,8 +116,8 @@ if __name__ == "__main__":
     params['bkg'] = upfile['bkg']['tree'].arrays(branches)
     params['sig'] = upfile['sig']['tree'].arrays(branches)
 
-    df['sig'] = pd.DataFrame(params['sig'])#[:30]
-    df['bkg'] = pd.DataFrame(params['bkg'])#[:30]
+    df['sig'] = pd.DataFrame(params['sig']).sort_index(axis=1)#[:30]
+    df['bkg'] = pd.DataFrame(params['bkg']).sort_index(axis=1)#[:30]
     #print(df['sig'][np.logical_not(np.isfinite(df['sig']['BToKEE_l_xy_sig']))])
 
     df['sig'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
@@ -126,7 +134,7 @@ if __name__ == "__main__":
     df['sig']['isSignal'] = np.ones(len(df['sig']))
     df['bkg']['isSignal'] = np.zeros(len(df['bkg']))
 
-    df_all = pd.concat([df['sig'],df['bkg']])
+    df_all = pd.concat([df['sig'],df['bkg']]).sort_index(axis=1)
     dataset = df_all.values
     X = dataset[:,0:input_dim]
     Y = dataset[:,input_dim]
@@ -143,14 +151,15 @@ if __name__ == "__main__":
 
     if use_classifiers['Keras']:
         print('Training Keras Neural Network...')
-        early_stopping = EarlyStopping(monitor='val_loss', patience=30)
+        early_stopping = EarlyStopping(monitor='val_loss', patience=100)
 
-        model_checkpoint = ModelCheckpoint('dense_model.h5', monitor='val_loss', 
+        model_checkpoint = ModelCheckpoint('dense_model_{}.h5'.format(args.suffix), monitor='val_loss', 
                                            verbose=1, save_best_only=True, 
                                            save_weights_only=False, mode='auto', 
                                            period=1)
 
         hyper_params = {'hidden_layers': 3, 'initial_nodes': 64, 'l2_lambda': 10.0**-4, 'dropout': 0.25, 'batch_size': 512, 'learning_rate': 10.0**-3}
+        #hyper_params = {'hidden_layers': 2, 'initial_nodes': 32, 'l2_lambda': 1.3057169431397849e-05, 'dropout': 0.08351959164395392, 'batch_size': 256, 'learning_rate': 0.00039193778307251034}
 
         model['Keras'] = build_custom_model(hyper_params, 'Keras') 
         model['Keras'].compile(optimizer=Adam(lr=hyper_params['learning_rate']), loss='binary_crossentropy', metrics=['accuracy'], weighted_metrics=['accuracy'])
@@ -165,7 +174,7 @@ if __name__ == "__main__":
         model['GTB'] = build_custom_model(hyper_params, 'GTB')
         model['GTB'] = train(model['GTB'], 'GTB')
         # save model to file
-        joblib.dump(model['GTB'], "gtb.joblib.dat")
+        joblib.dump(model['GTB'], "gtb_{}.joblib.dat".format(args.suffix))
 
     if use_classifiers['XGB']:
         print('Training XGBoost...')
@@ -174,7 +183,7 @@ if __name__ == "__main__":
         model['XGB'] = build_custom_model(hyper_params, 'XGB')
         model['XGB'] = train(model['XGB'], 'XGB')
         # save model to file
-        joblib.dump(model['XGB'], "xgb.joblib.dat")
+        joblib.dump(model['XGB'], "xgb_{}.joblib.dat".format(args.suffix))
 
     if use_classifiers['SVM']:
         print('Training Support Vector Machine...')
@@ -183,7 +192,7 @@ if __name__ == "__main__":
         model['SVM'] = build_custom_model(hyper_params, 'SVM')
         model['SVM'] = train(model['SVM'], 'SVM')
         # save model to file
-        joblib.dump(model['SVM'], "svm.joblib.dat")
+        joblib.dump(model['SVM'], "svm_{}.joblib.dat".format(args.suffix))
 
 
     import matplotlib as mpl
@@ -217,7 +226,7 @@ if __name__ == "__main__":
             'figure.figsize': fig_size}
     plt.rcParams.update(params)
 
-    plt.figure()
+    fig_roc, ax_roc = plt.subplots()
     for classifier in model.keys():
         if classifier == 'Keras':
           Y_predict = model[classifier].predict(X_test)
@@ -228,16 +237,33 @@ if __name__ == "__main__":
 
         fpr, tpr, thresholds = roc_curve(Y_test, Y_predict)
         roc_auc = auc(fpr, tpr)
-        plt.plot(fpr, tpr, lw=2, label='%s, AUC=%.3f'%(classifier, roc_auc))
-    plt.plot(np.logspace(-3, 0, 1000), np.logspace(-4, 0, 1000), linestyle='--', lw=2, color='k', label='Random chance')
-    plt.xscale('log')
-    plt.xlim([1.0e-3, 1.0])
-    plt.ylim([0, 1.0])
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.title('Receiver Operating Curve')
-    plt.legend(loc="lower right") 
-    plt.savefig('test_roc.pdf', bbox_inches='tight')
+        ax_roc.plot(fpr, tpr, lw=2, label='%s, AUC=%.3f'%(classifier, roc_auc))
+
+        if not (classifier == 'Keras'): continue
+        fig_mvaId, ax_mvaId = plt.subplots()
+        Y_predict = Y_predict.flatten()
+        Y_sig = Y_predict[np.greater(Y_test, 0.5)]
+        Y_bkg = Y_predict[np.less(Y_test, 0.5)]
+        weights_sig = np.ones_like(Y_sig)/float(len(Y_sig))
+        weights_bkg = np.ones_like(Y_bkg)/float(len(Y_bkg))
+        ax_mvaId.hist(Y_sig, bins=np.linspace(0, 1, 50), weights=weights_sig, color='b', log=True, label='Signal')
+        ax_mvaId.hist(Y_bkg, bins=np.linspace(0, 1, 50), weights=weights_bkg, color='r', alpha=0.5, log=True, label='Background')
+        ax_mvaId.set_ylabel('a.u.')
+        ax_mvaId.set_xlabel('Classifier output')
+        ax_mvaId.set_title('Classifier output: {}'.format(classifier))
+        ax_mvaId.legend(loc='upper center')
+        fig_mvaId.savefig('training_results_mvaId_{}_{}.pdf'.format(classifier, args.suffix), bbox_inches='tight')
+
+
+    ax_roc.plot(np.logspace(-3, 0, 1000), np.logspace(-4, 0, 1000), linestyle='--', lw=2, color='k', label='Random chance')
+    ax_roc.set_xscale('log')
+    ax_roc.set_xlim([1.0e-3, 1.0])
+    ax_roc.set_ylim([0, 1.0])
+    ax_roc.set_xlabel('False Positive Rate')
+    ax_roc.set_ylabel('True Positive Rate')
+    ax_roc.set_title('Receiver Operating Curve')
+    ax_roc.legend(loc="lower right") 
+    fig_roc.savefig('training_results_roc_{}.pdf'.format(args.suffix), bbox_inches='tight')
 
     if 'Keras' in model.keys():
         # plot loss vs epoch
@@ -253,7 +279,7 @@ if __name__ == "__main__":
         ax2.legend(loc="lower right")
         ax2.set_xlabel('Epoch')
         ax2.set_ylabel('Accuary')
-        fig.savefig('test_keras.pdf', bbox_inches='tight')
+        fig.savefig('training_results_keras_{}.pdf'.format(args.suffix), bbox_inches='tight')
 
 
 

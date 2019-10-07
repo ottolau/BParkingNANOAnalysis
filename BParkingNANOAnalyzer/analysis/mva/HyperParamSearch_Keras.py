@@ -82,13 +82,20 @@ def objective(**X):
     return -best_auc
 
 
+import argparse
+parser = argparse.ArgumentParser(description="A simple ttree plotter")
+parser.add_argument("-s", "--signal", dest="signal", default="RootTree_BParkingNANO_2019Sep12_BuToKJpsi_Toee_mvaTraining_sig_pf.root", help="Signal file")
+parser.add_argument("-b", "--background", dest="background", default="RootTree_BParkingNANO_2019Sep12_Run2018A2A3B2B3C2C3D2_mvaTraining_bkg_pf.root", help="Background file")
+parser.add_argument("-f", "--suffix", dest="suffix", default=None, help="Suffix of the output name")
+args = parser.parse_args()
+
 filename = {}
 upfile = {}
 params = {}
 df = {}
 
-filename['bkg'] = "RootTree_BParkingNANO_2019Sep12_Run2018A2A3B2B3C2C3D2_mvaTraining_bkg_pf.root"
-filename['sig'] = "RootTree_BParkingNANO_2019Sep12_BuToKJpsi_Toee_mvaTraining_sig_pf.root"
+filename['bkg'] = args.background
+filename['sig'] = args.signal
 
 #branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig']
 branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig']
@@ -129,7 +136,7 @@ classWeight = compute_class_weight('balanced', np.unique(Y_train_val), Y_train_v
 classWeight = dict(enumerate(classWeight))
 print(classWeight)
 
-early_stopping = EarlyStopping(monitor='val_loss', patience=30)
+early_stopping = EarlyStopping(monitor='val_loss', patience=50)
 
 model_checkpoint = ModelCheckpoint('dense_model.h5', monitor='val_loss', 
                                    verbose=0, save_best_only=True, 
@@ -144,7 +151,7 @@ print("Finish optimization in {}s".format(time.time()-begt))
 
 plt.figure()
 plot_convergence(res_gp)
-plt.savefig('BayesianOptimization_BToKJpsi_Toee_ConvergencePlot.png')
+plt.savefig('BayesianOptimization_ConvergencePlot_BToKJpsi_Toee_{}.png'.format(args.suffix))
 
 
 print("Best parameters: \

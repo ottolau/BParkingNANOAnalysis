@@ -17,6 +17,9 @@ import math
 #
 import ROOT
 from ROOT import RooFit
+import numpy as np
+ROOT.gErrorIgnoreLevel=ROOT.kError
+ROOT.RooMsgService.instance().setGlobalKillBelow(RooFit.FATAL)
 
 def CMS_lumi():
     mark = ROOT.TLatex()
@@ -97,8 +100,8 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
         # Crystal-ball
         wspace.factory('mean[5.2418e+00, 5.20e+00, 5.35e+00]')
         wspace.factory('sigma[7.1858e-02, 1.e-3, 5.e-1]')
-        wspace.factory('alpha[1.0, 0.0, 1.0e+3]')
-        wspace.factory('n[10, 0, 100]')
+        wspace.factory('alpha[1.0e-1, 0.0, 1.0]')
+        wspace.factory('n[5, 1, 10]')
         wspace.factory('CBShape::sig(x,mean,sigma,alpha,n)')
 
     if bkgPDF == 0:
@@ -118,7 +121,7 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
 
     if bkgPDF == 2:
         # Exponential
-        wspace.factory('exp_alpha[-1.0, -100.0, 0.0]')
+        wspace.factory('exp_alpha[-1.0, -100.0, -1.0e-5]')
         alpha = wspace.var('alpha')
         wspace.factory('Exponential::bkg(x,exp_alpha)')
 
@@ -140,10 +143,27 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
     sig = wspace.pdf('sig')
 
 
+    # define the set obs = (x)
+    wspace.defineSet('obs', 'x')
+
+    # make the set obs known to Python
+    obs  = wspace.set('obs')
+
     ## fit the model to the data.
-    results = model.fitTo(data, RooFit.Extended(True), RooFit.Save(), RooFit.Range(xmin,xmax))
+    results = model.fitTo(data, RooFit.Extended(True), RooFit.Save(), RooFit.Range(xmin,xmax), RooFit.PrintLevel(-1))
     results.Print()
 
+    #B_SIGNAL_LOW = mean.getVal() - 3.0*sigma.getVal()
+    #B_SIGNAL_UP = mean.getVal() + 3.0*sigma.getVal()
+    B_SIGNAL_LOW = 5.0
+    B_SIGNAL_UP = 5.4
+    theBMass.setRange("window",B_SIGNAL_LOW,B_SIGNAL_UP) ;
+    fracBkgRange = bkg.createIntegral(obs,obs,"window") ;
+
+    #fracBkgRange = bkg.createIntegral(bkgRangeArgSet,"window") ;
+    nbkgWindow = nbkg.getVal() * fracBkgRange.getVal()
+    #print(nbkg.getVal(), fracBkgRange.getVal())
+    print("Number of signals: %f, Number of background: %f, S/sqrt(S+B): %f"%(nsig.getVal(), nbkgWindow, nsig.getVal()/np.sqrt(nsig.getVal() + nbkgWindow)))
 
     # Plot results of fit on a different frame
     c2 = ROOT.TCanvas('fig_binnedFit', 'fit', 800, 600)

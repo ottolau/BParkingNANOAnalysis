@@ -85,7 +85,7 @@ if __name__ == "__main__":
   inputfile = args.inputfile.replace('.h5','')+'.h5'
   outputfile = args.outputfile.replace('.root','').replace('.h5','')
 
-  ele_type = {'all': True, 'pf': True, 'low': True, 'mix': True, 'low_pfveto': True, 'mix_net': True}
+  ele_type = {'all': False, 'pf': False, 'low': True, 'mix': True, 'low_pfveto': False, 'mix_net': False}
   ele_selection = {'all': 'overlap_veto_selection', 'pf': 'pf_selection', 'low': 'low_selection', 'mix': 'mix_selection', 'low_pfveto': 'low_pfveto_selection', 'mix_net': 'mix_net_selection'}
 
   branches = pd.read_hdf(inputfile, 'branches')
@@ -98,7 +98,14 @@ if __name__ == "__main__":
   b_sb_selection = b_lowsb_selection | b_upsb_selection
 
   #general_selection = jpsi_selection & (branches['BToKEE_pt'] > 5.0) & (branches['BToKEE_k_pt'] > 1.0) & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) 
-  general_selection = jpsi_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) 
+  #general_selection = jpsi_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) 
+  
+  #sv_selection = (branches['BToKEE_pt'] > 10.0) & (branches['BToKEE_l_xy_sig'] > 6.0 ) & (branches['BToKEE_svprob'] > 0.01) & (branches['BToKEE_cos2D'] > 0.999)
+  #l1_selection = (branches['BToKEE_l1_convVeto']) & (branches['BToKEE_l1_pt'] > 1.5) & (branches['BToKEE_l1_mvaId'] > 3.0) #& (np.logical_not(branches['BToKEE_l1_isPFoverlap']))
+  #l2_selection = (branches['BToKEE_l2_convVeto']) & (branches['BToKEE_l2_pt'] > 0.5) & (branches['BToKEE_l2_mvaId'] > 3.0) #& (np.logical_not(branches['BToKEE_l2_isPFoverlap']))
+  k_selection = (branches['BToKEE_k_pt'] > 1.0) #& (branches['BToKEE_k_DCASig'] > 2.0)
+  #additional_selection = (branches['BToKEE_mass'] > B_LOW) & (branches['BToKEE_mass'] < B_UP)
+  general_selection = jpsi_selection & k_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94)
 
   branches = branches[general_selection]
   branches['BToKEE_normpt'] = branches['BToKEE_pt'] / branches['BToKEE_mass']
@@ -119,7 +126,7 @@ if __name__ == "__main__":
 
   # count the number of b candidates passes the selection
   #count_selection = jpsi_selection 
-  #nBToKEE_selected = self._branches['BToKEE_event'][count_selection].values
+  #nBToKEE_selected = branches['BToKEE_event'][count_selection].values
   #_, nBToKEE_selected = np.unique(nBToKEE_selected[np.isfinite(nBToKEE_selected)], return_counts=True)
 
 
