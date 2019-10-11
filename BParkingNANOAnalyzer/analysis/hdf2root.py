@@ -85,8 +85,8 @@ if __name__ == "__main__":
   inputfile = args.inputfile.replace('.h5','')+'.h5'
   outputfile = args.outputfile.replace('.root','').replace('.h5','')
 
-  ele_type = {'all': False, 'pf': False, 'low': True, 'mix': True, 'low_pfveto': False, 'mix_net': False}
-  ele_selection = {'all': 'overlap_veto_selection', 'pf': 'pf_selection', 'low': 'low_selection', 'mix': 'mix_selection', 'low_pfveto': 'low_pfveto_selection', 'mix_net': 'mix_net_selection'}
+  ele_type = {'all': True, 'pf': False, 'low': False, 'mix': False, 'low_pfveto': False, 'mix_net': False}
+  ele_selection = {'all': 'all_selection', 'pf': 'pf_selection', 'low': 'low_selection', 'mix': 'mix_selection', 'low_pfveto': 'low_pfveto_selection', 'mix_net': 'mix_net_selection'}
 
   branches = pd.read_hdf(inputfile, 'branches')
   output_branches = {}
@@ -100,12 +100,13 @@ if __name__ == "__main__":
   #general_selection = jpsi_selection & (branches['BToKEE_pt'] > 5.0) & (branches['BToKEE_k_pt'] > 1.0) & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) 
   #general_selection = jpsi_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) 
   
-  #sv_selection = (branches['BToKEE_pt'] > 10.0) & (branches['BToKEE_l_xy_sig'] > 6.0 ) & (branches['BToKEE_svprob'] > 0.01) & (branches['BToKEE_cos2D'] > 0.999)
+  sv_selection = (branches['BToKEE_pt'] > 3.0) & (branches['BToKEE_l_xy_sig'] > 6.0 ) & (branches['BToKEE_svprob'] > 0.01) & (branches['BToKEE_cos2D'] > 0.999)
   #l1_selection = (branches['BToKEE_l1_convVeto']) & (branches['BToKEE_l1_pt'] > 1.5) & (branches['BToKEE_l1_mvaId'] > 3.0) #& (np.logical_not(branches['BToKEE_l1_isPFoverlap']))
   #l2_selection = (branches['BToKEE_l2_convVeto']) & (branches['BToKEE_l2_pt'] > 0.5) & (branches['BToKEE_l2_mvaId'] > 3.0) #& (np.logical_not(branches['BToKEE_l2_isPFoverlap']))
   k_selection = (branches['BToKEE_k_pt'] > 1.0) #& (branches['BToKEE_k_DCASig'] > 2.0)
   #additional_selection = (branches['BToKEE_mass'] > B_LOW) & (branches['BToKEE_mass'] < B_UP)
-  general_selection = jpsi_selection & k_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94)
+  #general_selection = jpsi_selection & k_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94)
+  general_selection = jpsi_selection & sv_selection & k_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94)
 
   branches = branches[general_selection]
   branches['BToKEE_normpt'] = branches['BToKEE_pt'] / branches['BToKEE_mass']
@@ -117,12 +118,13 @@ if __name__ == "__main__":
   l1_low_selection = (branches['BToKEE_l1_isLowPt']) #& (branches['BToKEE_l1_pt'] < 5.0)
   l2_low_selection = (branches['BToKEE_l2_isLowPt']) #& (branches['BToKEE_l2_pt'] < 5.0)
 
-  pf_selection = l1_pf_selection & l2_pf_selection
+  pf_selection = l1_pf_selection & l2_pf_selection & (branches['BToKEE_pt'] > 10.0) & (branches['BToKEE_k_pt'] > 1.5)
   low_selection = l1_low_selection & l2_low_selection
   overlap_veto_selection = np.logical_not(branches['BToKEE_l1_isPFoverlap']) & np.logical_not(branches['BToKEE_l2_isPFoverlap'])
   mix_selection = ((l1_pf_selection & l2_low_selection) | (l2_pf_selection & l1_low_selection))
   low_pfveto_selection = low_selection & overlap_veto_selection
   mix_net_selection = overlap_veto_selection & np.logical_not(pf_selection | low_selection)
+  all_selection = pf_selection | low_pfveto_selection | mix_net_selection 
 
   # count the number of b candidates passes the selection
   #count_selection = jpsi_selection 

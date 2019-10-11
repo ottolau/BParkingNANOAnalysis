@@ -99,9 +99,9 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
     if sigPDF == 2:
         # Crystal-ball
         wspace.factory('mean[5.2418e+00, 5.20e+00, 5.35e+00]')
-        wspace.factory('sigma[7.1858e-02, 1.e-3, 5.e-1]')
-        wspace.factory('alpha[1.0e-1, 0.0, 1.0]')
-        wspace.factory('n[5, 1, 10]')
+        wspace.factory('sigma[7.1858e-02, 1.e-6, 5.e-1]')
+        wspace.factory('alpha[1.0e-1, 0.0, 100.0]')
+        wspace.factory('n[3, 3, 3]')
         wspace.factory('CBShape::sig(x,mean,sigma,alpha,n)')
 
     if bkgPDF == 0:

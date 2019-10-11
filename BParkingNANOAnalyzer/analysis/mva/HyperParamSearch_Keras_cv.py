@@ -15,7 +15,7 @@ from keras.optimizers import SGD, Adam
 from keras.layers.normalization import BatchNormalization
 from keras.callbacks import EarlyStopping
 from keras.callbacks import ModelCheckpoint
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold, KFold
 from sklearn.metrics import roc_curve, auc
 from sklearn.utils import compute_class_weight
 
@@ -42,10 +42,11 @@ def build_custom_model(num_hiddens=2, initial_node=32,
     
     return model
 
-def train(model, batch_size=64):
+
+def train(X_train_val, Y_train_val, X_test, Y_test, model, classWeight, batch_size=64):
     history = model.fit(X_train_val, 
                     Y_train_val, 
-                    epochs=200, 
+                    epochs=10, 
                     batch_size=batch_size, 
                     verbose=0,
                     class_weight=classWeight,
@@ -58,8 +59,8 @@ def train(model, batch_size=64):
     #best_acc = max(history.history['val_acc'])
     #return best_acc
 
-space  = [Integer(2, 5, name='hidden_layers'),
-          Integer(32, 1024, name='initial_nodes'),
+space  = [Integer(2, 4, name='hidden_layers'),
+          Integer(32, 256, name='initial_nodes'),
           Real(10**-6, 10**-3, "log-uniform", name='l2_lambda'),
           Real(0.0,0.5,name='dropout'),
           Integer(256,4096,name='batch_size'),
@@ -76,10 +77,22 @@ def objective(**X):
     model.compile(optimizer=Adam(lr=X['learning_rate']), loss='binary_crossentropy', metrics=['accuracy'], weighted_metrics=['accuracy'])
     model.summary()
 
-    best_auc = train(model, batch_size=X['batch_size'])
+    aucs = []
+    cv = StratifiedKFold(n_splits=10, shuffle=True)
+    for train_idx, test_idx in cv.split(X_data, Y_data):
+      X_train_val = X_data[train_idx]
+      X_test = X_data[test_idx]
+      Y_train_val = Y_data[train_idx]
+      Y_test = Y_data[test_idx]
 
-    print("Best auc: {}".format(best_auc))
-    return -best_auc
+      classWeight = compute_class_weight('balanced', np.unique(Y_train_val), Y_train_val) 
+      classWeight = dict(enumerate(classWeight))
+
+      aucs.append(train(X_train_val, Y_train_val, X_test, Y_test, model, classWeight, batch_size=X['batch_size']))
+
+    ave_auc = sum(aucs)/float(len(aucs))
+    print("Average auc: {}".format(ave_auc))
+    return -ave_auc
 
 
 import argparse
@@ -109,8 +122,8 @@ upfile['sig'] = uproot.open(filename['sig'])
 params['bkg'] = upfile['bkg']['tree'].arrays(branches)
 params['sig'] = upfile['sig']['tree'].arrays(branches)
 
-df['sig'] = pd.DataFrame(params['sig'])#[:30]
-df['bkg'] = pd.DataFrame(params['bkg'])#[:30]
+df['sig'] = pd.DataFrame(params['sig'])[:30]
+df['bkg'] = pd.DataFrame(params['bkg'])[:30]
 
 df['sig'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
 df['bkg'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
@@ -127,14 +140,9 @@ df['bkg']['isSignal'] = np.zeros(len(df['bkg']))
 
 df_all = pd.concat([df['sig'],df['bkg']]).sample(frac=1).reset_index(drop=True)
 dataset = df_all.values
-X = dataset[:,0:input_dim]
-Y = dataset[:,input_dim]
+X_data = dataset[:,0:input_dim]
+Y_data = dataset[:,input_dim]
 
-X_train_val, X_test, Y_train_val, Y_test = train_test_split(X, Y, test_size=0.2, random_state=7)
-
-classWeight = compute_class_weight('balanced', np.unique(Y_train_val), Y_train_val) 
-classWeight = dict(enumerate(classWeight))
-print(classWeight)
 
 early_stopping = EarlyStopping(monitor='val_loss', patience=50)
 

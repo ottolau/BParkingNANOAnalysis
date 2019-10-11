@@ -261,6 +261,7 @@ def make_comparisons(signalfile, backgroundfile, outputFolder='Figures'):
 
 def make_eleStack(inputfile, outputfile):
     eleType = ['pf', 'low_pfveto', 'mix_net', 'all']
+    '''
     for eType in eleType:
       f1 = ROOT.TFile('{}_{}.root'.format(inputfile, eType))
       dir_list = ROOT.gDirectory.GetListOfKeys()
@@ -275,6 +276,18 @@ def make_eleStack(inputfile, outputfile):
           if eType == 'all':
             h_all = key.ReadObj()
       ROOT.gDirectory.Clear()
+    '''
+    f1 = ROOT.TFile(inputfile)
+    dir_list = ROOT.gDirectory.GetListOfKeys()
+    for key in dir_list:
+      if key.ReadObj().GetName() == 'BToKEE_mass_pf':
+        h_pf = key.ReadObj()
+      if key.ReadObj().GetName() == 'BToKEE_mass_low_pfveto':
+        h_low = key.ReadObj()
+      if key.ReadObj().GetName() == 'BToKEE_mass_mix_net':
+        h_mix = key.ReadObj()
+      if key.ReadObj().GetName() == 'BToKEE_mass_all':
+        h_all = key.ReadObj()
 
     canvas_name = "c_" + h_pf.GetName()
     for v in varUnitMap.keys():
@@ -411,9 +424,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     #make_plots(args.inputfile)
-    make_comparisons(args.signalfile, args.backgroundfile)
+    #make_comparisons(args.signalfile, args.backgroundfile)
     #make_2plots(args.inputfile, 'BToKEE_mass_pf', 'BToKEE_fit_mass_pf', 'BToKEE_mass_comp_MC.pdf')
-    #make_eleStack(args.inputfile, 'test.pdf')
+    make_eleStack(args.inputfile, 'test.pdf')
     #make_subtraction(args.inputfile, 'test.pdf')
 
 

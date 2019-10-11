@@ -15,10 +15,11 @@ import argparse
 parser = argparse.ArgumentParser(description="A simple ttree plotter")
 parser.add_argument("-i", "--inputfile", dest="inputfile", default="DoubleMuonNtu_Run2016B.list", help="List of input ggNtuplizer files")
 parser.add_argument("-o", "--outputfile", dest="outputfile", default="test", help="Output file containing plots")
-parser.add_argument("-m", "--model", dest="model", default="dense_model_pf.h5", help="Trainned model")
+parser.add_argument("-p", "--pfmodel", dest="pfmodel", default="dense_model_pf.h5", help="Trainned PF model")
+parser.add_argument("-m", "--mixmodel", dest="mixmodel", default="dense_model_mix.h5", help="Trainned Mix model")
+parser.add_argument("-l", "--lowmodel", dest="lowmodel", default="dense_model_low.h5", help="Trainned Low model")
 parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Store histograms or tree")
 args = parser.parse_args()
-
 
 outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
                   'BToKEE_mll_fullfit': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
@@ -36,10 +37,10 @@ outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
                   'BToKEE_l2_dxy_sig': {'nbins': 50, 'xmin': -30.0, 'xmax': 30.0},
                   'BToKEE_l1_dz': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
                   'BToKEE_l2_dz': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
-                  'BToKEE_l1_unBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
-                  'BToKEE_l2_unBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
-                  'BToKEE_l1_ptBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
-                  'BToKEE_l2_ptBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                  #'BToKEE_l1_unBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                  #'BToKEE_l2_unBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                  #'BToKEE_l1_ptBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                  #'BToKEE_l2_ptBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                   'BToKEE_l1_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                   'BToKEE_l2_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                   'BToKEE_l1_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
@@ -59,7 +60,16 @@ outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
                   'BToKEE_cos2D': {'nbins': 50, 'xmin': 0.999, 'xmax': 1.0},
                   'BToKEE_l_xy_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
                   'BToKEE_keras_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
+                  'BToKEE_keras_low': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
+                  'BToKEE_keras_mix': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
                   }
+'''
+outputbranches = {'BToKEE_mass_all': {'nbins': 50, 'xmin': 4.7, 'xmax': 6.0},
+                  'BToKEE_mass_pf': {'nbins': 50, 'xmin': 4.7, 'xmax': 6.0},
+                  'BToKEE_mass_low_pfveto': {'nbins': 50, 'xmin': 4.7, 'xmax': 6.0},
+                  'BToKEE_mass_mix_net': {'nbins': 50, 'xmin': 4.7, 'xmax': 6.0},
+                  }
+'''
 
 ELECTRON_MASS = 0.000511
 K_MASS = 0.493677
@@ -72,12 +82,10 @@ B_UPSB_UP = 5.75
 B_MIN = 4.7
 B_MAX = 6.0
 
-def fit(tree, mvaCut):
+def fit(tree):
   wspace = ROOT.RooWorkspace('myWorkSpace')
   ROOT.gStyle.SetOptFit(0000);
   ROOT.gROOT.SetBatch(True);
-
-  mvaCutReplace = '{0:.3f}'.format(mvaCut).replace('.','_')
 
   xmin = 4.7 
   xmax = 6.0 
@@ -123,8 +131,8 @@ def fit(tree, mvaCut):
   if sigPDF == 2:
       # Crystal-ball
       wspace.factory('mean[5.2418e+00, 5.20e+00, 5.35e+00]')
-      wspace.factory('sigma[7.1858e-02, 1.e-5, 5.e-1]')
-      wspace.factory('alpha[1.0e-2, 1.0e-6, 10.0]')
+      wspace.factory('sigma[7.1858e-02, 1.e-4, 5.e-1]')
+      wspace.factory('alpha[1.0e-1, 0.0, 100.0]')
       wspace.factory('n[3, 3, 3]')
       wspace.factory('CBShape::sig(x,mean,sigma,alpha,n)')
 
@@ -186,7 +194,7 @@ def fit(tree, mvaCut):
   #fracBkgRange = bkg.createIntegral(bkgRangeArgSet,"window") ;
   nbkgWindow = nbkg.getVal() * fracBkgRange.getVal()
   #print(nbkg.getVal(), fracBkgRange.getVal())
-  print("MAV cut: %f, Number of signals: %f, Number of background: %f, S/sqrt(S+B): %f"%(mvaCut, nsig.getVal(), nbkgWindow, nsig.getVal()/np.sqrt(nsig.getVal() + nbkgWindow)))
+  print("Number of signals: %f, Number of background: %f, S/sqrt(S+B): %f"%(nsig.getVal(), nbkgWindow, nsig.getVal()/np.sqrt(nsig.getVal() + nbkgWindow)))
 
   # Plot results of fit on a different frame
   c2 = ROOT.TCanvas('fig_binnedFit', 'fit', 800, 600)
@@ -196,7 +204,7 @@ def fit(tree, mvaCut):
   ROOT.gPad.SetRightMargin(0.05)
 
   #xframe = wspace.var('x').frame(RooFit.Title("PF electron"))
-  xframe = theBMass.frame(RooFit.Title("MVA cut: {}".format(mvaCut)))
+  xframe = theBMass.frame(RooFit.Title("All Electrons"))
   data.plotOn(xframe, RooFit.Binning(50), RooFit.Name("data"))
   model.plotOn(xframe,RooFit.Name("global"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
   model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.LineStyle(ROOT.kDashed),RooFit.LineColor(ROOT.kMagenta),RooFit.MoveToBack()) ;
@@ -236,94 +244,22 @@ def fit(tree, mvaCut):
   c2.cd()
   c2.Update()
 
-  c2.SaveAs('{}_mvaCut{}.pdf'.format(args.outputfile, mvaCutReplace))
+  c2.SaveAs('{}_mva_all.pdf'.format(args.outputfile))
   return nsig.getVal(), nsig.getError(), nbkgWindow
-
-def plotSNR(cut, sig, sigError, bkg, CutBasedWP):
-    import matplotlib as mpl
-    mpl.use('pdf')
-    from matplotlib import pyplot as plt
-    from matplotlib import rc
-    #.Allow for using TeX mode in matplotlib Figures
-    rc('font',**{'family':'sans-serif','sans-serif':['Computer Modern Roman']})
-    rc('text', usetex=True)
-    plt.rcParams['text.latex.preamble']=[r"\usepackage{lmodern}"]
-
-    ratio=5.0/7.0
-    fig_width_pt = 3*246.0  # Get this from LaTeX using \showthe\columnwidth
-    inches_per_pt = 1.0/72.27               # Convert pt to inch
-    golden_mean = ratio if ratio != 0.0 else (np.sqrt(5)-1.0)/2.0         # Aesthetic ratio
-    fig_width = fig_width_pt*inches_per_pt  # width in inches
-    fig_height = fig_width*golden_mean      # height in inches
-    fig_size =  [fig_width,fig_height]
-
-    params = {'text.usetex' : True,
-            'axes.labelsize': 24,
-            'font.size': 24,
-            'legend.fontsize': 20,
-            'xtick.labelsize': 24,
-            'ytick.labelsize': 24,
-            'font.family' : 'lmodern',
-            'text.latex.unicode': True,
-            'axes.grid' : False,
-            'text.usetex': True,
-            'figure.figsize': fig_size}
-    plt.rcParams.update(params)
-
-    fig, ax1 = plt.subplots()
-    #plt.grid(linestyle='--')
-    snr_line, = ax1.plot(cut, sig/np.sqrt(sig+bkg), 'b-', label=r'$S/\sqrt{S+B}$')
-    snr_cb_line = ax1.axhline(y=CutBasedWP['SNR'], color='g', linestyle='-.')
-    ax1.set_xlabel(r'MVA Cut')
-    ax1.set_ylabel(r'$S/\sqrt{S+B}$')
-    #ax1.set_ylim(ymin=0)
-    for t1 in ax1.get_yticklabels():
-        t1.set_color('b')
-
-    lower_bound = [s-serror for (s, serror) in zip(sig, sigError)]
-    upper_bound = [s+serror for (s, serror) in zip(sig, sigError)]
-
-    ax2 = ax1.twinx()
-    s_line, = ax2.plot(cut, sig, 'r-', label=r'Number of signals')
-    s_cb_line = ax2.axhline(y=CutBasedWP['S'], color='c', linestyle='-.')
-    ax2.fill_between(cut, lower_bound, upper_bound, facecolor='yellow', alpha=0.5)
-    ax2.set_ylabel(r'Number of signals')
-    ax2.set_ylim(ymin=0)
-    for t1 in ax2.get_yticklabels():
-        t1.set_color('r')
-    #ax2.legend(loc='upper left')
-    #lns = lns1+lns2
-    #labs = [l.get_label() for l in lns]
-    #ax2.legend(lns, labs, loc='upper left')
-    #fig.legend(loc=2, bbox_to_anchor=(0,1), bbox_transform=ax2.transAxes)
-    handles = [snr_line, s_line, snr_cb_line, s_cb_line]
-    labels = [r'Keras: $S/\sqrt{S+B}$', r'Keras: Number of signals', r'Cut-based: $S/\sqrt{S+B}$', r'Cut-based: Number of signals']
-    #fig.legend(handles=handles, labels=labels, loc=1, bbox_to_anchor=(1,1), bbox_transform=ax2.transAxes)
-    #fig.legend(handles=handles, labels=labels, loc=2, bbox_to_anchor=(0,1), bbox_transform=ax2.transAxes)
-    fig.legend(handles=handles, labels=labels, loc=3, bbox_to_anchor=(0,0), bbox_transform=ax2.transAxes)
-    fig.savefig('{}_SNRPlot.pdf'.format(args.outputfile), bbox_inches='tight')
-
-    
-    fig3, ax3 = plt.subplots()
-    plt.grid(linestyle='--')
-    ax3.plot(sig, sig/np.sqrt(sig+bkg), 'bo', label='Keras')
-    ax3.plot(CutBasedWP['S'], CutBasedWP['SNR'], 'r*', label='Cut-based')
-    ax3.set_xlabel(r'S')
-    ax3.set_ylabel(r'$S/\sqrt{S+B}$')
-    ax3.legend(loc=2)
-    fig3.savefig('{}_S_SNRPlot.pdf'.format(args.outputfile), bbox_inches='tight')
 
 
 if __name__ == "__main__":
   inputfile = args.inputfile.replace('.h5','')+'.h5'
   outputfile = args.outputfile.replace('.root','').replace('.h5','')
 
+  ele_type = {'all': True, 'pf': True, 'low_pfveto': True, 'mix_net': True}
+  ele_selection = {'all': 'all_mva_selection', 'pf': 'pf_mva_selection', 'low_pfveto': 'low_mva_selection', 'mix_net': 'mix_mva_selection'}
+
   branches = pd.read_hdf(inputfile, 'branches')
   output_branches = {}
-  #training_branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
-  training_branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
-
-  #training_branches = sorted(['BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
+  pf_training_branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
+  mix_training_branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
+  low_training_branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
 
   jpsi_selection = (branches['BToKEE_mll_raw'] > JPSI_LOW) & (branches['BToKEE_mll_raw'] < JPSI_UP)
   b_selection = jpsi_selection & (branches['BToKEE_mass'] > B_LOWSB_UP) & (branches['BToKEE_mass'] < B_UPSB_LOW)
@@ -344,65 +280,59 @@ if __name__ == "__main__":
   l1_low_selection = (branches['BToKEE_l1_isLowPt']) #& (branches['BToKEE_l1_pt'] < 5.0)
   l2_low_selection = (branches['BToKEE_l2_isLowPt']) #& (branches['BToKEE_l2_pt'] < 5.0)
 
-  pf_selection = l1_pf_selection & l2_pf_selection
+  pf_selection = l1_pf_selection & l2_pf_selection & (branches['BToKEE_k_pt'] > 1.5)
   low_selection = l1_low_selection & l2_low_selection
   overlap_veto_selection = np.logical_not(branches['BToKEE_l1_isPFoverlap']) & np.logical_not(branches['BToKEE_l2_isPFoverlap'])
   mix_selection = ((l1_pf_selection & l2_low_selection) | (l2_pf_selection & l1_low_selection))
   low_pfveto_selection = low_selection & overlap_veto_selection
   mix_net_selection = overlap_veto_selection & np.logical_not(pf_selection | low_selection)
+  all_selection = pf_selection | low_pfveto_selection | mix_net_selection 
 
   # count the number of b candidates passes the selection
   #count_selection = jpsi_selection 
   #nBToKEE_selected = self._branches['BToKEE_event'][count_selection].values
   #_, nBToKEE_selected = np.unique(nBToKEE_selected[np.isfinite(nBToKEE_selected)], return_counts=True)
 
-
-  #branches = branches[mix_net_selection]
-  branches = branches[low_pfveto_selection]
-
   # add mva id to pandas dataframe
 
-  model = load_model(args.model)
-  branches['BToKEE_keras'] = model.predict(branches[training_branches].sort_index(axis=1).values)
+  model_pf = load_model(args.pfmodel)
+  model_mix = load_model(args.mixmodel)
+  model_low = load_model(args.lowmodel)
 
-  SList = []
-  SErrList = []
-  BList = []
-  
-  mvaCutList = np.linspace(0.80, 0.99, 20)
-  for mvaCut in mvaCutList:
-    # mva selection
-    mva_selection = (branches['BToKEE_keras'] > mvaCut) #& (branches['BToKEE_keras_pf'] < 0.999)
-    #selected_branches = np.array(branches[pf_selection & mva_selection]['BToKEE_mass'], dtype=[('BToKEE_mass', 'f4')])
-    selected_branches = np.array(branches[mva_selection]['BToKEE_mass'], dtype=[('BToKEE_mass', 'f4')])
-    tree = array2tree(selected_branches)
-    S, SErr, B = fit(tree, mvaCut) 
-    SList.append(S)
-    SErrList.append(SErr)
-    BList.append(B)
+  branches['BToKEE_keras_pf'] = model_pf.predict(branches[pf_training_branches].sort_index(axis=1).values)
+  branches['BToKEE_keras_mix'] = model_mix.predict(branches[mix_training_branches].sort_index(axis=1).values)
+  branches['BToKEE_keras_low'] = model_low.predict(branches[low_training_branches].sort_index(axis=1).values)
 
-  SList = np.array(SList)
-  SErrList = np.array(SErrList)
-  BList = np.array(BList)
-  #CutBasedWP = {'S': 1561, 'B': 1097, 'SNR': 30.2} # PF
-  #CutBasedWP = {'S': 759, 'B': 1394, 'SNR': 16.3} # Mix
-  CutBasedWP = {'S': 140, 'B': 285, 'SNR': 6.8} # Low
+  mvaCut_pf = 0.93
+  mvaCut_mix = 0.93
+  mvaCut_low = 0.90
 
-  plotSNR(mvaCutList, SList, SErrList, BList, CutBasedWP)
+  # mva selection
+  pf_mva_selection = pf_selection & (branches['BToKEE_keras_pf'] > mvaCut_pf)
+  mix_mva_selection = mix_net_selection & (branches['BToKEE_keras_mix'] > mvaCut_mix)
+  low_mva_selection = low_pfveto_selection & (branches['BToKEE_keras_low'] > mvaCut_low)
+  all_mva_selection = pf_mva_selection | mix_mva_selection | low_mva_selection
 
-  '''
-  if args.hist:
-    file_out = root_open('{}.root'.format(outputfile), 'recreate')
-    hist_list = {hist_name: Hist(hist_bins['nbins'], hist_bins['xmin'], hist_bins['xmax'], name=hist_name, title='', type='F') for hist_name, hist_bins in sorted(outputbranches.items())}
-    for hist_name, hist_bins in sorted(outputbranches.items()):
-      if hist_name in branches.keys():
-        branch_np = output_branches[hist_name].values
-        fill_hist(hist_list[hist_name], branch_np[np.isfinite(branch_np)])
-        hist_list[hist_name].write()
-    file_out.close()
+  selected_branches = np.array(branches[pf_mva_selection | mix_mva_selection | low_mva_selection]['BToKEE_mass'], dtype=[('BToKEE_mass', 'f4')])
+  tree = array2tree(selected_branches)
+  S, SErr, B = fit(tree) 
 
-  else:
-    output_branches[outputbranches.keys()].to_root('{}.root'.format(outputfile), key='tree')
-  '''
+  output_branches = {}
+  for eType, eBool in ele_type.items():
+    if not eBool: continue
+    output_branches[eType] = branches[eval(ele_selection[eType])]
+    if args.hist:
+      file_out = root_open('{}_{}.root'.format(outputfile, eType), 'recreate')
+      hist_list = {hist_name: Hist(hist_bins['nbins'], hist_bins['xmin'], hist_bins['xmax'], name=hist_name, title='', type='F') for hist_name, hist_bins in sorted(outputbranches.items())}
+      for hist_name, hist_bins in sorted(outputbranches.items()):
+        if hist_name in branches.keys():
+          branch_np = output_branches[eType][hist_name].values
+          fill_hist(hist_list[hist_name], branch_np[np.isfinite(branch_np)])
+          hist_list[hist_name].write()
+      file_out.close()
+
+    else:
+      output_branches[outputbranches.keys()].to_root('{}.root'.format(outputfile), key='tree')
+   
 
 
