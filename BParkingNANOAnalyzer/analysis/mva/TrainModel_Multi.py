@@ -62,13 +62,13 @@ def train(model, classifier, hyper_params=None):
                         callbacks=[early_stopping, model_checkpoint], 
                         validation_split=0.25)
         Y_predict = model.predict(X_test)
-        fpr, tpr, thresholds = roc_curve(Y_test, Y_predict, sample_weight=sampleWeight_test)
+        fpr, tpr, thresholds = roc_curve(Y_test, Y_predict)
         roc_auc = roc_auc_score(Y_test, Y_predict, average='weighted')
         #roc_auc = auc(fpr, tpr)
         print("Best auc: {}".format(roc_auc))
         print("Classification Report")
         print(classification_report(Y_test, np.argmax(Y_predict, axis=1)))
-        #print(classification_report(Y_test, Y_predict, sample_weight=sampleWeight_test, labels=[0, 1]))
+        #print(classification_report(Y_test, Y_predict, labels=[0, 1]))
         return model, history
         #best_acc = max(history.history['val_acc'])
         #return best_acc
@@ -79,7 +79,7 @@ def train(model, classifier, hyper_params=None):
           Y_predict = model.decision_function(X_test)
         if classifier == 'XGB':
           Y_predict = model.predict_proba(X_test)[:,1]
-        fpr, tpr, thresholds = roc_curve(Y_test, Y_predict, sample_weight=sampleWeight_test)
+        fpr, tpr, thresholds = roc_curve(Y_test, Y_predict)
         roc_auc = auc(fpr, tpr)
         Y_predict = model.predict(X_test)
         print("Best auc: {}".format(roc_auc))
@@ -147,9 +147,6 @@ if __name__ == "__main__":
     classWeight = compute_class_weight('balanced', np.unique(Y_train_val), Y_train_val) 
     classWeight = dict(enumerate(classWeight))
     print(classWeight)
-    classWeight_test = compute_class_weight('balanced', np.unique(Y_test), Y_test) 
-    classWeight_test = dict(enumerate(classWeight_test))
-    sampleWeight_test = compute_sample_weight(classWeight_test, Y_test)
 
     use_classifiers = {'Keras': True, 'GTB': False, 'XGB': False, 'SVM': False}
     model = {}
@@ -241,7 +238,7 @@ if __name__ == "__main__":
         if classifier == 'XGB':
           Y_predict = model[classifier].predict_proba(X_test)[:,1]
 
-        fpr, tpr, thresholds = roc_curve(Y_test, Y_predict, sample_weight=sampleWeight_test, drop_intermediate=False)
+        fpr, tpr, thresholds = roc_curve(Y_test, Y_predict, drop_intermediate=False)
         roc_auc = roc_auc_score(Y_test, Y_predict, average='weighted')
         #roc_auc = auc(fpr, tpr)
         ax_roc.plot(fpr, tpr, lw=2, label='%s, AUC=%.3f'%(classifier, roc_auc))

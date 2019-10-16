@@ -23,7 +23,7 @@ allHDF = []
 for f in [join(args.inputpath, f) for f in listdir(args.inputpath) if isfile(join(args.inputpath, f)) and '.h5' in f]:
   try:
     df = pd.read_hdf(f)
-    df = df[(df['BToKEE_mll_raw'] > JPSI_LOW) & (df['BToKEE_mll_raw'] < JPSI_UP) & (df['BToKEE_l1_mvaId'] > 3.94) & (df['BToKEE_l2_mvaId'] > 3.94)]
+    #df = df[(df['BToKEE_mll_raw'] > JPSI_LOW) & (df['BToKEE_mll_raw'] < JPSI_UP) & (df['BToKEE_l1_mvaId'] > 3.94) & (df['BToKEE_l2_mvaId'] > 3.94)]
     print(df.shape)
     allHDF.append(df)
   except ValueError:

@@ -87,20 +87,20 @@ def train(X_train_val, Y_train_val, X_test, Y_test, model, classifier, classWeig
     if classifier == 'Keras':
         history = model.fit(X_train_val, 
                         Y_train_val, 
-                        epochs=100, 
+                        epochs=400, 
                         batch_size=hyper_params['batch_size'], 
                         verbose=1,
                         class_weight=classWeight,
                         callbacks=[early_stopping, model_checkpoint], 
                         validation_split=0.25)
         Y_predict = model.predict(X_test)
-        fpr, tpr, thresholds = roc_curve(Y_test, Y_predict)
+        fpr, tpr, thresholds = roc_curve(Y_test, Y_predict, drop_intermediate=False)
         roc_auc = roc_auc_score(Y_test, Y_predict, average='weighted')
         #roc_auc = auc(fpr, tpr)
         print("Best auc: {}".format(roc_auc))
         print("Classification Report")
         print(classification_report(Y_test, np.argmax(Y_predict, axis=1)))
-        #print(classification_report(Y_test, Y_predict, sample_weight=sampleWeight_test, labels=[0, 1]))
+        #print(classification_report(Y_test, Y_predict, labels=[0, 1]))
         return model, history, fpr, tpr, thresholds, roc_auc 
 
     if classifier == 'GTB' or classifier == 'XGB' or classifier == 'SVM':
@@ -159,8 +159,8 @@ if __name__ == "__main__":
     nData = min(df['sig'].shape[0], df['bkg'].shape[0])
     print(nData)
 
-    #df['sig'] = df['sig'].sample(frac=1)[:nData]
-    #df['bkg'] = df['bkg'].sample(frac=1)[:nData]
+    df['sig'] = df['sig'].sample(frac=1)#[:nData]
+    df['bkg'] = df['bkg'].sample(frac=1)#[:nData]
 
     # add isSignal variable
     df['sig']['isSignal'] = np.ones(len(df['sig']))
@@ -192,7 +192,7 @@ if __name__ == "__main__":
                                            period=1)
 
         #hyper_params = {'hidden_layers': 3, 'initial_nodes': 64, 'l2_lambda': 10.0**-4, 'dropout': 0.25, 'batch_size': 512, 'learning_rate': 10.0**-3}
-        hyper_params = {'hidden_layers': 2, 'initial_nodes': 32, 'l2_lambda': 1.3057169431397849e-05, 'dropout': 0.08351959164395392, 'batch_size': 256, 'learning_rate': 0.00039193778307251034} # PF
+        hyper_params = {'hidden_layers': 4, 'initial_nodes': 256, 'l2_lambda': 1.0e-06, 'dropout': 0.0, 'batch_size': 788, 'learning_rate': 0.002220813809955833} # PF
         #hyper_params = {'hidden_layers': 3, 'initial_nodes': 471, 'l2_lambda': 0.0009291606742300548, 'dropout': 0.3082756432562473, 'batch_size': 492, 'learning_rate': 0.00033698412975590987} # Low
         model['Keras'] = build_custom_model(hyper_params, 'Keras') 
         model['Keras'].compile(optimizer=Adam(lr=hyper_params['learning_rate']), loss='binary_crossentropy', metrics=['accuracy'], weighted_metrics=['accuracy'])

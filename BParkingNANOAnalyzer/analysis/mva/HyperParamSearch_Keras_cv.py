@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 from subprocess import call
 from os.path import isfile
 
@@ -18,6 +17,16 @@ from keras.callbacks import ModelCheckpoint
 from sklearn.model_selection import train_test_split, StratifiedKFold, KFold
 from sklearn.metrics import roc_curve, auc
 from sklearn.utils import compute_class_weight
+
+from keras.backend.tensorflow_backend import set_session
+import tensorflow as tf
+tf.logging.set_verbosity(tf.logging.ERROR)
+
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True  # dynamically grow the memory used on the GPU
+sess = tf.Session(config=config)
+set_session(sess)  # set this TensorFlow session as the default session for Keras
+
 
 from skopt import gp_minimize
 from skopt.space import Real, Integer
@@ -46,7 +55,7 @@ def build_custom_model(num_hiddens=2, initial_node=32,
 def train(X_train_val, Y_train_val, X_test, Y_test, model, classWeight, batch_size=64):
     history = model.fit(X_train_val, 
                     Y_train_val, 
-                    epochs=10, 
+                    epochs=200, 
                     batch_size=batch_size, 
                     verbose=0,
                     class_weight=classWeight,
@@ -69,6 +78,8 @@ space  = [Integer(2, 4, name='hidden_layers'),
 
 @use_named_args(space)
 def objective(**X):
+    global best_auc
+    global best_config
     print("New configuration: {}".format(X))
 
     model = build_custom_model(num_hiddens=X['hidden_layers'], initial_node=X['initial_nodes'], 
@@ -92,6 +103,11 @@ def objective(**X):
 
     ave_auc = sum(aucs)/float(len(aucs))
     print("Average auc: {}".format(ave_auc))
+    if ave_auc > best_auc:
+      best_auc = ave_auc
+      best_config = X
+    print("Best auc: {}, Best configuration: {}".format(best_auc, best_config))
+
     return -ave_auc
 
 
@@ -122,16 +138,16 @@ upfile['sig'] = uproot.open(filename['sig'])
 params['bkg'] = upfile['bkg']['tree'].arrays(branches)
 params['sig'] = upfile['sig']['tree'].arrays(branches)
 
-df['sig'] = pd.DataFrame(params['sig'])[:30]
-df['bkg'] = pd.DataFrame(params['bkg'])[:30]
+df['sig'] = pd.DataFrame(params['sig'])#[:30]
+df['bkg'] = pd.DataFrame(params['bkg'])#[:30]
 
 df['sig'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
 df['bkg'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
 
 nData = min(df['sig'].shape[0], df['bkg'].shape[0])
 
-df['sig'] = df['sig'].sample(frac=1)[:nData]
-df['bkg'] = df['bkg'].sample(frac=1)[:nData]
+df['sig'] = df['sig'].sample(frac=1)#[:nData]
+df['bkg'] = df['bkg'].sample(frac=1)#[:nData]
 
 
 # add isSignal variable
@@ -144,7 +160,7 @@ X_data = dataset[:,0:input_dim]
 Y_data = dataset[:,input_dim]
 
 
-early_stopping = EarlyStopping(monitor='val_loss', patience=50)
+early_stopping = EarlyStopping(monitor='val_loss', patience=100)
 
 model_checkpoint = ModelCheckpoint('dense_model.h5', monitor='val_loss', 
                                    verbose=0, save_best_only=True, 
@@ -154,7 +170,9 @@ model_checkpoint = ModelCheckpoint('dense_model.h5', monitor='val_loss',
 
 begt = time.time()
 print("Begin Bayesian optimization")
-res_gp = gp_minimize(objective, space, n_calls=5, n_random_starts=3, random_state=3)
+best_auc = 0.0
+best_config = {}
+res_gp = gp_minimize(objective, space, n_calls=300, n_random_starts=150, random_state=3)
 print("Finish optimization in {}s".format(time.time()-begt))
 
 plt.figure()
