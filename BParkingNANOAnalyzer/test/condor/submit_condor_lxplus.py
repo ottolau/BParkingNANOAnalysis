@@ -76,13 +76,13 @@ def write_bash(temp = 'runjob.sh', command = '', outputdir = ''):
     out += 'echo "*******************************************"\n'
     out += 'OUTDIR='+outputdir+'\n'
     out += 'echo "xrdcp output for condor"\n'
-    out += 'for FILE in *.{}\n'.format('root' if args.hist else 'h5')
+    out += 'for FILE in *.{}\n'.format('root' if args.hist else 'root')
     out += 'do\n'
     out += '  echo "xrdcp -f ${FILE} ${OUTDIR}/${FILE}"\n'
     out += '  xrdcp -f ${FILE} ${OUTDIR}/${FILE} 2>&1\n'
     out += '  XRDEXIT=$?\n'
     out += '  if [[ $XRDEXIT -ne 0 ]]; then\n'
-    out += '    rm *.{}\n'.format('root' if args.hist else 'h5')
+    out += '    rm *.{}\n'.format('root' if args.hist else 'root')
     out += '    echo "exit code $XRDEXIT, failure in xrdcp"\n'
     out += '    exit $XRDEXIT\n'
     out += '  fi\n'

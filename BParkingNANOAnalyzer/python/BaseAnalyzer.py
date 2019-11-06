@@ -39,7 +39,7 @@ class BParkingNANOAnalyzer(object):
       self._hist_list = {hist_name: Hist(hist_bins['nbins'], hist_bins['xmin'], hist_bins['xmax'], name=hist_name, title='', type='F') for hist_name, hist_bins in sorted(self._outputbranches.items())}
 
     else:
-      if os.path.isfile(self._file_out_name+'.h5'): os.system('rm {}'.format(self._file_out_name+'.h5'))
+      if os.path.isfile(self._file_out_name+'.root'): os.system('rm {}'.format(self._file_out_name+'.root'))
 
 
   def fill_output(self):

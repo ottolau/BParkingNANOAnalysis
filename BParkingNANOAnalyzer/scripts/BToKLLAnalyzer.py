@@ -52,6 +52,8 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             #'ProbeTracks_isPacked',
                             'ProbeTracks_genPartIdx',
                             #'HLT_Mu9_IP6_*',
+                            'GenPart_pdgId',
+                            'GenPart_genPartIdxMother',
                             'event'
                             ]
 
@@ -124,9 +126,24 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       #for self._branches in tree.iterate(self._inputbranches, entrysteps=float("inf")):
         #print('[BToKLLAnalyzer::run] INFO: FILE: {}/{}. Iterating tree {}...'.format(self._ifile+1, self._num_files, nTree+1))
       self._branches = tree.arrays(self._inputbranches)
-      self._branches = {key: awkward.fromiter(branch) for key, branch in self._branches.items()}
+      #self._branches = {key: awkward.fromiter(branch) for key, branch in self._branches.items()}
 
       print('[BToKLLAnalyzer::run] INFO: FILE: {}/{}. Analyzing...'.format(self._ifile+1, self._num_files))
+
+      self._branches['BToKEE_l1_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['Electron_genPartIdx'][self._branches['BToKEE_l1Idx']]]
+      self._branches['BToKEE_l2_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['Electron_genPartIdx'][self._branches['BToKEE_l2Idx']]]
+      self._branches['BToKEE_k_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['ProbeTracks_genPartIdx'][self._branches['BToKEE_kIdx']]]
+
+      self._branches['BToKEE_l1_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_l1_genMotherIdx']]
+      self._branches['BToKEE_l2_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_l2_genMotherIdx']]
+      self._branches['BToKEE_k_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_k_genMotherIdx']]
+
+      self._branches['BToKEE_l1Mother_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['BToKEE_l1_genMotherIdx']]
+      self._branches['BToKEE_l2Mother_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['BToKEE_l2_genMotherIdx']]
+
+      self._branches['BToKEE_l1Mother_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_l1Mother_genMotherIdx']]
+      self._branches['BToKEE_l2Mother_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_l2Mother_genMotherIdx']]
+
 
       # remove cross referencing
       for branch in self._branches.keys():
@@ -138,6 +155,9 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
         if 'ProbeTracks_' in branch:
           self._branches['BToKEE_k_'+branch.replace('ProbeTracks_','')] = self._branches[branch][self._branches['BToKEE_kIdx']] 
           del self._branches[branch]
+        
+        if 'GenPart_' in branch:
+          del self._branches[branch]
 
         if 'HLT_Mu9_IP6_' in branch:
           self._branches['BToKEE_'+branch] = np.repeat(self._branches[branch], self._branches['nBToKEE'])
@@ -146,8 +166,10 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
         if branch == 'event':
           self._branches['BToKEE_'+branch] = np.repeat(self._branches[branch], self._branches['nBToKEE'])
           del self._branches[branch]
+        
 
       del self._branches['nBToKEE']
+
 
 
       #l1_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_l1_pt'], self._branches['BToKEE_l1_eta'], self._branches['BToKEE_l1_phi'], ELECTRON_MASS)
@@ -159,6 +181,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
 
       # flatten the jagged arrays to a normal numpy array, turn the whole dictionary to pandas dataframe
       self._branches = pd.DataFrame.from_dict({branch: array.flatten() for branch, array in self._branches.items()})
+      #self._branches = self._branches.pandas.df()
       #self._branches = awkward.topandas(self._branches, flatten=True)
 
 
@@ -185,6 +208,8 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       b_upsb_selection = (self._branches['BToKEE_mass'] > B_UPSB_LOW) & (self._branches['BToKEE_mass'] < B_UPSB_UP)
       b_sb_selection = b_lowsb_selection | b_upsb_selection
       mc_matched_selection = (self._branches['BToKEE_l1_genPartIdx'] > -0.5) & (self._branches['BToKEE_l2_genPartIdx'] > -0.5) & (self._branches['BToKEE_k_genPartIdx'] > -0.5)
+      mc_parent_selection = (abs(self._branches['BToKEE_l1_genMotherPdgId']) == 443) & (abs(self._branches['BToKEE_k_genMotherPdgId']) == 521)
+      mc_chain_selection = (self._branches['BToKEE_l1_genMotherPdgId'] == self._branches['BToKEE_l2_genMotherPdgId']) & (self._branches['BToKEE_k_genMotherPdgId'] == self._branches['BToKEE_l1Mother_genMotherPdgId']) & (self._branches['BToKEE_k_genMotherPdgId'] == self._branches['BToKEE_l2Mother_genMotherPdgId'])
       #b_selection = (self._branches['BToKEE_mass'] > B_LOW) & (self._branches['BToKEE_mass'] < B_UP)
 
 
@@ -192,11 +217,11 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
       k_selection = (self._branches['BToKEE_k_pt'] > 1.0) #& (self._branches['BToKEE_k_DCASig'] > 2.0)
       #additional_selection = b_sb_selection
-      additional_selection = mc_matched_selection
+      additional_selection = mc_matched_selection & mc_parent_selection & mc_chain_selection
       #additional_selection = b_selection
       #selection = l1_selection & l2_selection & k_selection & additional_selection
-      selection = l1_selection & l2_selection & additional_selection
-      #selection = additional_selection
+      #selection = l1_selection & l2_selection & additional_selection
+      selection = additional_selection
 
       self._branches = self._branches[selection]
 
