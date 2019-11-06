@@ -35,11 +35,12 @@ from rootpy.io import root_open
 from rootpy.plotting import Hist
 from root_numpy import fill_hist, array2root, array2tree
 from root_pandas import to_root
-from keras.models import load_model
 from scipy.optimize import curve_fit
 from scipy.integrate import quad
 import iminuit, probfit
 import scipy.stats
+import xgboost as xgb
+from sklearn.externals import joblib
 
 import ROOT
 from ROOT import RooFit
@@ -52,7 +53,7 @@ parser = argparse.ArgumentParser(description="A simple ttree plotter")
 parser.add_argument("-s", "--signal", dest="signal", default="RootTree_BParkingNANO_2019Sep12_BuToKJpsi_Toee_mvaTraining_sig_testing_pf.root", help="Signal file")
 parser.add_argument("-b", "--background", dest="background", default="RootTree_BParkingNANO_2019Sep12_Run2018A2A3B2B3C2C3D2_mvaTraining_bkg_testing_pf.root", help="Background file")
 parser.add_argument("-o", "--outputfile", dest="outputfile", default="test", help="Output file containing plots")
-parser.add_argument("-m", "--model", dest="model", default="dense_model_fulldata_pf.h5", help="Trainned model")
+parser.add_argument("-m", "--model", dest="model", default="xgb_fulldata_pf.model", help="Trainned model")
 args = parser.parse_args()
 
 
@@ -126,8 +127,8 @@ def plotSNR(cut, sig, bkg, CutBasedWP):
     
     fig3, ax3 = plt.subplots()
     plt.grid(linestyle='--')
-    ax3.plot(sig, sig/np.sqrt(sig+bkg), 'bo', label='Keras')
-    ax3.plot(CutBasedWP['S'], CutBasedWP['SNR'], 'r*', label='Cut-based')
+    ax3.plot(sig, sig/np.sqrt(sig+bkg), 'bo', label='XGB')
+    #ax3.plot(CutBasedWP['S'], CutBasedWP['SNR'], 'r*', label='Cut-based')
     ax3.set_xlabel(r'S')
     ax3.set_ylabel(r'$S/\sqrt{S+B}$')
     ax3.legend(loc=2)
@@ -179,8 +180,8 @@ if __name__ == "__main__":
   df['bkg'] = pd.DataFrame(params['bkg']).sort_index(axis=1)
 
   output_branches = {}
-  training_branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
-  #training_branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
+  #training_branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
+  training_branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
 
 
   for k, branches in df.items():
@@ -192,7 +193,7 @@ if __name__ == "__main__":
     b_upsb_selection = jpsi_selection & (branches['BToKEE_mass'] > B_UPSB_LOW) & (branches['BToKEE_mass'] < B_UPSB_UP)
     b_sb_selection = b_lowsb_selection | b_upsb_selection
 
-    general_selection = jpsi_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & (branches['BToKEE_k_pt'] > 1.5) 
+    general_selection = jpsi_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & (branches['BToKEE_k_pt'] > 1.0) 
 
     # additional cuts, allows various lengths
     l1_pf_selection = (branches['BToKEE_l1_isPF'])
@@ -208,7 +209,9 @@ if __name__ == "__main__":
     mix_net_selection = overlap_veto_selection & np.logical_not(pf_selection | low_selection)
 
 
-    df[k] = branches[general_selection & pf_selection].copy()
+    #df[k] = branches[general_selection & pf_selection & (branches['BToKEE_k_pt'] > 1.5)].copy()
+    df[k] = branches[general_selection & mix_net_selection].copy()
+    #df[k] = branches[general_selection & low_pfveto_selection].copy()
     df[k].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
 
 
@@ -221,28 +224,34 @@ if __name__ == "__main__":
   # add mva id to pandas dataframe
   #print(df['sig'], df['bkg'])
 
-  cutBased_selection = (df['sig']['BToKEE_pt'] > 10.0) & (df['sig']['BToKEE_l_xy_sig'] > 6.0 ) & (df['sig']['BToKEE_svprob'] > 0.1) & (df['sig']['BToKEE_cos2D'] > 0.999)
-  NMC_CUTBASED = float(df['sig'][cutBased_selection]['BToKEE_mass'].count())
-  print(NMC_CUTBASED)
+  #cutBased_selection = (df['sig']['BToKEE_pt'] > 10.0) & (df['sig']['BToKEE_l_xy_sig'] > 6.0 ) & (df['sig']['BToKEE_svprob'] > 0.1) & (df['sig']['BToKEE_cos2D'] > 0.999)
+  #NMC_CUTBASED = float(df['sig'][cutBased_selection]['BToKEE_mass'].count())
+  #print(NMC_CUTBASED)
 
-  model = load_model(args.model)
-  mva_sig = model.predict(df['sig'][training_branches].sort_index(axis=1).values)
-  mva_bkg = model.predict(df['bkg'][training_branches].sort_index(axis=1).values)
+  model = xgb.Booster({'nthread': 4})
+  #model = xgb.Booster()
+  model.load_model(args.model)
+  #model = joblib.load('xgb_cv_pf.joblib.dat')
+  mva_sig = model.predict(xgb.DMatrix(df['sig'][training_branches].sort_index(axis=1).values))
+  mva_bkg = model.predict(xgb.DMatrix(df['bkg'][training_branches].sort_index(axis=1).values))
 
-  df['sig']['BToKEE_keras'] = mva_sig
-  df['bkg']['BToKEE_keras'] = mva_bkg
-  #print(df['sig']['BToKEE_keras'])
+  print('min: {}, max: {}'.format(min(mva_sig),max(mva_bkg)))
+  df['sig']['BToKEE_xgb'] = mva_sig
+  df['bkg']['BToKEE_xgb'] = mva_bkg
 
   SList = []
   SErrList = []
   BList = []
   
-  mvaCutList = np.linspace(0.80, 0.99, 20)
+  mvaCutList = np.linspace(1.0, 4.0, 20)
   for mvaCut in mvaCutList:
     mvaCutReplace = '{0:.3f}'.format(mvaCut).replace('.','_')
     # mva selection
-    selected_branches_sig = df['sig'][(df['sig']['BToKEE_keras'] > mvaCut)]['BToKEE_mass']
-    selected_branches_bkg = df['bkg'][(df['bkg']['BToKEE_keras'] > mvaCut)]['BToKEE_mass'].values
+    #selected_branches_sig = df['sig'][(df['sig']['BToKEE_xgb'] > mvaCut)]['BToKEE_mass']
+    #selected_branches_bkg = df['bkg'][(df['bkg']['BToKEE_xgb'] > mvaCut)]['BToKEE_mass'].values
+    selected_branches_sig = df['sig'][(df['sig']['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')['BToKEE_mass']
+    selected_branches_bkg = df['bkg'][(df['bkg']['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')['BToKEE_mass'].values
+
     NMC_SELECTED = float(selected_branches_sig.count())
     h_BToKEE_mass_bkg = Hist(50, 4.7, 6.0, name='h_BToKEE_mass_bkg', title='', type='F') 
     fill_hist(h_BToKEE_mass_bkg, selected_branches_bkg[np.isfinite(selected_branches_bkg)])
@@ -270,9 +279,9 @@ if __name__ == "__main__":
     plt.legend(loc='upper right')
     plt.savefig('{}_bkgfit_{}.pdf'.format(outputfile, mvaCutReplace), bbox_inches='tight')
 
-    N_BKG = quad(expo, 5.0, 5.4, args=(popt[0], popt[1]))[0] / h_steps / 0.25
-    #N_SIG = (LUMI_DATA / LUMI_MC) * (NMC_SELECTED) / 0.25
-    N_SIG = CutBasedWP['S'] * (NMC_SELECTED / NMC_CUTBASED)
+    N_BKG = quad(expo, 5.0, 5.4, args=(popt[0], popt[1]))[0] / h_steps / 0.25#0.25
+    N_SIG = (LUMI_DATA / LUMI_MC) * (NMC_SELECTED) / 0.25#0.25
+    #N_SIG = CutBasedWP['S'] * (NMC_SELECTED / NMC_CUTBASED)
 
     #print(NMC_SELECTED)
     print('MVA cut: {}, Number of selected MC: {}, Expected signal: {}, Background: {}, SNR: {}'.format(mvaCut, NMC_SELECTED, N_SIG, N_BKG, N_SIG/np.sqrt(N_SIG + N_BKG)))

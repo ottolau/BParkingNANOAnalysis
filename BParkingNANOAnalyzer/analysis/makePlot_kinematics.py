@@ -19,7 +19,7 @@ varUnitMap = {"k_pt": "kaon p_{T} [GeV]",
               "l2_normpt": "subleading electron normalized p_{T}",
               "BToKEE_normpt": "B^{+} normalized p_{T}",
               "mll": "m(e^{+}e^{-}) [GeV/c^{2}]",
-              "mass": "m(K^{+}e^{+}e^{-}) [GeV/c^{2}]",
+              "mass": "m(K^{+}e^{+}e^{-}) [GeV]",
               "eta": "#eta",
               "phi": "#phi",
               "dxy_sig": "d_{xy}/#sigma_{d_{xy}}",
@@ -41,28 +41,32 @@ def setup_pad():
     pad = ROOT.TPad("pad", "pad", 0.0, 0.0, 1.0, 1.0)
     pad.SetTopMargin(0.08)
     pad.SetBottomMargin(0.12)
+    #pad.SetLeftMargin(0.11)
     pad.SetLeftMargin(0.11)
     pad.SetRightMargin(0.06)
     return pad
 
-def CMS_lumi(pad):
+def CMS_lumi():
     mark = ROOT.TLatex()
     mark.SetNDC()
-    lumistamp = ''
+    lumistamp = '2018 (13 TeV)'
     fontScale = 1.0
+    cmsTextSize = 0.042 * fontScale * 1.25
+    extraOverCmsTextSize  = 0.76
+    extraTextSize = extraOverCmsTextSize*cmsTextSize
+
     mark.SetTextAlign(11)
-    mark.SetTextSize(0.042 * fontScale * 1.25)
+    mark.SetTextSize(cmsTextSize)
     mark.SetTextFont(61)
     mark.DrawLatex(ROOT.gPad.GetLeftMargin(), 1 - (ROOT.gPad.GetTopMargin() - 0.017), "CMS")
-    pad.Update()
     mark.SetTextSize(0.042 * fontScale)
     mark.SetTextFont(52)
-    mark.DrawLatex(ROOT.gPad.GetLeftMargin() + 0.08, 1 - (ROOT.gPad.GetTopMargin() - 0.017), "Preliminary")
-    pad.Update()
+    mark.DrawLatex(ROOT.gPad.GetLeftMargin() + 0.09, 1 - (ROOT.gPad.GetTopMargin() - 0.017), "Preliminary")
+    #mark.DrawLatex(ROOT.gPad.GetLeftMargin() + 0.09, 1 - (ROOT.gPad.GetTopMargin() - 0.017), "Simulation Preliminary")
+    mark.SetTextSize(extraTextSize)
     mark.SetTextFont(42)
     mark.SetTextAlign(31)
     mark.DrawLatex(1 - ROOT.gPad.GetRightMargin(), 1 - (ROOT.gPad.GetTopMargin() - 0.017), lumistamp)
-    pad.Update()
 
 
 def draw_hist(histo, histo_name, x_label, y_label, norm=False, same=False, err=False):
@@ -73,15 +77,15 @@ def draw_hist(histo, histo_name, x_label, y_label, norm=False, same=False, err=F
     histo.SetTitleSize(0.05)
     histo.GetYaxis().SetTitleOffset(0.9)
     histo.GetYaxis().SetTitleFont(42)
-    histo.GetYaxis().SetTitleSize(0.05)
-    histo.GetYaxis().SetLabelSize(0.065)
-    histo.GetYaxis().SetLabelSize(0.04)
+    histo.GetYaxis().SetTitleSize(0.04)
+    #histo.GetYaxis().SetLabelSize(0.065)
+    histo.GetYaxis().SetLabelSize(0.05)
     histo.GetYaxis().SetLabelFont(42)
     histo.GetXaxis().SetTitleOffset(0.9)
     histo.GetXaxis().SetTitleFont(42)
-    histo.GetXaxis().SetTitleSize(0.05)
-    histo.GetXaxis().SetLabelSize(0.065)
-    histo.GetXaxis().SetLabelSize(0.04)
+    histo.GetXaxis().SetTitleSize(0.04)
+    #histo.GetXaxis().SetLabelSize(0.065)
+    histo.GetXaxis().SetLabelSize(0.05)
     histo.GetXaxis().SetLabelFont(42)
     if same:
         histo.SetFillColorAlpha(46,1)
@@ -261,7 +265,7 @@ def make_comparisons(signalfile, backgroundfile, outputFolder='Figures'):
 
 def make_eleStack(inputfile, outputfile):
     eleType = ['pf', 'low_pfveto', 'mix_net', 'all']
-    '''
+    
     for eType in eleType:
       f1 = ROOT.TFile('{}_{}.root'.format(inputfile, eType))
       dir_list = ROOT.gDirectory.GetListOfKeys()
@@ -288,7 +292,7 @@ def make_eleStack(inputfile, outputfile):
         h_mix = key.ReadObj()
       if key.ReadObj().GetName() == 'BToKEE_mass_all':
         h_all = key.ReadObj()
-
+    '''
     canvas_name = "c_" + h_pf.GetName()
     for v in varUnitMap.keys():
         if v in h_pf.GetName(): var = v
@@ -300,13 +304,21 @@ def make_eleStack(inputfile, outputfile):
     pad.Draw()
     pad.cd()
 
+    
     h_pf.SetFillColorAlpha(42,1)
     h_pf.SetFillStyle(4050)
     h_low.SetFillColorAlpha(46,1)
     h_low.SetFillStyle(4050)
     h_mix.SetFillColorAlpha(40,1)
     h_mix.SetFillStyle(4050)
-
+    '''
+    h_pf.SetFillColorAlpha(0,1)
+    h_pf.SetFillStyle(4050)
+    h_extra = h_low.Clone()
+    h_extra.Add(h_mix)
+    h_extra.SetFillColorAlpha(1,1)
+    h_extra.SetFillStyle(3354)
+    '''
     h_all.SetFillColorAlpha(1,1)
     h_all.SetLineColor(1)
     h_all.SetFillStyle(3335)
@@ -314,6 +326,7 @@ def make_eleStack(inputfile, outputfile):
 
     h_stack = ROOT.THStack("h_stack", "")
     h_stack.Add(h_pf)
+    #h_stack.Add(h_extra)
     h_stack.Add(h_mix)
     h_stack.Add(h_low)
     h_stack.Draw("HIST")
@@ -321,7 +334,7 @@ def make_eleStack(inputfile, outputfile):
 
     h_stack.GetYaxis().SetTitle('Events')
     h_stack.GetXaxis().SetTitle(unit)
-    h_stack.GetYaxis().SetTitleOffset(0.9)
+    h_stack.GetYaxis().SetTitleOffset(1.0)
     h_stack.GetYaxis().SetTitleFont(42)
     h_stack.GetYaxis().SetTitleSize(0.05)
     h_stack.GetYaxis().SetLabelSize(0.065)
@@ -340,13 +353,15 @@ def make_eleStack(inputfile, outputfile):
     l1.SetTextSize(0.04)
     l1.SetLineColor(ROOT.kWhite)
     l1.SetFillStyle(0)
-    l1.AddEntry(h_pf, 'PF electron', 'f')
+    l1.AddEntry(h_pf, 'PF electrons', 'f')
+    #l1.AddEntry(h_extra, 'Additional electrons', 'f')
+    #l1.AddEntry(h_all, 'Total', 'l')
     l1.AddEntry(h_mix, 'PF + Low pT electron', 'f')
     l1.AddEntry(h_low, 'Low pT electron', 'f')
     l1.AddEntry(h_all, 'Uncertainty', 'f')
     l1.Draw("same")
     pad.cd()
-    CMS_lumi(pad)
+    CMS_lumi()
 
     c.cd()
     c.Update()

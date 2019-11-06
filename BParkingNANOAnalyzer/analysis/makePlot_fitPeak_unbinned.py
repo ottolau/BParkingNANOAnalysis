@@ -24,15 +24,20 @@ ROOT.RooMsgService.instance().setGlobalKillBelow(RooFit.FATAL)
 def CMS_lumi():
     mark = ROOT.TLatex()
     mark.SetNDC()
-    lumistamp = ''
+    lumistamp = '2018 (13 TeV)'
     fontScale = 1.0
+    cmsTextSize = 0.042 * fontScale * 1.25
+    extraOverCmsTextSize  = 0.76
+    extraTextSize = extraOverCmsTextSize*cmsTextSize
+
     mark.SetTextAlign(11)
-    mark.SetTextSize(0.042 * fontScale * 1.25)
+    mark.SetTextSize(cmsTextSize)
     mark.SetTextFont(61)
     mark.DrawLatex(ROOT.gPad.GetLeftMargin(), 1 - (ROOT.gPad.GetTopMargin() - 0.017), "CMS")
     mark.SetTextSize(0.042 * fontScale)
     mark.SetTextFont(52)
-    mark.DrawLatex(ROOT.gPad.GetLeftMargin() + 0.08, 1 - (ROOT.gPad.GetTopMargin() - 0.017), "Preliminary")
+    mark.DrawLatex(ROOT.gPad.GetLeftMargin() + 0.09, 1 - (ROOT.gPad.GetTopMargin() - 0.017), "Preliminary")
+    mark.SetTextSize(extraTextSize)
     mark.SetTextFont(42)
     mark.SetTextAlign(31)
     mark.DrawLatex(1 - ROOT.gPad.GetRightMargin(), 1 - (ROOT.gPad.GetTopMargin() - 0.017), lumistamp)
@@ -78,7 +83,8 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
     getattr(wspace,'import')(data, RooFit.Rename("data"))
 
     wspace.factory('nsig[100.0, 0.0, 100000.0]')
-    wspace.factory('nbkg[500.0, 0.0, 1000000.0]')
+    #wspace.factory('nbkg[500.0, 0.0, 1000000.0]')
+    wspace.factory('nbkg[0.0, 0.0, 0.0]')
 
 
     if sigPDF == 0:
@@ -101,8 +107,48 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
         wspace.factory('mean[5.2418e+00, 5.20e+00, 5.35e+00]')
         wspace.factory('sigma[7.1858e-02, 1.e-6, 5.e-1]')
         wspace.factory('alpha[1.0e-1, 0.0, 100.0]')
-        wspace.factory('n[3, 3, 3]')
+        #wspace.factory('n[3, 3, 3]')
+        wspace.factory('n[1, 5, 100]')
         wspace.factory('CBShape::sig(x,mean,sigma,alpha,n)')
+
+    if sigPDF == 3:
+        # Double Gaussian
+        wspace.factory('mean[5.2418e+00, 5.20e+00, 5.35e+00]')
+        wspace.factory('sigma[7.1858e-02, 1.e-3, 5.e-1]')
+        wspace.factory('Gaussian::gaus1(x,mean,sigma)')
+        wspace.factory('sigma2[7.1858e-02, 1.e-6, 5.e-1]')
+        wspace.factory('Gaussian::gaus2(x,mean,sigma2)')
+        wspace.factory('f1[0.5, 0.0, 1.0]')
+        #wspace.factory('AddPdf::sig({gasu1,gaus2},{f1})')
+        wspace.factory('SUM::sig(f1*gaus1, gaus2)')
+
+    if sigPDF == 4:
+        # Double Crystal-ball
+        
+        wspace.factory('mean[5.2418e+00, 5.20e+00, 5.35e+00]')
+        wspace.factory('sigma[7.1858e-02, 1.e-6, 5.e-1]')
+        wspace.factory('alpha[1.0e-1, 0.0, 100.0]')
+        wspace.factory('n[1, 5, 100]')
+        wspace.factory('CBShape::cb1(x,mean,sigma,alpha,n)')
+        wspace.factory('sigma2[7.1858e-02, 1.e-6, 5.e-1]')
+        wspace.factory('alpha2[1.0e-1, 0.0, 100.0]')
+        wspace.factory('n2[1, 5, 100]')
+        wspace.factory('CBShape::cb2(x,mean,sigma2,alpha2,n2)')
+        wspace.factory('f1[0.5, 0.0, 1.0]')
+        '''
+        # Cut-based
+        wspace.factory('mean[5.2666e+00, 5.2666e+00, 5.2666e+00]')
+        wspace.factory('sigma[1.0915e-01, 1.0915e-01, 1.0915e-01]')
+        wspace.factory('alpha[2.5536e+00, 2.5536e+00, 2.5536e+00]')
+        wspace.factory('n[5.2500e+01, 5.2500e+01, 5.2500e+01]')
+        wspace.factory('CBShape::cb1(x,mean,sigma,alpha,n)')
+        wspace.factory('sigma2[3.4488e-02, 3.4488e-02, 3.4488e-02]')
+        wspace.factory('alpha2[4.4034e-01, 4.4034e-01, 4.4034e-01]')
+        wspace.factory('n2[5.2500e+01, 5.2500e+01, 5.2500e+01]')
+        wspace.factory('CBShape::cb2(x,mean,sigma2,alpha2,n2)')
+        wspace.factory('f1[6.3348e-01, 6.3348e-01, 6.3348e-01]')
+        '''
+        wspace.factory('SUM::sig(f1*cb1, cb2)')
 
     if bkgPDF == 0:
         # Polynomial
@@ -121,7 +167,8 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
 
     if bkgPDF == 2:
         # Exponential
-        wspace.factory('exp_alpha[-1.0, -100.0, -1.0e-5]')
+        #wspace.factory('exp_alpha[-1.0, -100.0, -1.0e-5]')
+        wspace.factory('exp_alpha[-1.0, -1.0, -1.0]')
         alpha = wspace.var('alpha')
         wspace.factory('Exponential::bkg(x,exp_alpha)')
 
@@ -178,7 +225,7 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
     model.plotOn(xframe,RooFit.Name("global"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
     model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.LineStyle(ROOT.kDashed),RooFit.LineColor(ROOT.kMagenta),RooFit.MoveToBack()) ;
     model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.DrawOption("FL"),RooFit.FillColor(9),RooFit.FillStyle(3004),RooFit.LineStyle(6),RooFit.LineColor(9)) ;
-    model.plotOn(xframe,RooFit.VisualizeError(results), RooFit.FillColor(ROOT.kOrange), RooFit.MoveToBack()) # this will show fit overlay on canvas
+    #model.plotOn(xframe,RooFit.VisualizeError(results), RooFit.FillColor(ROOT.kOrange), RooFit.MoveToBack()) # this will show fit overlay on canvas
 
     xframe.GetYaxis().SetTitleOffset(0.9)
     xframe.GetYaxis().SetTitleFont(42)
@@ -194,7 +241,7 @@ def fit(inputfile, outputfile, hist_name, sigPDF=0, bkgPDF=0):
     xframe.GetXaxis().SetLabelFont(42)
 
     xframe.GetYaxis().SetTitle("Events")
-    xframe.GetXaxis().SetTitle("m(K^{+}e^{+}e^{-}) [GeV/c^{2}]")
+    xframe.GetXaxis().SetTitle("m(K^{+}e^{+}e^{-}) [GeV]")
     #xframe.GetXaxis().SetTitle("m(e^{+}e^{-}) [GeV/c^{2}]")
     xframe.SetStats(0)
     xframe.SetMinimum(0)
@@ -226,6 +273,6 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--outputfile", dest="outputfile", default="", help="ROOT file contains histograms")
     args = parser.parse_args()
 
-    fit(args.inputfile, args.outputfile, 'BToKEE_mass', sigPDF=2, bkgPDF=2)
+    fit(args.inputfile, args.outputfile, 'BToKEE_mass', sigPDF=3, bkgPDF=2)
     #fit(args.inputfile, args.outputfile, 'BToKEE_mll_raw_jpsi_pf', sigPDF=1, bkgPDF=1)
 

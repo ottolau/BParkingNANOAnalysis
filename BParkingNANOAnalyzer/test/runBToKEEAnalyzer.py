@@ -73,10 +73,11 @@ if __name__ == "__main__":
         pool.join()
 
         outputfile = args.outputfile.replace('.root','').replace('.h5','')
-        if args.hist:
-          exec_me("hadd -k -f %s/%s %s/%s"%(outpath,outputfile+'.root',outpath,outputfile+'_subset*.root'))
-          exec_me("rm %s/%s"%(outpath,outputfile+'_subset*.root'))
-
+        #if args.hist:
+        exec_me("hadd -k -f %s/%s %s/%s"%(outpath,outputfile+'.root',outpath,outputfile+'_subset*.root'))
+        exec_me("rm %s/%s"%(outpath,outputfile+'_subset*.root'))
+        
+        '''
         else:
           if os.path.isfile('{}/{}.h5'.format(outpath, outputfile)): os.system('rm {}/{}.h5'.format(outpath, outputfile))
           #allHDF = [pd.read_hdf(f, 'branches')  for f in ['{}/{}'.format(outpath, outputfile+'_subset{}.h5'.format(i)) for i in range(len(fChunks))]]
@@ -92,7 +93,7 @@ if __name__ == "__main__":
             outputHDF = pd.DataFrame()
           outputHDF.to_hdf('{}/{}.h5'.format(outpath, outputfile), 'branches', mode='a', format='table', append=True)
           exec_me("rm %s/%s"%(outpath,outputfile+'_subset*.h5'))
-
+        '''
 
 
 

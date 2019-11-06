@@ -29,10 +29,10 @@ outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 2.6, 'xmax': 3.6},
                   'BToKEE_l_xy_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
                   }
 '''
-outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
+outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 2.6, 'xmax': 3.6},
                   'BToKEE_mll_fullfit': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
                   'BToKEE_mll_llfit': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mass': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
+                  'BToKEE_mass': {'nbins': 50, 'xmin': 4.7, 'xmax': 6.0},
                   'BToKEE_l1_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
                   'BToKEE_l2_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
                   'BToKEE_l1_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
@@ -85,7 +85,7 @@ if __name__ == "__main__":
   inputfile = args.inputfile.replace('.h5','')+'.h5'
   outputfile = args.outputfile.replace('.root','').replace('.h5','')
 
-  ele_type = {'all': True, 'pf': True, 'low': True, 'mix': True, 'low_pfveto': True, 'mix_net': True}
+  ele_type = {'all': True, 'pf': True, 'low': False, 'mix': False, 'low_pfveto': False, 'mix_net': False}
   ele_selection = {'all': 'all_selection', 'pf': 'pf_selection', 'low': 'low_selection', 'mix': 'mix_selection', 'low_pfveto': 'low_pfveto_selection', 'mix_net': 'mix_net_selection'}
 
   branches = pd.read_hdf(inputfile, 'branches')
@@ -100,15 +100,16 @@ if __name__ == "__main__":
   #general_selection = jpsi_selection & (branches['BToKEE_pt'] > 5.0) & (branches['BToKEE_k_pt'] > 1.0) & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) 
   #general_selection = jpsi_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) 
   
-  sv_selection = (branches['BToKEE_pt'] > 3.0) & (branches['BToKEE_l_xy_sig'] > 6.0 ) & (branches['BToKEE_svprob'] > 0.01) & (branches['BToKEE_cos2D'] > 0.999)
+  #sv_selection = (branches['BToKEE_pt'] > 10.0) & (branches['BToKEE_l_xy_sig'] > 6.0 ) & (branches['BToKEE_svprob'] > 0.1) & (branches['BToKEE_cos2D'] > 0.999)
   #l1_selection = (branches['BToKEE_l1_convVeto']) & (branches['BToKEE_l1_pt'] > 1.5) & (branches['BToKEE_l1_mvaId'] > 3.0) #& (np.logical_not(branches['BToKEE_l1_isPFoverlap']))
   #l2_selection = (branches['BToKEE_l2_convVeto']) & (branches['BToKEE_l2_pt'] > 0.5) & (branches['BToKEE_l2_mvaId'] > 3.0) #& (np.logical_not(branches['BToKEE_l2_isPFoverlap']))
-  k_selection = (branches['BToKEE_k_pt'] > 1.0) #& (branches['BToKEE_k_DCASig'] > 2.0)
+  #k_selection = (branches['BToKEE_k_pt'] > 1.0) #& (branches['BToKEE_k_DCASig'] > 2.0)
   #additional_selection = (branches['BToKEE_mass'] > B_LOW) & (branches['BToKEE_mass'] < B_UP)
   #general_selection = jpsi_selection & k_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94)
-  general_selection = jpsi_selection & sv_selection & k_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94)
+  #general_selection = jpsi_selection & sv_selection & k_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94)
 
   #branches = branches[general_selection]
+  #branches = branches[jpsi_selection]
   branches['BToKEE_normpt'] = branches['BToKEE_pt'] / branches['BToKEE_mass']
 
   # additional cuts, allows various lengths
@@ -118,7 +119,7 @@ if __name__ == "__main__":
   l1_low_selection = (branches['BToKEE_l1_isLowPt']) #& (branches['BToKEE_l1_pt'] < 5.0)
   l2_low_selection = (branches['BToKEE_l2_isLowPt']) #& (branches['BToKEE_l2_pt'] < 5.0)
 
-  pf_selection = l1_pf_selection & l2_pf_selection #& (branches['BToKEE_pt'] > 10.0) & (branches['BToKEE_k_pt'] > 1.5)
+  pf_selection = l1_pf_selection & l2_pf_selection # & (branches['BToKEE_k_pt'] > 1.5) & (branches['BToKEE_pt'] > 10.0)
   low_selection = l1_low_selection & l2_low_selection
   overlap_veto_selection = np.logical_not(branches['BToKEE_l1_isPFoverlap']) & np.logical_not(branches['BToKEE_l2_isPFoverlap'])
   mix_selection = ((l1_pf_selection & l2_low_selection) | (l2_pf_selection & l1_low_selection))
@@ -131,6 +132,7 @@ if __name__ == "__main__":
   #nBToKEE_selected = branches['BToKEE_event'][count_selection].values
   #_, nBToKEE_selected = np.unique(nBToKEE_selected[np.isfinite(nBToKEE_selected)], return_counts=True)
 
+  prepareMVA = False
 
   for eType, eBool in ele_type.items():
     if not eBool: continue
@@ -147,7 +149,16 @@ if __name__ == "__main__":
       file_out.close()
 
     else:
-      output_branches[eType][outputbranches.keys()].to_root('{}_{}.root'.format(outputfile, eType), key='tree')
+      if prepareMVA:
+        output_branches[eType] = output_branches[eType].sample(frac=1)
+        frac = 0.75
+        training_branches = output_branches[eType].iloc[:int(frac*output_branches[eType].shape[0])]
+        testing_branches = output_branches[eType].iloc[int(frac*output_branches[eType].shape[0]):]
+        training_branches[outputbranches.keys()].to_root('{}_training_{}.root'.format(outputfile, eType), key='tree')
+        testing_branches[outputbranches.keys()].to_root('{}_testing_{}.root'.format(outputfile, eType), key='tree')
+
+      else:
+        output_branches[eType][outputbranches.keys()].to_root('{}_{}.root'.format(outputfile, eType), key='tree')
 
 
 

@@ -74,7 +74,7 @@ def build_custom_model(hyper_params, classifier):
         model = GradientBoostingClassifier(n_estimators=hyper_params['n_estimators'], learning_rate=hyper_params['learning_rate'], max_depth=hyper_params['max_depth'], verbose=1)
 
     if classifier == 'XGB':
-        model = xgb.XGBClassifier(max_depth=hyper_params['max_depth'], n_estimators=hyper_params['n_estimators'], learning_rate=hyper_params['learning_rate'])
+        model = xgb.XGBClassifier(max_depth=hyper_params['max_depth'], n_estimators=hyper_params['n_estimators'], learning_rate=hyper_params['learning_rate'], min_child_weight=hyper_params['min_child_weight'], gamma=hyper_params['gamma'], subsample=hyper_params['subsample'], colsample_bytree=hyper_params['colsample_bytree'], reg_alpha=hyper_params['reg_alpha'], reg_lambda=hyper_params['reg_lambda'], objective='binary:logitraw', eval_metric='auc', n_jobs=10)
     
     if classifier == 'SVM':
         model = svm.SVC(C=hyper_params['C'], gamma=hyper_params['gamma'], verbose=1, class_weight=classWeight)
@@ -103,26 +103,50 @@ def train(X_train_val, Y_train_val, X_test, Y_test, model, classifier, classWeig
         #print(classification_report(Y_test, Y_predict, labels=[0, 1]))
         return model, history, fpr, tpr, thresholds, roc_auc 
 
-    if classifier == 'GTB' or classifier == 'XGB' or classifier == 'SVM':
-        model.fit(X_train_val, Y_train_val)
+    if classifier == 'GTB' or classifier == 'SVM':
+        model.fit(X_train_val, Y_train_val, eval_metric='auc')
         if classifier == 'GTB' or classifier == 'SVM':
           Y_predict = model.decision_function(X_test)
-        if classifier == 'XGB':
-          Y_predict = model.predict_proba(X_test)[:,1]
-        fpr, tpr, thresholds = roc_curve(Y_test, Y_predict)
-        roc_auc = auc(fpr, tpr)
-        Y_predict = model.predict(X_test)
+        #if classifier == 'XGB':
+          #Y_predict = model.predict_proba(X_test)[:,1]
+        fpr, tpr, thresholds = roc_curve(Y_test, Y_predict, drop_intermediate=False)
+        roc_auc = roc_auc_score(Y_test, Y_predict)
+        #Y_predict = model.predict(X_test)
         print("Best auc: {}".format(roc_auc))
         print("Classification Report")
         print(classification_report(Y_test, Y_predict))
-        return model
+        return model, fpr, tpr, thresholds, roc_auc
+
+    if classifier == 'XGB':
+        xgtrain = xgb.DMatrix(X_train_val, label=Y_train_val)
+        xgtest  = xgb.DMatrix(X_test , label=Y_test )
+        watchlist = [(xgtrain, 'train'), (xgtest, 'eval')]
+        params = hyper_params.copy()
+        label = xgtrain.get_label()
+        ratio = float(np.sum(label == 0)) / np.sum(label == 1)
+        params['scale_pos_weight'] = ratio
+        params['objective'] = 'binary:logitraw'
+        params['eval_metric'] = 'auc'
+        params['early_stopping_rounds'] = 100
+        params['nthread'] = 10
+        params['silent'] = 1
+
+        model = xgb.train(params, xgtrain, num_boost_round=800, evals=watchlist, verbose_eval=False)
+        Y_predict = model.predict(xgb.DMatrix(X_test), ntree_limit=model.best_iteration+1)
+        fpr, tpr, thresholds = roc_curve(Y_test, Y_predict, drop_intermediate=False)
+        roc_auc = roc_auc_score(Y_test, Y_predict)
+        print("Best auc: {}".format(roc_auc))
+        #print("Classification Report")
+        #print(classification_report(Y_test, Y_predict))
+        return model, fpr, tpr, thresholds, roc_auc
 
 
+   
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="A simple ttree plotter")
-    parser.add_argument("-s", "--signal", dest="signal", default="RootTree_BParkingNANO_2019Sep12_BuToKJpsi_Toee_mvaTraining_sig_pf.root", help="Signal file")
-    parser.add_argument("-b", "--background", dest="background", default="RootTree_BParkingNANO_2019Sep12_Run2018A2A3B2B3C2C3D2_mvaTraining_bkg_pf.root", help="Background file")
+    parser.add_argument("-s", "--signal", dest="signal", default="RootTree_BParkingNANO_2019Sep12_BuToKJpsi_Toee_mvaTraining_sig_training_pf.root", help="Signal file")
+    parser.add_argument("-b", "--background", dest="background", default="RootTree_BParkingNANO_2019Sep12_Run2018A2A3B2B3C2C3D2_mvaTraining_bkg_training_pf.root", help="Background file")
     parser.add_argument("-f", "--suffix", dest="suffix", default=None, help="Suffix of the output name")
     args = parser.parse_args()
 
@@ -135,8 +159,8 @@ if __name__ == "__main__":
     filename['sig'] = args.signal
 
     #branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l1_isPF', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_l2_isPF', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig']
-    #branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
-    branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
+    branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
+    #branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
     #branches = ['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D']
     #branches = sorted(['BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
 
@@ -172,30 +196,30 @@ if __name__ == "__main__":
     Y = dataset[:,input_dim]
     #print(Y)
 
-    use_classifiers = {'Keras': True, 'GTB': False, 'XGB': False, 'SVM': False}
+    use_classifiers = {'Keras': False, 'GTB': False, 'XGB': True, 'SVM': False}
     model = {}
     tprs = {}
     aucs = {}
     figs = {}
     axs = {}
+    hyper_params = {}
 
-    cv = StratifiedKFold(n_splits=10, shuffle=True)
-    #cv = KFold(n_splits=3, shuffle=True)
+    #cv = StratifiedKFold(n_splits=10, shuffle=True)
+    cv = KFold(n_splits=5, shuffle=True)
 
     if use_classifiers['Keras']:
         print('Initializing Keras Neural Network...')
         early_stopping = EarlyStopping(monitor='val_loss', patience=100)
 
-        model_checkpoint = ModelCheckpoint('dense_model_{}.h5'.format(args.suffix), monitor='val_loss', 
+        model_checkpoint = ModelCheckpoint('dense_model_cv_{}.h5'.format(args.suffix), monitor='val_loss', 
                                            verbose=1, save_best_only=True, 
                                            save_weights_only=False, mode='auto', 
                                            period=1)
-
         #hyper_params = {'hidden_layers': 3, 'initial_nodes': 64, 'l2_lambda': 10.0**-4, 'dropout': 0.25, 'batch_size': 512, 'learning_rate': 10.0**-3}
-        hyper_params = {'hidden_layers': 4, 'initial_nodes': 256, 'l2_lambda': 1.0e-06, 'dropout': 0.0, 'batch_size': 788, 'learning_rate': 0.002220813809955833} # PF
+        hyper_params['Keras'] = {'hidden_layers': 2, 'initial_nodes': 247, 'l2_lambda': 4.009859234023707e-05, 'dropout': 0.408861611174969, 'batch_size': 1758, 'learning_rate': 0.0009008120868100766}
         #hyper_params = {'hidden_layers': 3, 'initial_nodes': 471, 'l2_lambda': 0.0009291606742300548, 'dropout': 0.3082756432562473, 'batch_size': 492, 'learning_rate': 0.00033698412975590987} # Low
-        model['Keras'] = build_custom_model(hyper_params, 'Keras') 
-        model['Keras'].compile(optimizer=Adam(lr=hyper_params['learning_rate']), loss='binary_crossentropy', metrics=['accuracy'], weighted_metrics=['accuracy'])
+        model['Keras'] = build_custom_model(hyper_params['Keras'], 'Keras') 
+        model['Keras'].compile(optimizer=Adam(lr=hyper_params['Keras']['learning_rate']), loss='binary_crossentropy', metrics=['accuracy'], weighted_metrics=['accuracy'])
         tprs['Keras'] = []
         aucs['Keras'] = []
         figs['Keras'], axs['Keras'] = plt.subplots()
@@ -203,22 +227,28 @@ if __name__ == "__main__":
 
     if use_classifiers['GTB']:
         print('Initializing Gradient Boosting Tree...')
-        hyper_params = {'n_estimators': 200, 'max_depth': 3, 'min_samples_split': 0.001, 'min_samples_leaf': 2, 'learning_rate': 10.0**-3}
-        model['GTB'] = build_custom_model(hyper_params, 'GTB')
+        hyper_params['GTB'] = {'n_estimators': 200, 'max_depth': 3, 'min_samples_split': 0.001, 'min_samples_leaf': 2, 'learning_rate': 10.0**-3}
+        model['GTB'] = build_custom_model(hyper_params['GTB'], 'GTB')
         tprs['GTB'] = []
         aucs['GTB'] = []
 
     if use_classifiers['XGB']:
         print('Initializing XGBoost...')
-        hyper_params = {'n_estimators': 200, 'max_depth': 3, 'learning_rate': 10.0**-3}
-        model['XGB'] = build_custom_model(hyper_params, 'XGB')
+        #hyper_params = {'n_estimators': 1000, 'max_depth': 5, 'learning_rate': 10.0**-3, 'min_child_weight': 1, 'gamma': 0.2, 'subsample': 0.8, 'colsample_bytree': 0.8, 'reg_alpha': 0.2, 'reg_lambda': 1.0}
+        #hyper_params['XGB'] = {'colsample_bytree': 0.9044646018957753, 'subsample': 0.6626530919329603, 'eta': 0.013916755880706982, 'alpha': 0.07979819085895129, 'max_depth': 6, 'gamma': 0.14271732920694105, 'lambda': 1.212350804702256}
+        #hyper_params['XGB'] = {'colsample_bytree': 0.6607323533198513, 'subsample': 0.8549783548086116, 'eta': 0.12721398718375884, 'alpha': 0.08311984221421874, 'max_depth': 7, 'gamma': 0.571135630090849, 'lambda': 1.2855493741184907}
+        #hyper_params['XGB'] = {'colsample_bytree': 0.8020747383215419, 'subsample': 0.7014327644533827, 'eta': 0.02973077790685988, 'alpha': 0.0015234991615051378, 'max_depth': 6, 'gamma': 0.9183332340428476, 'lambda': 1.2443558028940713}
+        hyper_params['XGB'] = {'colsample_bytree': 0.7265861505610647, 'subsample': 0.5726850720377014, 'eta': 0.02777478451843462, 'alpha': 0.04311540168298377, 'max_depth': 4, 'gamma': 0.6948236527284698, 'lambda': 1.1769525359431465}
+
+        #model['XGB'] = build_custom_model(hyper_params, 'XGB')
         tprs['XGB'] = []
         aucs['XGB'] = []
+        figs['XGB'], axs['XGB'] = plt.subplots()
 
     if use_classifiers['SVM']:
         print('Initializing Support Vector Machine...')
-        hyper_params = {'C': 1.0, 'gamma': 1.0/input_dim}
-        model['SVM'] = build_custom_model(hyper_params, 'SVM')
+        hyper_params['SVM'] = {'C': 1.0, 'gamma': 1.0/input_dim}
+        model['SVM'] = build_custom_model(hyper_params['SVM'], 'SVM')
         tprs['SVM'] = []
         aucs['SVM'] = []
 
@@ -241,7 +271,7 @@ if __name__ == "__main__":
       if use_classifiers['Keras']:
           print('Training Keras Neural Network...')
           model['Keras'].summary()
-          model['Keras'], history, fpr, tpr, thresholds, roc_auc = train(X_train_val, Y_train_val, X_test, Y_test, model['Keras'], 'Keras', classWeight=classWeight, hyper_params=hyper_params)
+          model['Keras'], history, fpr, tpr, thresholds, roc_auc = train(X_train_val, Y_train_val, X_test, Y_test, model['Keras'], 'Keras', classWeight=classWeight, hyper_params=hyper_params['Keras'])
           tprs['Keras'].append(interp(mean_fpr, fpr, tpr))
           tprs['Keras'][-1][0] = 0.0
           aucs['Keras'].append(roc_auc)
@@ -252,23 +282,29 @@ if __name__ == "__main__":
           print('Training Gradient Boosting Tree...')
           model['GTB'] = train(X_train_val, Y_train_val, X_test, Y_test, model['GTB'], 'GTB')
           # save model to file
-          joblib.dump(model['GTB'], "gtb_{}.joblib.dat".format(args.suffix))
+          joblib.dump(model['GTB'], "gtb_cv_{}.joblib.dat".format(args.suffix))
 
       if use_classifiers['XGB']:
           print('Training XGBoost...')
-          model['XGB'] = train(X_train_val, Y_train_val, X_test, Y_test, model['XGB'], 'XGB')
+          model['XGB'], fpr, tpr, thresholds, roc_auc = train(X_train_val, Y_train_val, X_test, Y_test, None, 'XGB', hyper_params=hyper_params['XGB'])
           # save model to file
-          joblib.dump(model['XGB'], "xgb_{}.joblib.dat".format(args.suffix))
+          joblib.dump(model['XGB'], "xgb_cv_{}.joblib.dat".format(args.suffix))
+          tprs['XGB'].append(interp(mean_fpr, fpr, tpr))
+          tprs['XGB'][-1][0] = 0.0
+          aucs['XGB'].append(roc_auc)
+          axs['XGB'].plot(fpr, tpr, lw=1, alpha=0.3, label='ROC fold %d (AUC = %0.2f)' % (iFold, roc_auc))
+
 
       if use_classifiers['SVM']:
           print('Training Support Vector Machine...')
           model['SVM'] = train(X_train_val, Y_train_val, X_test, Y_test, model['SVM'], 'SVM')
           # save model to file
-          joblib.dump(model['SVM'], "svm_{}.joblib.dat".format(args.suffix))
+          joblib.dump(model['SVM'], "svm_cv_{}.joblib.dat".format(args.suffix))
 
 
       iFold += 1
 
+    fig_mean, ax_mean = plt.subplots()
 
     for classifier in model.keys():
       mean_tpr = np.mean(tprs[classifier], axis=0)
@@ -277,6 +313,8 @@ if __name__ == "__main__":
       std_auc = np.std(aucs[classifier])
       axs[classifier].plot(mean_fpr, mean_tpr, color='b', label=r'Mean ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc), lw=2, alpha=.8)
       axs[classifier].plot(np.logspace(-3, 0, 1000), np.logspace(-4, 0, 1000), linestyle='--', lw=2, color='k', label='Random chance')
+
+      ax_mean.plot(mean_fpr, mean_tpr, label=r'%s: Mean ROC (AUC = %0.2f $\pm$ %0.2f)' % (classifier, mean_auc, std_auc), lw=2, alpha=.8)
 
       std_tpr = np.std(tprs[classifier], axis=0)
       tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
@@ -292,6 +330,16 @@ if __name__ == "__main__":
       axs[classifier].legend(loc="upper left") 
       figs[classifier].savefig('training_results_roc_cv_{}_{}.pdf'.format(classifier, args.suffix), bbox_inches='tight')
 
+    ax_mean.plot(np.logspace(-3, 0, 1000), np.logspace(-4, 0, 1000), linestyle='--', lw=2, color='k', label='Random chance')
+    ax_mean.set_xscale('log')
+    #ax_mean.set_xlim([1.0e-3, 1.0])
+    ax_mean.set_ylim([0, 1.0])
+    ax_mean.set_xlabel('False Positive Rate')
+    ax_mean.set_ylabel('True Positive Rate')
+    ax_mean.set_title('Receiver Operating Curve Comparison')
+    #ax_mean.legend(loc="lower right") 
+    ax_mean.legend(loc="upper left") 
+    fig_mean.savefig('training_results_roc_mean_comparison_{}.pdf'.format(args.suffix), bbox_inches='tight')
 
 
 

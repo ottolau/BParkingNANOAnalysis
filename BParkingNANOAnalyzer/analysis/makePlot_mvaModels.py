@@ -5,6 +5,7 @@ from rootpy.plotting import Hist
 from root_numpy import fill_hist, array2root, array2tree
 from root_pandas import to_root
 from keras.models import load_model
+import xgboost as xgb
 import ROOT
 from ROOT import RooFit
 ROOT.gErrorIgnoreLevel=ROOT.kError
@@ -15,16 +16,16 @@ import argparse
 parser = argparse.ArgumentParser(description="A simple ttree plotter")
 parser.add_argument("-i", "--inputfile", dest="inputfile", default="DoubleMuonNtu_Run2016B.list", help="List of input ggNtuplizer files")
 parser.add_argument("-o", "--outputfile", dest="outputfile", default="test", help="Output file containing plots")
-parser.add_argument("-p", "--pfmodel", dest="pfmodel", default="dense_model_pf.h5", help="Trainned PF model")
-parser.add_argument("-m", "--mixmodel", dest="mixmodel", default="dense_model_mix.h5", help="Trainned Mix model")
-parser.add_argument("-l", "--lowmodel", dest="lowmodel", default="dense_model_low.h5", help="Trainned Low model")
+parser.add_argument("-p", "--pfmodel", dest="pfmodel", default="xgb_fulldata_pf.model", help="Trainned PF model")
+parser.add_argument("-m", "--mixmodel", dest="mixmodel", default="xgb_fulldata_mix_net.model", help="Trainned Mix model")
+parser.add_argument("-l", "--lowmodel", dest="lowmodel", default="xgb_fulldata_low.model", help="Trainned Low model")
 parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Store histograms or tree")
 args = parser.parse_args()
 
 outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
                   'BToKEE_mll_fullfit': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
                   'BToKEE_mll_llfit': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mass': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
+                  'BToKEE_mass': {'nbins': 50, 'xmin': 4.7, 'xmax': 6.0},
                   'BToKEE_l1_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
                   'BToKEE_l2_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
                   'BToKEE_l1_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
@@ -82,10 +83,35 @@ B_UPSB_UP = 5.75
 B_MIN = 4.7
 B_MAX = 6.0
 
-def fit(tree):
+def CMS_lumi():
+    mark = ROOT.TLatex()
+    mark.SetNDC()
+    lumistamp = '2018 (13 TeV)'
+    fontScale = 1.0
+    cmsTextSize = 0.042 * fontScale * 1.25
+    extraOverCmsTextSize  = 0.76
+    extraTextSize = extraOverCmsTextSize*cmsTextSize
+
+    mark.SetTextAlign(11)
+    mark.SetTextSize(cmsTextSize)
+    mark.SetTextFont(61)
+    mark.DrawLatex(ROOT.gPad.GetLeftMargin(), 1 - (ROOT.gPad.GetTopMargin() - 0.017), "CMS")
+    mark.SetTextSize(0.042 * fontScale)
+    mark.SetTextFont(52)
+    mark.DrawLatex(ROOT.gPad.GetLeftMargin() + 0.09, 1 - (ROOT.gPad.GetTopMargin() - 0.017), "Preliminary")
+    mark.SetTextSize(extraTextSize)
+    mark.SetTextFont(42)
+    mark.SetTextAlign(31)
+    mark.DrawLatex(1 - ROOT.gPad.GetRightMargin(), 1 - (ROOT.gPad.GetTopMargin() - 0.017), lumistamp)
+
+def fit(tree, eType):
   wspace = ROOT.RooWorkspace('myWorkSpace')
   ROOT.gStyle.SetOptFit(0000);
   ROOT.gROOT.SetBatch(True);
+  ROOT.gROOT.SetStyle("Plain");
+  ROOT.gStyle.SetGridStyle(3);
+  ROOT.gStyle.SetOptStat(000000);
+  ROOT.gStyle.SetOptTitle(0)
 
   xmin = 4.7 
   xmax = 6.0 
@@ -110,7 +136,7 @@ def fit(tree):
 
   wspace.factory('nsig[100.0, 0.0, 100000.0]')
   wspace.factory('nbkg[500.0, 0.0, 1000000.0]')
-  sigPDF = 2
+  sigPDF = 4
   bkgPDF = 2
 
   if sigPDF == 0:
@@ -133,8 +159,48 @@ def fit(tree):
       wspace.factory('mean[5.2418e+00, 5.20e+00, 5.35e+00]')
       wspace.factory('sigma[7.1858e-02, 1.e-4, 5.e-1]')
       wspace.factory('alpha[1.0e-1, 0.0, 100.0]')
-      wspace.factory('n[3, 3, 3]')
+      wspace.factory('n[10, 10, 10]')
       wspace.factory('CBShape::sig(x,mean,sigma,alpha,n)')
+
+  if sigPDF == 4:
+      # Double Crystal-ball
+      '''
+      wspace.factory('mean[5.2418e+00, 5.20e+00, 5.35e+00]')
+      wspace.factory('sigma[7.1858e-02, 1.e-6, 5.e-1]')
+      wspace.factory('alpha[1.0e-1, 0.0, 100.0]')
+      wspace.factory('n[1, 5, 100]')
+      wspace.factory('CBShape::cb1(x,mean,sigma,alpha,n)')
+      wspace.factory('sigma2[7.1858e-02, 1.e-6, 5.e-1]')
+      wspace.factory('alpha2[1.0e-1, 0.0, 100.0]')
+      wspace.factory('n2[1, 5, 100]')
+      wspace.factory('CBShape::cb2(x,mean,sigma2,alpha2,n2)')
+      wspace.factory('f1[0.5, 0.0, 1.0]')
+      '''
+      # MVA
+      if eType == 'pf':
+        wspace.factory('mean[5.2701e+00, 5.2701e+00, 5.2701e+00]')
+        wspace.factory('sigma[1.0869e-01, 1.0869e-01, 1.0869e-01]')
+        wspace.factory('alpha[2.6632e+00, 2.6632e+00, 2.6632e+00]')
+        wspace.factory('n[5.2500e+01 , 5.2500e+01, 5.2500e+01]')
+        wspace.factory('CBShape::cb1(x,mean,sigma,alpha,n)')
+        wspace.factory('sigma2[3.2178e-02, 3.2178e-02, 3.2178e-02]')
+        wspace.factory('alpha2[4.1014e-01, 4.1014e-01, 4.1014e-01]')
+        wspace.factory('n2[5.2500e+01, 5.2500e+01, 5.2500e+01]')
+        wspace.factory('CBShape::cb2(x,mean,sigma2,alpha2,n2)')
+        wspace.factory('f1[6.1236e-01, 6.1236e-01, 6.1236e-01]')
+      else:
+        wspace.factory('mean[5.2695e+00, 5.2695e+00, 5.2695e+00]')
+        wspace.factory('sigma[1.1716e-01, 1.1716e-01, 1.1716e-01]')
+        wspace.factory('alpha[3.0430e+00, 3.0430e+00, 3.0430e+00]')
+        wspace.factory('n[5.2500e+01 , 5.2500e+01, 5.2500e+01]')
+        wspace.factory('CBShape::cb1(x,mean,sigma,alpha,n)')
+        wspace.factory('sigma2[5.2612e-02, 5.2612e-02, 5.2612e-02]')
+        wspace.factory('alpha2[8.3173e-01, 8.3173e-01, 8.3173e-01]')
+        wspace.factory('n2[5.2500e+01, 5.2500e+01, 5.2500e+01]')
+        wspace.factory('CBShape::cb2(x,mean,sigma2,alpha2,n2)')
+        wspace.factory('f1[5.0383e-01, 5.0383e-01, 5.0383e-01]')
+
+      wspace.factory('SUM::sig(f1*cb1, cb2)')
 
   if bkgPDF == 0:
       # Polynomial
@@ -204,7 +270,7 @@ def fit(tree):
   ROOT.gPad.SetRightMargin(0.05)
 
   #xframe = wspace.var('x').frame(RooFit.Title("PF electron"))
-  xframe = theBMass.frame(RooFit.Title("All Electrons"))
+  xframe = theBMass.frame()
   data.plotOn(xframe, RooFit.Binning(50), RooFit.Name("data"))
   model.plotOn(xframe,RooFit.Name("global"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
   model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.LineStyle(ROOT.kDashed),RooFit.LineColor(ROOT.kMagenta),RooFit.MoveToBack()) ;
@@ -225,11 +291,13 @@ def fit(tree):
   xframe.GetXaxis().SetLabelFont(42)
 
   xframe.GetYaxis().SetTitle("Events")
-  xframe.GetXaxis().SetTitle("m(K^{+}e^{+}e^{-}) [GeV/c^{2}]")
+  xframe.GetXaxis().SetTitle("m(K^{+}e^{+}e^{-}) [GeV]")
   #xframe.GetXaxis().SetTitle("m(e^{+}e^{-}) [GeV/c^{2}]")
   xframe.SetStats(0)
   xframe.SetMinimum(0)
   xframe.Draw()
+
+  CMS_lumi()
 
   legend = ROOT.TLegend(0.65,0.65,0.92,0.85);
   #legend = ROOT.TLegend(0.65,0.15,0.92,0.35);
@@ -244,7 +312,7 @@ def fit(tree):
   c2.cd()
   c2.Update()
 
-  c2.SaveAs('{}_mva_all.pdf'.format(args.outputfile))
+  c2.SaveAs('{}_mvafit_{}.pdf'.format(args.outputfile, eType))
   return nsig.getVal(), nsig.getError(), nbkgWindow
 
 
@@ -252,7 +320,7 @@ if __name__ == "__main__":
   inputfile = args.inputfile.replace('.h5','')+'.h5'
   outputfile = args.outputfile.replace('.root','').replace('.h5','')
 
-  ele_type = {'all': True, 'pf': True, 'low_pfveto': True, 'mix_net': True}
+  ele_type = {'all': False, 'pf': False, 'low_pfveto': False, 'mix_net': True}
   ele_selection = {'all': 'all_mva_selection', 'pf': 'pf_mva_selection', 'low_pfveto': 'low_mva_selection', 'mix_net': 'mix_mva_selection'}
 
   branches = pd.read_hdf(inputfile, 'branches')
@@ -293,36 +361,63 @@ if __name__ == "__main__":
   #nBToKEE_selected = self._branches['BToKEE_event'][count_selection].values
   #_, nBToKEE_selected = np.unique(nBToKEE_selected[np.isfinite(nBToKEE_selected)], return_counts=True)
 
+  #mvaCut_pf = 0.89
+  #mvaCut_mix = 0.93
+  #mvaCut_low = 0.90
+  mvaCut_pf = 2.10526315789
+  mvaCut_mix = 3.05263157895
+  mvaCut_low = 2.57894736842
+
+  branches['BToKEE_keras_pf'] = -99.0
+  branches['BToKEE_keras_mix'] = -99.0
+  branches['BToKEE_keras_low'] = -99.0
+
   # add mva id to pandas dataframe
 
-  model_pf = load_model(args.pfmodel)
-  model_mix = load_model(args.mixmodel)
-  model_low = load_model(args.lowmodel)
+  if ele_type['pf']:
+    #model_pf = load_model(args.pfmodel)
+    #branches['BToKEE_keras_pf'] = model_pf.predict(branches[pf_training_branches].sort_index(axis=1).values)
+    model_pf = xgb.Booster({'nthread': 4})
+    model_pf.load_model(args.pfmodel)
+    branches['BToKEE_keras_pf'] = model_pf.predict(xgb.DMatrix(branches[pf_training_branches].sort_index(axis=1).values))
 
-  branches['BToKEE_keras_pf'] = model_pf.predict(branches[pf_training_branches].sort_index(axis=1).values)
-  branches['BToKEE_keras_mix'] = model_mix.predict(branches[mix_training_branches].sort_index(axis=1).values)
-  branches['BToKEE_keras_low'] = model_low.predict(branches[low_training_branches].sort_index(axis=1).values)
+    pf_mva_selection = pf_selection & (branches['BToKEE_keras_pf'] > mvaCut_pf)
+    tree = array2tree(np.array(branches[pf_mva_selection]['BToKEE_mass'], dtype=[('BToKEE_mass', 'f4')]))
+    S, SErr, B = fit(tree, 'pf') 
 
-  mvaCut_pf = 0.93
-  mvaCut_mix = 0.93
-  mvaCut_low = 0.90
+  if ele_type['mix_net']:
+    #model_mix = load_model(args.mixmodel)
+    #branches['BToKEE_keras_mix'] = model_mix.predict(branches[mix_training_branches].sort_index(axis=1).values)
+    model_mix = xgb.Booster({'nthread': 4})
+    model_mix.load_model(args.mixmodel)
+    branches['BToKEE_keras_mix'] = model_mix.predict(xgb.DMatrix(branches[mix_training_branches].sort_index(axis=1).values))
 
-  # mva selection
-  pf_mva_selection = pf_selection & (branches['BToKEE_keras_pf'] > mvaCut_pf)
-  mix_mva_selection = mix_net_selection & (branches['BToKEE_keras_mix'] > mvaCut_mix)
-  low_mva_selection = low_pfveto_selection & (branches['BToKEE_keras_low'] > mvaCut_low)
-  all_mva_selection = pf_mva_selection | mix_mva_selection | low_mva_selection
+    mix_mva_selection = mix_net_selection & (branches['BToKEE_keras_mix'] > mvaCut_mix)
+    tree = array2tree(np.array(branches[mix_mva_selection]['BToKEE_mass'], dtype=[('BToKEE_mass', 'f4')]))
+    S, SErr, B = fit(tree, 'mix_net') 
 
-  selected_branches = np.array(branches[pf_mva_selection | mix_mva_selection | low_mva_selection]['BToKEE_mass'], dtype=[('BToKEE_mass', 'f4')])
-  tree = array2tree(selected_branches)
-  S, SErr, B = fit(tree) 
+  if ele_type['low_pfveto']:
+    #model_low = load_model(args.lowmodel)
+    #branches['BToKEE_keras_low'] = model_low.predict(branches[low_training_branches].sort_index(axis=1).values)
+    model_low = xgb.Booster({'nthread': 4})
+    model_low.load_model(args.lowmodel)
+    branches['BToKEE_keras_low'] = model_low.predict(xgb.DMatrix(branches[low_training_branches].sort_index(axis=1).values))
+
+    low_mva_selection = low_pfveto_selection & (branches['BToKEE_keras_low'] > mvaCut_low)
+    tree = array2tree(np.array(branches[low_mva_selection]['BToKEE_mass'], dtype=[('BToKEE_mass', 'f4')]))
+    S, SErr, B = fit(tree, 'low_pfveto') 
+
+  if ele_type['all']:
+    all_mva_selection = pf_mva_selection | mix_mva_selection | low_mva_selection
+    tree = array2tree(np.array(branches[all_mva_selection]['BToKEE_mass'], dtype=[('BToKEE_mass', 'f4')]))
+    S, SErr, B = fit(tree, 'all') 
 
   output_branches = {}
   for eType, eBool in ele_type.items():
     if not eBool: continue
     output_branches[eType] = branches[eval(ele_selection[eType])]
     if args.hist:
-      file_out = root_open('{}_{}.root'.format(outputfile, eType), 'recreate')
+      file_out = root_open('{}_histograms_{}.root'.format(outputfile, eType), 'recreate')
       hist_list = {hist_name: Hist(hist_bins['nbins'], hist_bins['xmin'], hist_bins['xmax'], name=hist_name, title='', type='F') for hist_name, hist_bins in sorted(outputbranches.items())}
       for hist_name, hist_bins in sorted(outputbranches.items()):
         if hist_name in branches.keys():
@@ -332,7 +427,7 @@ if __name__ == "__main__":
       file_out.close()
 
     else:
-      output_branches[outputbranches.keys()].to_root('{}.root'.format(outputfile), key='tree')
+      output_branches[eType][outputbranches.keys()].to_root('{}_kinematics_{}.root'.format(outputfile, eType), key='tree')
    
 
 

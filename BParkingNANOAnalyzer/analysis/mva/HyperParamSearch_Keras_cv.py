@@ -70,8 +70,8 @@ def train(X_train_val, Y_train_val, X_test, Y_test, model, classWeight, batch_si
 
 space  = [Integer(2, 4, name='hidden_layers'),
           Integer(32, 256, name='initial_nodes'),
-          Real(10**-6, 10**-3, "log-uniform", name='l2_lambda'),
-          Real(0.0,0.5,name='dropout'),
+          Real(10**-5, 10**-1, "log-uniform", name='l2_lambda'),
+          Real(0.15,0.5,name='dropout'),
           Integer(256,4096,name='batch_size'),
           Real(10**-5, 10**-1, "log-uniform", name='learning_rate'),
           ]

@@ -195,9 +195,10 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       additional_selection = mc_matched_selection
       #additional_selection = b_selection
       #selection = l1_selection & l2_selection & k_selection & additional_selection
-      selection = additional_selection
+      selection = l1_selection & l2_selection & additional_selection
+      #selection = additional_selection
 
-      #self._branches = self._branches[selection]
+      self._branches = self._branches[selection]
 
       # additional cuts, allows various lengths
 
