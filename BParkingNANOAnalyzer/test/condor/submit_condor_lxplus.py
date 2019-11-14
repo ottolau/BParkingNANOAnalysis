@@ -8,6 +8,7 @@ parser.add_argument("-i", "--inputfiles", dest="inputfiles", default="DoubleMuon
 parser.add_argument("-o", "--outputfile", dest="outputfile", default="plots.root", help="Output file containing plots")
 parser.add_argument("-f", "--suffix", dest="suffix", default=None, help="Suffix of the output name")
 parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Store histograms or tree")
+parser.add_argument("-c", "--mc", dest="mc", action='store_true', help="MC or data")
 parser.add_argument("-m", "--maxevents", dest="maxevents", type=int, default=ROOT.TTree.kMaxEntries, help="Maximum number events to loop over")
 args = parser.parse_args()
 
@@ -31,8 +32,9 @@ def write_condor(exe='runjob.sh', arguments = [], files = [],dryRun=True):
     out += 'use_x509userproxy = true\n'
     out += 'x509userproxy = $ENV(X509_USER_PROXY)\n' # for lxplus
     out += 'Arguments = %s\n'%(' '.join(arguments))
+    #out += '+JobFlavour = "longlunch"\n'
     #out += '+JobFlavour = "workday"\n'
-    out += '+MaxRuntime = 14400\n'
+    #out += '+MaxRuntime = 14400\n'
     out += 'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)\n'
     out += 'max_retries = 3\n'
     out += 'requirements = Machine =!= LastRemoteHost\n'
@@ -154,10 +156,12 @@ if __name__ == '__main__':
             inputfileList.write('%s\n'%(f))
         inputfileList.close()
 
-        if args.hist:
-          cmd = "cp ${{MAINDIR}}/inputfile_{}.list .; cp ${{MAINDIR}}/BToKLLAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/; cp ${{MAINDIR}}/runBToKEEAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/test/; python runBToKEEAnalyzer.py -i inputfile_{}.list -o {}_subset{}.root -s -r".format(i,i,outputName,i)
-        else:
-          cmd = "cp ${{MAINDIR}}/inputfile_{}.list .; cp ${{MAINDIR}}/BToKLLAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/; cp ${{MAINDIR}}/runBToKEEAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/test/; python runBToKEEAnalyzer.py -i inputfile_{}.list -o {}_subset{}.h5 -r".format(i,i,outputName,i)
+        args_list = []
+        if args.hist: args_list.append('-s')
+        if args.mc: args_list.append('-c')
+        args_str = " ".join(args_list)
+
+        cmd = "cp ${{MAINDIR}}/inputfile_{0}.list .; cp ${{MAINDIR}}/BToKLLAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/; cp ${{MAINDIR}}/runBToKEEAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/test/; python runBToKEEAnalyzer.py -i inputfile_{0}.list -o {1}_subset{0}.root -r {2}".format(i,outputName,args_str if len(args_list) > 0 else "")
 
         inputargs =  []
         f_sh = "runjob_%s.sh"%i

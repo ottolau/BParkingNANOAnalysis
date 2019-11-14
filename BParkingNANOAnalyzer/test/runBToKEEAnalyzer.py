@@ -13,6 +13,7 @@ parser.add_argument("-o", "--outputfile", dest="outputfile", default="plots.root
 parser.add_argument("-m", "--maxevents", dest="maxevents", type=int, default=ROOT.TTree.kMaxEntries, help="Maximum number events to loop over")
 parser.add_argument("-t", "--ttree", dest="ttree", default="Events", help="TTree Name")
 parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Store histograms or tree")
+parser.add_argument("-c", "--mc", dest="mc", action='store_true', help="MC or data")
 parser.add_argument("-r", "--runparallel", dest="runparallel", action='store_true', help="Enable parallel run")
 args = parser.parse_args()
 
@@ -30,15 +31,15 @@ def chunks(l, n):
     for i in xrange(0, len(l), n):
         yield l[i:i + n]
 
-def analyze(inputfile, outputfile, hist=False):
-    analyzer = BToKLLAnalyzer(inputfile, outputfile, hist)
+def analyze(inputfile, outputfile, hist=False, mc=False):
+    analyzer = BToKLLAnalyzer(inputfile, outputfile, hist, mc)
     analyzer.run()
 
 def analyzeParallel(enumfChunk):
     ich, fChunk = enumfChunk
     print("Processing chunk number %i"%(ich))
     outputfile = outpath+'/'+args.outputfile.replace('.root','').replace('.h5','')+'_subset'+str(ich)+'.root'
-    analyze(fChunk, outputfile, args.hist)
+    analyze(fChunk, outputfile, args.hist, args.mc)
 
 
 if __name__ == "__main__":
@@ -47,7 +48,7 @@ if __name__ == "__main__":
             fileList = [f.rstrip('\n') for f in filenames]
         inputfile = fileList
         outputfile = args.outputfile.replace('.root','').replace('.h5','')+'.root'
-        analyze(inputfile, outputfile, args.hist)
+        analyze(inputfile, outputfile, args.hist, args.mc)
 
     else:
         #outputBase = "/eos/uscms/store/user/klau/BsPhiLL_output/LowPtElectronSculpting"
