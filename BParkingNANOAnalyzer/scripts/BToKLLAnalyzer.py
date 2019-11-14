@@ -144,7 +144,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       print('[BToKLLAnalyzer::run] INFO: FILE: {}/{}. Loading file...'.format(self._ifile+1, self._num_files))
       tree = uproot.open(filename)['Events']
       self._branches = tree.arrays(self._inputbranches)
-      #self._branches = {key: awkward.fromiter(branch) for key, branch in self._branches.items()}
+      self._branches = {key: awkward.fromiter(branch) for key, branch in self._branches.items()}
 
       print('[BToKLLAnalyzer::run] INFO: FILE: {}/{}. Analyzing...'.format(self._ifile+1, self._num_files))
 

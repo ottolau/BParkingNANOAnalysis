@@ -36,7 +36,7 @@ def write_condor(exe='runjob.sh', arguments = [], files = [],dryRun=True):
     #out += '+JobFlavour = "workday"\n'
     #out += '+MaxRuntime = 14400\n'
     out += 'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)\n'
-    out += 'max_retries = 3\n'
+    out += 'max_retries = 0\n'
     out += 'requirements = Machine =!= LastRemoteHost\n'
     out += 'Queue 1\n'
     with open(job_name, 'w') as f:
