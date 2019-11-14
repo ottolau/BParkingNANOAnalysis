@@ -218,7 +218,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       sv_selection = (self._branches['BToKEE_fit_pt'] > 3.0) & (self._branches['BToKEE_l_xy_sig'] > 6.0 ) & (self._branches['BToKEE_svprob'] > 0.01) & (self._branches['BToKEE_fit_cos2D'] > 0.9)
       l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_fit_l1_pt'] > 1.5) #& (self._branches['BToKEE_l1_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
       l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_fit_l2_pt'] > 0.5) #& (self._branches['BToKEE_l2_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
-      k_selection = (self._branches['BToKEE_fit_k_pt'] > 0.7) #& (self._branches['BToKEE_k_DCASig'] > 2.0)
+      k_selection = (self._branches['BToKEE_fit_k_pt'] > 0.5) #& (self._branches['BToKEE_k_DCASig'] > 2.0)
       #additional_selection = (self._branches['BToKEE_fit_mass'] > B_LOW) & (self._branches['BToKEE_fit_mass'] < B_UP)
 
       b_lowsb_selection = (self._branches['BToKEE_fit_mass'] > B_LOWSB_LOW) & (self._branches['BToKEE_fit_mass'] < B_LOWSB_UP)

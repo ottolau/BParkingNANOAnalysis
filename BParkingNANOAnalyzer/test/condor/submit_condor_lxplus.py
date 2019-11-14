@@ -32,7 +32,7 @@ def write_condor(exe='runjob.sh', arguments = [], files = [],dryRun=True):
     out += 'use_x509userproxy = true\n'
     out += 'x509userproxy = $ENV(X509_USER_PROXY)\n' # for lxplus
     out += 'Arguments = %s\n'%(' '.join(arguments))
-    #out += '+JobFlavour = "longlunch"\n'
+    out += '+JobFlavour = "longlunch"\n'
     #out += '+JobFlavour = "workday"\n'
     #out += '+MaxRuntime = 14400\n'
     out += 'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)\n'
