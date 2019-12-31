@@ -40,9 +40,9 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'BToKEE_fit_k_phi',
                             'BToKEE_svprob',
                             'BToKEE_fit_cos2D',
-                            'Electron_pt',
-                            'Electron_eta',
-                            'Electron_phi',
+                            #'Electron_pt',
+                            #'Electron_eta',
+                            #'Electron_phi',
                             'Electron_dz',
                             'Electron_dxy',
                             'Electron_dxyErr',
@@ -53,8 +53,8 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'Electron_isPF',
                             'Electron_isPFoverlap',
                             'Electron_mvaId',
-                            'Electron_lostHits',
-                            'Electron_genPartIdx',
+                            #'Electron_pfmvaId',
+                            #'Electron_lostHits',
                             'ProbeTracks_pt',
                             'ProbeTracks_DCASig',
                             'ProbeTracks_eta',
@@ -62,13 +62,14 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'ProbeTracks_dz',
                             #'ProbeTracks_isLostTrk',
                             #'ProbeTracks_isPacked',
-                            'ProbeTracks_genPartIdx',
                             #'HLT_Mu9_IP6_*',
                             'event'
                             ]
 
     inputbranches_BToKEE_mc = ['GenPart_pdgId',
-                               'GenPart_genPartIdxMother'
+                               'GenPart_genPartIdxMother',
+                               'Electron_genPartIdx',
+                               'ProbeTracks_genPartIdx',
                                ]
 
     if self._isMC:
@@ -100,6 +101,8 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_l2_ptBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                              'BToKEE_l1_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                              'BToKEE_l2_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                             #'BToKEE_l1_pfmvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                             #'BToKEE_l2_pfmvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                              'BToKEE_l1_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                              'BToKEE_l2_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                              'BToKEE_l1_isLowPt': {'nbins': 2, 'xmin': 0, 'xmax': 2},
@@ -144,7 +147,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       print('[BToKLLAnalyzer::run] INFO: FILE: {}/{}. Loading file...'.format(self._ifile+1, self._num_files))
       tree = uproot.open(filename)['Events']
       self._branches = tree.arrays(self._inputbranches)
-      self._branches = {key: awkward.fromiter(branch) for key, branch in self._branches.items()}
+      self._branches = {key: awkward.fromiter(branch) for key, branch in self._branches.items()} # need this line for the old version of awkward/uproot (for condor job)
 
       print('[BToKLLAnalyzer::run] INFO: FILE: {}/{}. Analyzing...'.format(self._ifile+1, self._num_files))
 
@@ -160,9 +163,11 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
 
         self._branches['BToKEE_l1Mother_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['BToKEE_l1_genMotherIdx']]
         self._branches['BToKEE_l2Mother_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['BToKEE_l2_genMotherIdx']]
+        self._branches['BToKEE_kMother_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['BToKEE_k_genMotherIdx']]
 
         self._branches['BToKEE_l1Mother_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_l1Mother_genMotherIdx']]
         self._branches['BToKEE_l2Mother_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_l2Mother_genMotherIdx']]
+        self._branches['BToKEE_kMother_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_kMother_genMotherIdx']]
 
 
       # remove cross referencing
@@ -204,7 +209,6 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
 
 
       # add additional branches
-      #self._branches['BToKEE_l_xy_sig'] = self._branches['BToKEE_l_xy'] / np.sqrt(self._branches['BToKEE_l_xy_unc'])
       self._branches['BToKEE_l_xy_sig'] = self._branches['BToKEE_l_xy'] / self._branches['BToKEE_l_xy_unc']
       self._branches['BToKEE_l1_dxy_sig'] = self._branches['BToKEE_l1_dxy'] / self._branches['BToKEE_l1_dxyErr']
       self._branches['BToKEE_l2_dxy_sig'] = self._branches['BToKEE_l2_dxy'] / self._branches['BToKEE_l2_dxyErr']
@@ -215,34 +219,24 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
 
       # general selection
       
-      sv_selection = (self._branches['BToKEE_fit_pt'] > 3.0) & (self._branches['BToKEE_l_xy_sig'] > 6.0 ) & (self._branches['BToKEE_svprob'] > 0.01) & (self._branches['BToKEE_fit_cos2D'] > 0.9)
-      l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_fit_l1_pt'] > 1.5) #& (self._branches['BToKEE_l1_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
-      l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_fit_l2_pt'] > 0.5) #& (self._branches['BToKEE_l2_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
+      sv_selection = (self._branches['BToKEE_fit_pt'] > 3.0) #& (self._branches['BToKEE_l_xy_sig'] > 6.0 ) & (self._branches['BToKEE_svprob'] > 0.01) & (self._branches['BToKEE_fit_cos2D'] > 0.9)
+      l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_fit_l1_pt'] > 1.5) & (self._branches['BToKEE_l1_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
+      l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_fit_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
       k_selection = (self._branches['BToKEE_fit_k_pt'] > 0.5) #& (self._branches['BToKEE_k_DCASig'] > 2.0)
-      #additional_selection = (self._branches['BToKEE_fit_mass'] > B_LOW) & (self._branches['BToKEE_fit_mass'] < B_UP)
+      additional_selection = (self._branches['BToKEE_fit_mass'] > B_LOW) & (self._branches['BToKEE_fit_mass'] < B_UP)
 
       b_lowsb_selection = (self._branches['BToKEE_fit_mass'] > B_LOWSB_LOW) & (self._branches['BToKEE_fit_mass'] < B_LOWSB_UP)
       b_upsb_selection = (self._branches['BToKEE_fit_mass'] > B_UPSB_LOW) & (self._branches['BToKEE_fit_mass'] < B_UPSB_UP)
       b_sb_selection = b_lowsb_selection | b_upsb_selection
-      if self._isMC:
-        mc_matched_selection = (self._branches['BToKEE_l1_genPartIdx'] > -0.5) & (self._branches['BToKEE_l2_genPartIdx'] > -0.5) & (self._branches['BToKEE_k_genPartIdx'] > -0.5)
-        # B->K J/psi(ee)
-        #mc_parent_selection = (abs(self._branches['BToKEE_l1_genMotherPdgId']) == 443) & (abs(self._branches['BToKEE_k_genMotherPdgId']) == 521)
-        #mc_chain_selection = (self._branches['BToKEE_l1_genMotherPdgId'] == self._branches['BToKEE_l2_genMotherPdgId']) & (self._branches['BToKEE_k_genMotherPdgId'] == self._branches['BToKEE_l1Mother_genMotherPdgId']) & (self._branches['BToKEE_k_genMotherPdgId'] == self._branches['BToKEE_l2Mother_genMotherPdgId'])
 
-        # B->K*(K pi) J/psi(ee)
-        mc_parent_selection = (abs(self._branches['BToKEE_l1_genMotherPdgId']) == 443) & (abs(self._branches['BToKEE_k_genMotherPdgId']) == 313)
-        mc_chain_selection = (self._branches['BToKEE_l1_genMotherPdgId'] == self._branches['BToKEE_l2_genMotherPdgId'])
-        mc_selection = mc_matched_selection & mc_parent_selection & mc_chain_selection
-
-      #additional_selection = b_sb_selection
-      if self._isMC:
-        selection = l1_selection & l2_selection & k_selection & mc_selection
-
-      else:
-        selection = l1_selection & l2_selection & k_selection
+      selection = sv_selection & l1_selection & l2_selection & k_selection & additional_selection
 
       self._branches = self._branches[selection]
+      if self._isMC:
+        self._branches['BToKEE_decay'] = self._branches.apply(self.DecayCats, axis=1)
+        #self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
+        #self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
+            
 
       # fill output
       self.fill_output()
@@ -250,5 +244,51 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
     self.finish()
     print('[BToKLLAnalyzer::run] INFO: Finished')
     self.print_timestamp()
+
+  def DecayCats(self, row):    
+    mc_matched_selection = (row['BToKEE_l1_genPartIdx'] > -0.5) & (row['BToKEE_l2_genPartIdx'] > -0.5) & (row['BToKEE_k_genPartIdx'] > -0.5)
+    # B->K ll
+    RK_nonresonant_chain_selection = (abs(row['BToKEE_l1_genMotherPdgId']) == 521) & (abs(row['BToKEE_k_genMotherPdgId']) == 521)
+    RK_nonresonant_chain_selection &= (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_l2_genMotherPdgId']) & (row['BToKEE_k_genMotherPdgId'] == row['BToKEE_l1_genMotherPdgId'])
+    RK_nonresonant_chain_selection &= mc_matched_selection
+
+    # B->K J/psi(ll)
+    RK_resonant_chain_selection = (abs(row['BToKEE_l1_genMotherPdgId']) == 443) & (abs(row['BToKEE_k_genMotherPdgId']) == 521)
+    RK_resonant_chain_selection &= (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_l2_genMotherPdgId']) & (row['BToKEE_k_genMotherPdgId'] == row['BToKEE_l1Mother_genMotherPdgId']) & (row['BToKEE_k_genMotherPdgId'] == row['BToKEE_l2Mother_genMotherPdgId'])
+    RK_resonant_chain_selection &= mc_matched_selection
+
+    # B->K*(K pi) ll
+    RKstar_nonresonant_chain_selection = (abs(row['BToKEE_l1_genMotherPdgId']) == 511) & (abs(row['BToKEE_k_genMotherPdgId']) == 313)
+    RKstar_nonresonant_chain_selection &= (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_l2_genMotherPdgId']) & (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_kMother_genMotherPdgId']) 
+    RKstar_nonresonant_chain_selection &= mc_matched_selection
+
+    # B->K*(K pi) J/psi(ll)
+    RKstar_resonant_chain_selection = (abs(row['BToKEE_l1_genMotherPdgId']) == 443) & (abs(row['BToKEE_k_genMotherPdgId']) == 313)
+    RKstar_resonant_chain_selection &= (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_l2_genMotherPdgId']) & (row['BToKEE_l1Mother_genMotherPdgId'] == row['BToKEE_kMother_genMotherPdgId']) 
+    RKstar_resonant_chain_selection &= mc_matched_selection
+
+    # Bs->phi(K K) ll
+    Rphi_nonresonant_chain_selection = (abs(row['BToKEE_l1_genMotherPdgId']) == 531) & (abs(row['BToKEE_k_genMotherPdgId']) == 333)
+    Rphi_nonresonant_chain_selection &= (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_l2_genMotherPdgId']) & (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_kMother_genMotherPdgId']) 
+    Rphi_nonresonant_chain_selection &= mc_matched_selection
+
+    # Bs->phi(K K) J/psi(ll)
+    Rphi_resonant_chain_selection = (abs(row['BToKEE_l1_genMotherPdgId']) == 443) & (abs(row['BToKEE_k_genMotherPdgId']) == 333)
+    Rphi_resonant_chain_selection &= (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_l2_genMotherPdgId']) & (row['BToKEE_l1Mother_genMotherPdgId'] == row['BToKEE_kMother_genMotherPdgId']) 
+    Rphi_resonant_chain_selection &= mc_matched_selection
+
+    if RK_nonresonant_chain_selection: return 0
+    elif RK_resonant_chain_selection: return 1
+    elif RKstar_nonresonant_chain_selection: return 2
+    elif RKstar_resonant_chain_selection: return 3
+    elif Rphi_nonresonant_chain_selection: return 4
+    elif Rphi_resonant_chain_selection: return 5
+    else: return -1
+
+
+
+
+
+
 
 

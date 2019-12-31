@@ -4,38 +4,39 @@ import ROOT
 from itertools import combinations, product, groupby
 import numpy as np
 from array import array
-
+from collections import OrderedDict
 
 ROOT.gROOT.SetBatch(ROOT.kTRUE);
 ROOT.gStyle.SetOptStat(0)
 #ROOT.gStyle.SetOptTitle(0)
 
-varUnitMap = {"k_pt": "kaon p_{T} [GeV]",
-              "l1_pt": "leading electron p_{T} [GeV]",
-              "l2_pt": "subleading electron p_{T} [GeV]",
-              "BToKEE_pt": "B^{+} p_{T} [GeV]",
-              "k_normpt": "kaon normalized p_{T}",
-              "l1_normpt": "leading electron normalized p_{T}",
-              "l2_normpt": "subleading electron normalized p_{T}",
-              "BToKEE_normpt": "B^{+} normalized p_{T}",
-              "mll": "m(e^{+}e^{-}) [GeV/c^{2}]",
-              "mass": "m(K^{+}e^{+}e^{-}) [GeV]",
-              "eta": "#eta",
-              "phi": "#phi",
-              "dxy_sig": "d_{xy}/#sigma_{d_{xy}}",
-              "dz": "d_{z} [cm]",
-              "l_xy_sig": "L_{xy} / #sigma_{L_{xy}}",
-              "svprob": "P(#chi^{2}_{SV})",
-              "prob": "P(#chi^{2}_{SV})",
-              "cos2D": "cos #alpha_{2D}",
-              "unBiased": "Low pT electron unbiased BDT",
-              "ptBiased": "Low pT electron pt biased BDT",
-              "mvaId": "Low pT electron performance id",
-              "k_DCASig": "kaon DCA significance",
-              "isLowPt": "isLowPt",
-              "isPFoverlap": "isPFoverlap",
-              "isPF": "isPF",
-                }
+varUnitMap = OrderedDict([("k_pt", "kaon p_{T} [GeV]"),
+              ("l1_pt", "leading electron p_{T} [GeV]"),
+              ("l2_pt", "subleading electron p_{T} [GeV]"),
+              ("BToKEE_fit_pt", "B^{+} p_{T} [GeV]"),
+              ("k_normpt", "kaon normalized p_{T}"),
+              ("l1_normpt", "leading electron normalized p_{T}"),
+              ("l2_normpt", "subleading electron normalized p_{T}"),
+              ("BToKEE_fit_normpt", "B^{+} normalized p_{T}"),
+              ("mll", "m(e^{+}e^{-}) [GeV]"),
+              ("BToKEE_fit_mass", "m(K^{+}e^{+}e^{-}) [GeV]"),
+              ("BToKEE_fit_massErr", "mass uncertainties [GeV]"),
+              ("eta", "#eta"),
+              ("phi", "#phi"),
+              ("dxy_sig", "d_{xy}/#sigma_{d_{xy}}"),
+              ("dz", "d_{z} [cm]"),
+              ("l_xy_sig", "L_{xy} / #sigma_{L_{xy}}"),
+              ("svprob", "P(#chi^{2}_{SV})"),
+              ("prob", "P(#chi^{2}_{SV})"),
+              ("cos2D", "cos #alpha_{2D}"),
+              ("unBiased", "Low pT electron unbiased BDT"),
+              ("ptBiased", "Low pT electron pt biased BDT"),
+              ("mvaId", "Low pT electron performance id"),
+              ("k_DCASig", "kaon DCA significance"),
+              ("isLowPt", "isLowPt"),
+              ("isPFoverlap", "isPFoverlap"),
+              ("isPF", "isPF"),
+              ])
 
 def setup_pad():
     pad = ROOT.TPad("pad", "pad", 0.0, 0.0, 1.0, 1.0)
@@ -69,7 +70,7 @@ def CMS_lumi():
     mark.DrawLatex(1 - ROOT.gPad.GetRightMargin(), 1 - (ROOT.gPad.GetTopMargin() - 0.017), lumistamp)
 
 
-def draw_hist(histo, histo_name, x_label, y_label, norm=False, same=False, err=False):
+def draw_hist(histo, histo_name, x_label, y_label, same=False, err=False):
     histo.SetTitle(histo_name)
     histo.GetYaxis().SetTitle(y_label)
     histo.GetXaxis().SetTitle(x_label)
@@ -78,44 +79,33 @@ def draw_hist(histo, histo_name, x_label, y_label, norm=False, same=False, err=F
     histo.GetYaxis().SetTitleOffset(0.9)
     histo.GetYaxis().SetTitleFont(42)
     histo.GetYaxis().SetTitleSize(0.04)
-    #histo.GetYaxis().SetLabelSize(0.065)
-    histo.GetYaxis().SetLabelSize(0.05)
+    histo.GetYaxis().SetLabelSize(0.04)
+    #histo.GetYaxis().SetLabelSize(0.05)
     histo.GetYaxis().SetLabelFont(42)
     histo.GetXaxis().SetTitleOffset(0.9)
     histo.GetXaxis().SetTitleFont(42)
     histo.GetXaxis().SetTitleSize(0.04)
-    #histo.GetXaxis().SetLabelSize(0.065)
-    histo.GetXaxis().SetLabelSize(0.05)
+    histo.GetXaxis().SetLabelSize(0.04)
+    #histo.GetXaxis().SetLabelSize(0.05)
     histo.GetXaxis().SetLabelFont(42)
     if same:
         histo.SetFillColorAlpha(46,1)
         histo.SetLineColor(46)
         histo.SetFillStyle(3335)
-        if norm:
-            #histo.DrawNormalized("HIST SAME")       
-            #histo.Scale(1.0/histo.Integral())
-            histo.Draw("HIST SAME")
-
+        if err:
+            histo.Draw("E SAME")
         else:
-            if err:
-                histo.Draw("E SAME")
-            else:
-                histo.Draw("HIST SAME")
+            histo.Draw("HIST SAME")
 
     else:
         histo.SetFillColorAlpha(40,1)
         histo.SetFillStyle(4050)
-        if norm:
-            #histo.DrawNormalized("HIST")
-            #histo.Scale(1.0/histo.Integral())
-            histo.Draw("HIST")
+        if err:
+            histo.SetLineColor(4)
+            histo.SetMarkerStyle(22)
+            histo.Draw("E")
         else:
-            if err:
-                histo.SetLineColor(4)
-                histo.SetMarkerStyle(22)
-                histo.Draw("E")
-            else:
-                histo.Draw("HIST")
+            histo.Draw("HIST")
 
 
 def make_plots(filename, outputFolder='Figures'):
@@ -184,8 +174,8 @@ def make_2plots(inputfile, hist_name_1, hist_name_2, outputfile):
     pad.Draw()
     pad.cd()
 
-    draw_hist(h1, hist_name_1, unit, "Events", False,  False, True)
-    draw_hist(h2, hist_name_2, unit, "Events", False,  True, True)
+    draw_hist(h1, hist_name_1, unit, "Events", same=False, err=True)
+    draw_hist(h2, hist_name_2, unit, "Events", same=True, err=True)
 
     l1 = ROOT.TLegend(0.6,0.8,0.92,0.9)
     l1.SetTextFont(72)
@@ -209,7 +199,7 @@ def make_comparisons(signalfile, backgroundfile, outputFolder='Figures'):
     dir_list_bkg = ROOT.gDirectory.GetListOfKeys()
     outputfile = signalfile.replace('.root','') + "_comparisons"
 
-    skipHist = ['BToKEE_l1_mvaId', 'BToKEE_l1_unBiased', 'BToKEE_l1_ptBiased', 'BToKEE_l2_mvaId', 'BToKEE_l2_unBiased', 'BToKEE_l2_ptBiased']
+    skipHist = ['BToKEE_l1_mvaId', 'BToKEE_l1_unBiased', 'BToKEE_l1_ptBiased', 'BToKEE_l1_isLowPt', 'BToKEE_l1_isPF', 'BToKEE_l1_isPFoverlap', 'BToKEE_l2_mvaId', 'BToKEE_l2_unBiased', 'BToKEE_l2_ptBiased', 'BToKEE_l2_isLowPt', 'BToKEE_l2_isPF', 'BToKEE_l2_isPFoverlap']
 
     nItems = sum(1 for prob in product(dir_list_sig, dir_list_bkg) if prob[0].GetClassName() == "TH1F" and prob[1].GetClassName() == "TH1F" and prob[0].ReadObj().GetName() == prob[1].ReadObj().GetName() and (prob[0].ReadObj().GetName() not in skipHist))
     nPages = 0
@@ -225,9 +215,10 @@ def make_comparisons(signalfile, backgroundfile, outputFolder='Figures'):
         print(hist_sig_name)
 
         canvas_name = "c_" + hist_sig_name
+        var = None
         for v in varUnitMap.keys():
             if v in hist_sig_name: var = v
-        unit = varUnitMap[var]
+        unit = varUnitMap[var] if var is not None else ''
        
         c = ROOT.TCanvas(canvas_name, canvas_name, 800, 600)
         c.cd()
@@ -239,17 +230,20 @@ def make_comparisons(signalfile, backgroundfile, outputFolder='Figures'):
         hist_bkg.Scale(1.0/hist_bkg.Integral())
         hist_sig.SetMaximum(1.25*max(hist_sig.GetMaximum(), hist_bkg.GetMaximum()))
 
-        draw_hist(hist_sig, hist_sig_name, unit, "a.u.", True,  False)
-        draw_hist(hist_bkg, hist_sig_name, unit, "a.u.", True,  True)
+        draw_hist(hist_sig, hist_sig_name, unit, "a.u.", same=False)
+        draw_hist(hist_bkg, hist_sig_name, unit, "a.u.", same=True)
 
-        l1 = ROOT.TLegend(0.7,0.8,0.92,0.9)
+        #l1 = ROOT.TLegend(0.7,0.8,0.92,0.9)
+        l1 = ROOT.TLegend(0.62,0.78,0.92,0.9)
         l1.SetTextFont(72)
         l1.SetTextSize(0.04)
-        l1.AddEntry(hist_sig,"Signal")
-        l1.AddEntry(hist_bkg,"Background")
+        #l1.AddEntry(hist_sig,"Signal")
+        #l1.AddEntry(hist_bkg,"Background")
+        l1.AddEntry(hist_sig,"B^{+}#rightarrow K^{+}J/#psi(e^{+}e^{-})")
+        l1.AddEntry(hist_bkg,"B^{0}#rightarrow K^{*}J/#psi(e^{+}e^{-})")
         l1.Draw("same")
         pad.cd()
-        CMS_lumi(pad)
+        CMS_lumi()
 
         c.cd()
         c.Update()
@@ -439,9 +433,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     #make_plots(args.inputfile)
-    #make_comparisons(args.signalfile, args.backgroundfile)
+    make_comparisons(args.signalfile, args.backgroundfile)
     #make_2plots(args.inputfile, 'BToKEE_mass_pf', 'BToKEE_fit_mass_pf', 'BToKEE_mass_comp_MC.pdf')
-    make_eleStack(args.inputfile, 'test.pdf')
+    #make_eleStack(args.inputfile, 'test.pdf')
     #make_subtraction(args.inputfile, 'test.pdf')
 
 

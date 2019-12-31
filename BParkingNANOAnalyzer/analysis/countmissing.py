@@ -12,7 +12,7 @@ def missing_elements(L):
   start, end = L[0], L[-1]
   return sorted(set(range(start, end + 1)).difference(L))
 
-filenumber = sorted([int(f.replace('.h5','').replace('subset','').split('_')[-1]) for f in listdir(args.inputpath) if isfile(join(args.inputpath, f)) and '.h5' in f])
+filenumber = sorted([int(f.replace('.root','').replace('subset','').split('_')[-1]) for f in listdir(args.inputpath) if isfile(join(args.inputpath, f)) and '.root' in f])
 print(missing_elements(filenumber))
 
 

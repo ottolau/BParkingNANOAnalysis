@@ -5,6 +5,7 @@ import multiprocessing as mp
 import sys
 sys.path.append('../')
 from scripts.BToKLLAnalyzer import BToKLLAnalyzer
+from scripts.BToKstarLLAnalyzer import BToKstarLLAnalyzer
 
 import argparse
 parser = argparse.ArgumentParser(description="A simple ttree plotter")
@@ -15,6 +16,7 @@ parser.add_argument("-t", "--ttree", dest="ttree", default="Events", help="TTree
 parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Store histograms or tree")
 parser.add_argument("-c", "--mc", dest="mc", action='store_true', help="MC or data")
 parser.add_argument("-r", "--runparallel", dest="runparallel", action='store_true', help="Enable parallel run")
+parser.add_argument("--kstar", action='store_true', help="Enable parallel run")
 args = parser.parse_args()
 
 
@@ -32,7 +34,10 @@ def chunks(l, n):
         yield l[i:i + n]
 
 def analyze(inputfile, outputfile, hist=False, mc=False):
-    analyzer = BToKLLAnalyzer(inputfile, outputfile, hist, mc)
+    if args.kstar:
+      analyzer = BToKstarLLAnalyzer(inputfile, outputfile, hist, mc)
+    else:
+      analyzer = BToKLLAnalyzer(inputfile, outputfile, hist, mc)
     analyzer.run()
 
 def analyzeParallel(enumfChunk):

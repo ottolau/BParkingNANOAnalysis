@@ -10,6 +10,7 @@ parser.add_argument("-f", "--suffix", dest="suffix", default=None, help="Suffix 
 parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Store histograms or tree")
 parser.add_argument("-c", "--mc", dest="mc", action='store_true', help="MC or data")
 parser.add_argument("-m", "--maxevents", dest="maxevents", type=int, default=ROOT.TTree.kMaxEntries, help="Maximum number events to loop over")
+parser.add_argument("--kstar", action='store_true', help="MC or data")
 args = parser.parse_args()
 
 def exec_me(command, dryRun=False):
@@ -32,11 +33,11 @@ def write_condor(exe='runjob.sh', arguments = [], files = [],dryRun=True):
     out += 'use_x509userproxy = true\n'
     out += 'x509userproxy = $ENV(X509_USER_PROXY)\n' # for lxplus
     out += 'Arguments = %s\n'%(' '.join(arguments))
-    out += '+JobFlavour = "longlunch"\n'
+    #out += '+JobFlavour = "longlunch"\n'
     #out += '+JobFlavour = "workday"\n'
-    #out += '+MaxRuntime = 14400\n'
+    out += '+MaxRuntime = 14400\n'
     out += 'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)\n'
-    out += 'max_retries = 0\n'
+    out += 'max_retries = 2\n'
     out += 'requirements = Machine =!= LastRemoteHost\n'
     out += 'Queue 1\n'
     with open(job_name, 'w') as f:
@@ -129,7 +130,7 @@ if __name__ == '__main__':
     exec_me("git clone https://github.com/ottolau/BParkingNANOAnalysis.git {}".format(os.path.join(zipPath, "BParkingNANOAnalysis")), False)
     exec_me("tar -zcvf BParkingNANOAnalysis.tgz -C {} {}".format(zipPath, "BParkingNANOAnalysis"), False)
 
-    files = ['../../scripts/BToKLLAnalyzer.py', '../runBToKEEAnalyzer.py', 'BParkingNANOAnalysis.tgz']
+    files = ['../../scripts/BToKLLAnalyzer.py', '../../scripts/BToKstarLLAnalyzer.py', '../runAnalyzer.py', 'BParkingNANOAnalysis.tgz']
     files_condor = [f.split('/')[-1] for f in files]
 
     fileList = []
@@ -159,9 +160,10 @@ if __name__ == '__main__':
         args_list = []
         if args.hist: args_list.append('-s')
         if args.mc: args_list.append('-c')
+        if args.kstar: args_list.append('--kstar')
         args_str = " ".join(args_list)
 
-        cmd = "cp ${{MAINDIR}}/inputfile_{0}.list .; cp ${{MAINDIR}}/BToKLLAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/; cp ${{MAINDIR}}/runBToKEEAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/test/; python runBToKEEAnalyzer.py -i inputfile_{0}.list -o {1}_subset{0}.root -r {2}".format(i,outputName,args_str if len(args_list) > 0 else "")
+        cmd = "cp ${{MAINDIR}}/inputfile_{0}.list .; cp ${{MAINDIR}}/BToKLLAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/; cp ${{MAINDIR}}/BToKstarLLAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/;cp ${{MAINDIR}}/runAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/test/; python runAnalyzer.py -i inputfile_{0}.list -o {1}_subset{0}.root -r {2}".format(i,outputName,args_str if len(args_list) > 0 else "")
 
         inputargs =  []
         f_sh = "runjob_%s.sh"%i
