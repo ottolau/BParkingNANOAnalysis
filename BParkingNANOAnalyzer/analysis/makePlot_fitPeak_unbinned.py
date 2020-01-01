@@ -50,7 +50,7 @@ def CMS_lumi(isMC):
 #-------------------------------------------------------------
 # The main function can be called whatever you like. We follow
 # C++ and call it main..dull, but clear!
-def fit(inputfile, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False):
+def fit(inputfile, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doPartial=False, partialinputfile=None):
 
     #msgservice = ROOT.RooMsgService.instance()
     #msgservice.setGlobalKillBelow(RooFit.FATAL)
@@ -63,12 +63,22 @@ def fit(inputfile, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False):
     ROOT.gStyle.SetOptStat(000000);
     ROOT.gStyle.SetOptTitle(0)
 
-    xmin, xmax = 4.5, 6.0
-    bMass = ROOT.RooRealVar("BToKEE_fit_mass", "m(K^{+}e^{+}e^{-})", 4.0, 6.0, "GeV")
-
     tree = ROOT.TChain('tree')
     tree.AddFile(inputfile)
     thevars = ROOT.RooArgSet()
+
+    if fitJpsi:
+      xmin, xmax = 2.5, 3.5
+      bMass = ROOT.RooRealVar("BToKEE_mll_fullfit", "m(e^{+}e^{-})", 2.0, 4.0, "GeV")
+      wspace.factory('mean[3.096916, 2.9, 3.3]')
+
+    else:
+      xmin, xmax = 4.5, 6.0
+      bMass = ROOT.RooRealVar("BToKEE_fit_mass", "m(K^{+}e^{+}e^{-})", 4.0, 6.0, "GeV")
+      dieleMass = ROOT.RooRealVar("BToKEE_mll_fullfit", "m(e^{+}e^{-})", 2.0, 4.0, "GeV")
+      wspace.factory('mean[5.27929e+00, 5.2e+00, 5.3e+00]')
+      thevars.add(dieleMass)
+
     thevars.add(bMass)
 
     fulldata = ROOT.RooDataSet('fulldata', 'fulldata', tree, ROOT.RooArgSet(thevars))
@@ -77,19 +87,123 @@ def fit(inputfile, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False):
     theBMass.setRange(xmin,xmax);
     thevars.add(theBMass)
 
-    cut = ''
+    if fitJpsi:
+      cut = ''
+    else:
+      m0 = 3.08812
+      si = 0.04757
+      cut = '(BToKEE_mll_fullfit > {}) & (BToKEE_mll_fullfit < {})'.format(m0 - 3.0*si, m0 + 3.0*si)
+
     print cut    
     data = fulldata.reduce(thevars, cut)
     getattr(wspace,'import')(data, RooFit.Rename("data"))
 
+    wspace.factory('nsig[100.0, 0.0, 1000000.0]')
+    wspace.factory('nbkg[500.0, 0.0, 1000000.0]')
+    wspace.factory('npartial[500.0, 0.0, 1000000.0]')
+
+    if sigPDF == 0:
+        # Voigtian
+        wspace.factory('width[1.000e-02, 1.000e-04, 1.000e-01]')
+        wspace.factory('sigma[7.1858e-02, 1.e-3, 1.e-1]')
+        wspace.factory('Voigtian::sig(x,mean,width,sigma)')
+
+    if sigPDF == 1:
+        # Gaussian
+        wspace.factory('sigma[7.1858e-02, 1.0e-3, 5.0e-1]')
+        wspace.factory('Gaussian::sig(x,mean,sigma)')
+
+    if sigPDF == 2:
+        # Crystal-ball
+        wspace.factory('sigma[7.1858e-02, 1.0e-6, 5.0e-1]')
+        wspace.factory('alpha[1.0, 0.0, 10.0]')
+        wspace.factory('n[2, 1, 10]')
+        wspace.factory('CBShape::sig(x,mean,sigma,alpha,n)')
+
+    if sigPDF == 3:
+        # Double Gaussian
+        wspace.factory('sigma1[7.1858e-02, 1.0e-3, 5.0e-1]')
+        wspace.factory('Gaussian::gaus1(x,mean,sigma1)')
+        wspace.factory('sigma2[7.1858e-02, 1.0e-6, 5.0e-1]')
+        wspace.factory('Gaussian::gaus2(x,mean,sigma2)')
+        wspace.factory('f1[0.5, 0.0, 1.0]')
+        wspace.factory('SUM::sig(f1*gaus1, gaus2)')
+
+    if sigPDF == 4:
+        # Double Crystal-ball
+        wspace.factory('sigma1[7.1858e-02, 1.0e-6, 5.0e-1]')
+        wspace.factory('alpha1[1.0, 0.0, 10.0]')
+        wspace.factory('n1[2.0, 1, 10]')
+        wspace.factory('CBShape::cb1(x,mean,sigma1,alpha1,n1)')
+        wspace.factory('sigma2[7.1858e-03, 1.0e-6, 5.0e-1]')
+        wspace.factory('alpha2[1.0, 0.0, 10.0]')
+        wspace.factory('n2[2.0, 1, 10]')
+        wspace.factory('CBShape::cb2(x,mean,sigma2,alpha2,n2)')
+        wspace.factory('f1[0.5, 0.0, 1.0]')
+        wspace.factory('SUM::sig(f1*cb1, cb2)')
+
+    if sigPDF == 5:
+        # Double-sided Crystal-ball
+        wspace.factory('width[7.1858e-02, 1.0e-6, 5.0e-1]')
+        wspace.factory('alpha1[1.0, 0.0, 10.0]')
+        wspace.factory('n1[2.0, 1.0, 10.0]')
+        wspace.factory('alpha2[1.0, 0.0, 10.0]')
+        wspace.factory('n2[2.0, 1.0, 10.0]')
+        wspace.factory('GenericPdf::sig("DoubleCBFast(x,mean,width,alpha1,n1,alpha2,n2)", {x,mean,width,alpha1,n1,alpha2,n2})')
+
+    if bkgPDF == 0:
+        # Polynomial
+        wspace.factory('c0[1.0, -1.0, 1.0]')
+        wspace.factory('c1[-0.1, -1.0, 1.0]')
+        wspace.factory('c2[-0.1, -1.0, 1.0]')
+        wspace.factory('Chebychev::bkg(x,{c0,c1,c2})')
+
+    if bkgPDF == 1:
+        wspace.factory('c1[0.0, -100.0, 100.0]')
+        wspace.factory('Polynomial::bkg(x,{c1})')
+
+    if bkgPDF == 2:
+        # Exponential
+        wspace.factory('exp_alpha[-1.0, -100.0, -1.0e-5]')
+        alpha = wspace.var('alpha')
+        wspace.factory('Exponential::bkg(x,exp_alpha)')
+
+    if not isMC:
+      if doPartial:
+        partialMass = ROOT.RooRealVar("BToKEE_fit_mass", "m(K^{+}e^{+}e^{-})", 4.0, 6.0, "GeV")
+        partialtree = ROOT.TChain('tree')
+        partialtree.AddFile(partialinputfile)
+        partialthevars = ROOT.RooArgSet()
+        partialthevars.add(partialMass)
+
+        partialdata = ROOT.RooDataSet('partialdata', 'partialdata', partialtree, ROOT.RooArgSet(partialthevars))
+        thePartialfunc = ROOT.RooFormulaVar("y", "y", "@0", ROOT.RooArgList(partialMass) )
+        thePartialMass = partialdata.addColumn(thePartialfunc) ;
+        thePartialMass.setRange(xmin,xmax);
+        partialthevars.add(thePartialMass)
+
+        partialdata = partialdata.reduce(partialthevars, '')
+        getattr(wspace,'import')(data, RooFit.Rename("partialdata"))
+        wspace.factory('SUM::model1(nsig*sig,nbkg*bkg)')
+        wspace.factory('KeysPdf::partial(y,partialdata,MirrorBoth,2)')
+        wspace.factory('SUM::model(model1,npartial*partial)')
+
+      else:
+        wspace.factory('SUM::model(nsig*sig,nbkg*bkg)')
+            
+    model = wspace.pdf('sig' if isMC else 'model')
+    bkg = wspace.pdf('bkg')
+    sig = wspace.pdf('sig')
 
     # define the set obs = (x)
     wspace.defineSet('obs', 'x')
 
     # make the set obs known to Python
     obs  = wspace.set('obs')
-    wspace.factory('KeysPdf::model(x,data,MirrorBoth,2)')
-    model = wspace.pdf('model')
+
+    ## fit the model to the data.
+    results = model.fitTo(data, RooFit.Extended(True), RooFit.Save(), RooFit.Range(xmin,xmax), RooFit.PrintLevel(-1))
+    results.Print()
 
     # Plot results of fit on a different frame
     c2 = ROOT.TCanvas('fig_binnedFit', 'fit', 800, 600)
@@ -102,6 +216,13 @@ def fit(inputfile, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False):
     xframe = theBMass.frame()
     data.plotOn(xframe, RooFit.Binning(50), RooFit.Name("data"))
     model.plotOn(xframe,RooFit.Name("global"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
+    if not isMC:
+      model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.LineStyle(ROOT.kDashed),RooFit.LineColor(ROOT.kMagenta),RooFit.MoveToBack()) ;
+      model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.DrawOption("FL"),RooFit.FillColor(9),RooFit.FillStyle(3004),RooFit.LineStyle(6),RooFit.LineColor(9)) ;
+      model.plotOn(xframe,RooFit.VisualizeError(results), RooFit.FillColor(ROOT.kOrange), RooFit.MoveToBack()) # this will show fit overlay on canvas
+    else:
+      model.paramOn(xframe,RooFit.Layout(0.15,0.45,0.85))
+      xframe.getAttText().SetTextSize(0.03)
 
     xframe.GetYaxis().SetTitleOffset(0.9)
     xframe.GetYaxis().SetTitleFont(42)
@@ -115,7 +236,10 @@ def fit(inputfile, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False):
     xframe.GetXaxis().SetLabelFont(42)
 
     xframe.GetYaxis().SetTitle("Events")
-    xframe.GetXaxis().SetTitle("m(K^{+}e^{+}e^{-}) [GeV]")
+    if fitJpsi:
+      xframe.GetXaxis().SetTitle("m(e^{+}e^{-}) [GeV]")
+    else:
+      xframe.GetXaxis().SetTitle("m(K^{+}e^{+}e^{-}) [GeV]")
     xframe.SetStats(0)
     xframe.SetMinimum(0)
     xframe.Draw()
@@ -128,6 +252,9 @@ def fit(inputfile, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False):
     legend.SetTextSize(0.04);
     legend.AddEntry(xframe.findObject("data"),"Data","lpe");
     legend.AddEntry(xframe.findObject("global"),"Global Fit","l");
+    if not isMC:
+      legend.AddEntry(xframe.findObject("bkg"),"Background fit","l");
+      legend.AddEntry(xframe.findObject("sig"),"Signal fit","l");
     legend.Draw();
 
     c2.cd()
@@ -144,5 +271,5 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--outputfile", dest="outputfile", default="", help="ROOT file contains histograms")
     args = parser.parse_args()
 
-    fit(args.inputfile, args.outputfile, sigPDF=5, bkgPDF=2, fitJpsi=False, isMC=True)
+    fit(args.inputfile, args.outputfile, sigPDF=5, bkgPDF=2, fitJpsi=True, isMC=True)
 
