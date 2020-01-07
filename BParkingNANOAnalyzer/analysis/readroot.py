@@ -6,7 +6,7 @@ from root_numpy import fill_hist, array2root
 from root_pandas import to_root
 import uproot
 import time
-import multiprocessing as mp
+import xgboost as xgb
 
 import argparse
 parser = argparse.ArgumentParser(description="A simple ttree plotter")
@@ -79,6 +79,14 @@ if __name__ == "__main__":
   ele_selection = {'all': 'all_selection', 'pf': 'pf_selection', 'low': 'low_selection', 'mix': 'mix_selection', 'low_pfveto': 'low_pfveto_selection', 'mix_net': 'mix_net_selection'}
 
   events = uproot.open(inputfile)['tree']
+
+  #training_branches = sorted(['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig'])
+  training_branches = sorted(['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig'])
+
+  mvaCut_pf = 3.63157894737 
+  #model_pf = xgb.Booster({'nthread': 4})
+  #model_pf.load_model('xgb_fulldata_pf.model')
+
   #params = events.arrays()
   startTime = time.time()
   for i, params in enumerate(events.iterate(entrysteps=1000000)):
@@ -87,12 +95,13 @@ if __name__ == "__main__":
 
     output_branches = {}
 
-    jpsi_selection = (branches['BToKEE_mll_llfit'] > JPSI_LOW) & (branches['BToKEE_mll_llfit'] < JPSI_UP)
+    jpsi_selection = (branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_UP)
     #b_selection = jpsi_selection & (branches['BToKEE_fit_mass'] > B_LOWSB_UP) & (branches['BToKEE_fit_mass'] < B_UPSB_LOW)
     b_upsb_selection = jpsi_selection & (branches['BToKEE_fit_mass'] > B_UP)
     b_sb_selection = b_upsb_selection
+  
 
-    
+
     #sv_selection = (branches['BToKEE_pt'] > 10.0) & (branches['BToKEE_l_xy_sig'] > 6.0 ) & (branches['BToKEE_svprob'] > 0.1) & (branches['BToKEE_cos2D'] > 0.999)
     #l1_selection = (branches['BToKEE_l1_convVeto']) & (branches['BToKEE_l1_pt'] > 1.5) & (branches['BToKEE_l1_mvaId'] > 3.0) #& (np.logical_not(branches['BToKEE_l1_isPFoverlap']))
     #l2_selection = (branches['BToKEE_l2_convVeto']) & (branches['BToKEE_l2_pt'] > 0.5) & (branches['BToKEE_l2_mvaId'] > 3.0) #& (np.logical_not(branches['BToKEE_l2_isPFoverlap']))
@@ -100,7 +109,9 @@ if __name__ == "__main__":
     #additional_selection = (branches['BToKEE_mass'] > B_LOW) & (branches['BToKEE_mass'] < B_UP)
     #general_selection = jpsi_selection & sv_selection & k_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94)
 
-    general_selection = (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & b_sb_selection
+    #general_selection = (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & b_sb_selection
+    general_selection = (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & jpsi_selection
+
     branches = branches[general_selection]
 
     # additional cuts, allows various lengths
@@ -123,7 +134,11 @@ if __name__ == "__main__":
     #nBToKEE_selected = branches['BToKEE_event'][count_selection].values
     #_, nBToKEE_selected = np.unique(nBToKEE_selected[np.isfinite(nBToKEE_selected)], return_counts=True)
 
-    prepareMVA = True
+    #branches = branches[pf_selection]
+    #branches['BToKEE_xgb_pf'] = model_pf.predict(xgb.DMatrix(branches[training_branches].sort_index(axis=1).values))
+    #branches = branches[(branches['BToKEE_xgb_pf'] > mvaCut_pf)]
+
+    prepareMVA = False
 
     for eType, eBool in ele_type.items():
       if not eBool: continue

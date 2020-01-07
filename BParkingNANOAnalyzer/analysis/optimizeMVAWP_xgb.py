@@ -50,8 +50,8 @@ ROOT.RooMsgService.instance().setGlobalKillBelow(RooFit.FATAL)
 
 import argparse
 parser = argparse.ArgumentParser(description="A simple ttree plotter")
-parser.add_argument("-s", "--signal", dest="signal", default="RootTree_BParkingNANO_2019Sep12_BuToKJpsi_Toee_mvaTraining_sig_testing_pf.root", help="Signal file")
-parser.add_argument("-b", "--background", dest="background", default="RootTree_BParkingNANO_2019Sep12_Run2018A2A3B2B3C2C3D2_mvaTraining_bkg_testing_pf.root", help="Background file")
+parser.add_argument("-s", "--signal", dest="signal", default="RootTree_BParkingNANO_2019Oct25_BuToKJpsi_Toee_mvaTraining_sig_testing_pf.root", help="Signal file")
+parser.add_argument("-b", "--background", dest="background", default="RootTree_BParkingNANO_2019Oct21_Run2018A2A3B2B3C2D2_mvaTraining_bkg_testing_pf.root", help="Background file")
 parser.add_argument("-o", "--outputfile", dest="outputfile", default="test", help="Output file containing plots")
 parser.add_argument("-m", "--model", dest="model", default="xgb_fulldata_pf.model", help="Trainned model")
 args = parser.parse_args()
@@ -59,13 +59,15 @@ args = parser.parse_args()
 
 ELECTRON_MASS = 0.000511
 K_MASS = 0.493677
-JPSI_LOW = 2.9
-JPSI_UP = 3.3
-B_LOWSB_LOW = 4.75
-B_LOWSB_UP = 5.0
-B_UPSB_LOW = 5.5
-B_UPSB_UP = 5.75
-B_MIN = 4.7
+JPSI_MC = 3.08812
+JPSI_SIGMA_MC = 0.04757
+JPSI_LOW = JPSI_MC - 3.0*JPSI_SIGMA_MC
+JPSI_UP = JPSI_MC + 3.0*JPSI_SIGMA_MC
+B_MC = 5.25538
+B_SIGMA_MC = 0.07581
+B_UP = B_MC + 3.0*B_SIGMA_MC
+B_LOW = B_MC - 3.0*B_SIGMA_MC
+B_MIN = 4.5
 B_MAX = 6.0
 
 def unbinned_exp_LLH(data, loc_init, scale_init, limit_loc, limit_scale):
@@ -148,7 +150,7 @@ if __name__ == "__main__":
   BR_BTOKJPSIEE = BR_BTOKJPSI * BR_JPSITOEE
   #BR_BTOKJPSIEE = 1.0
   LUMI_MC = NMC_TOT / (CROSS_SECTION * FILTER_EFF * FU * BR_BTOKJPSIEE) # fb-1
-  LUMI_DATA = 13.998514728133333 # fb-1
+  LUMI_DATA = 13.998514728133333 - 1.101911423 # fb-1
   CutBasedWP = {'S': 1451.0, 'B': 818.0, 'SNR': 30.2} # PF
   #CutBasedWP = {'S': 759, 'B': 1394, 'SNR': 16.3} # Mix
   #CutBasedWP = {'S': 140, 'B': 285, 'SNR': 6.8} # Low
@@ -180,20 +182,19 @@ if __name__ == "__main__":
   df['bkg'] = pd.DataFrame(params['bkg']).sort_index(axis=1)
 
   output_branches = {}
-  #training_branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
-  training_branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
+  #training_branches = sorted(['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig'])
+
+  training_branches = sorted(['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig'])
 
 
   for k, branches in df.items():
-    branches['BToKEE_normpt'] = branches['BToKEE_pt'] / branches['BToKEE_mass']
 
-    jpsi_selection = (branches['BToKEE_mll_raw'] > JPSI_LOW) & (branches['BToKEE_mll_raw'] < JPSI_UP)
-    b_selection = jpsi_selection & (branches['BToKEE_mass'] > B_LOWSB_UP) & (branches['BToKEE_mass'] < B_UPSB_LOW)
-    b_lowsb_selection = jpsi_selection & (branches['BToKEE_mass'] > B_LOWSB_LOW) & (branches['BToKEE_mass'] < B_LOWSB_UP)
-    b_upsb_selection = jpsi_selection & (branches['BToKEE_mass'] > B_UPSB_LOW) & (branches['BToKEE_mass'] < B_UPSB_UP)
-    b_sb_selection = b_lowsb_selection | b_upsb_selection
+    jpsi_selection = (branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_UP)
+    #b_selection = jpsi_selection & (branches['BToKEE_fit_mass'] > B_LOWSB_UP) & (branches['BToKEE_fit_mass'] < B_UPSB_LOW)
+    b_upsb_selection = jpsi_selection & (branches['BToKEE_fit_mass'] > B_UP)
+    b_sb_selection = b_upsb_selection
 
-    general_selection = jpsi_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & (branches['BToKEE_k_pt'] > 1.0) 
+    general_selection = jpsi_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94)
 
     # additional cuts, allows various lengths
     l1_pf_selection = (branches['BToKEE_l1_isPF'])
@@ -209,8 +210,8 @@ if __name__ == "__main__":
     mix_net_selection = overlap_veto_selection & np.logical_not(pf_selection | low_selection)
 
 
-    #df[k] = branches[general_selection & pf_selection & (branches['BToKEE_k_pt'] > 1.5)].copy()
-    df[k] = branches[general_selection & mix_net_selection].copy()
+    df[k] = branches[general_selection & pf_selection].copy()
+    #df[k] = branches[general_selection & mix_net_selection].copy()
     #df[k] = branches[general_selection & low_pfveto_selection].copy()
     df[k].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
 
@@ -243,23 +244,23 @@ if __name__ == "__main__":
   SErrList = []
   BList = []
   
-  mvaCutList = np.linspace(1.0, 4.0, 20)
+  mvaCutList = np.linspace(3.0, 5.0, 20)
   for mvaCut in mvaCutList:
     mvaCutReplace = '{0:.3f}'.format(mvaCut).replace('.','_')
     # mva selection
-    #selected_branches_sig = df['sig'][(df['sig']['BToKEE_xgb'] > mvaCut)]['BToKEE_mass']
-    #selected_branches_bkg = df['bkg'][(df['bkg']['BToKEE_xgb'] > mvaCut)]['BToKEE_mass'].values
-    selected_branches_sig = df['sig'][(df['sig']['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')['BToKEE_mass']
-    selected_branches_bkg = df['bkg'][(df['bkg']['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')['BToKEE_mass'].values
+    selected_branches_sig = df['sig'][(df['sig']['BToKEE_xgb'] > mvaCut)]['BToKEE_fit_mass']
+    selected_branches_bkg = df['bkg'][(df['bkg']['BToKEE_xgb'] > mvaCut)]['BToKEE_fit_mass'].values
+    #selected_branches_sig = df['sig'][(df['sig']['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')['BToKEE_fit_mass']
+    #selected_branches_bkg = df['bkg'][(df['bkg']['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')['BToKEE_fit_mass'].values
 
     NMC_SELECTED = float(selected_branches_sig.count())
-    h_BToKEE_mass_bkg = Hist(50, 4.7, 6.0, name='h_BToKEE_mass_bkg', title='', type='F') 
+    h_BToKEE_mass_bkg = Hist(50, 4.5, 6.0, name='h_BToKEE_mass_bkg', title='', type='F') 
     fill_hist(h_BToKEE_mass_bkg, selected_branches_bkg[np.isfinite(selected_branches_bkg)])
     #selected_branches_bkg = selected_branches_bkg[np.isfinite(selected_branches_bkg)]
     #popt, pocv = unbinned_exp_LLH(selected_branches_bkg, loc_init = 0, scale_init = 0.5, limit_loc = (-1, 1), limit_scale = (-1, 1))
     #print(popt)
 
-    h_bins, h_steps = np.linspace(4.7, 6.0, 30, retstep=True)
+    h_bins, h_steps = np.linspace(4.5, 6.0, 30, retstep=True)
     h_bkg_y, h_bkg_x = np.histogram(selected_branches_bkg, bins=h_bins)
     h_bkg_x = (h_bkg_x[:-1] + h_bkg_x[1:]) / 2
     remove_zero = np.where(np.greater(h_bkg_y, 1.0))
@@ -271,7 +272,7 @@ if __name__ == "__main__":
 
     plt.figure()
     plt.errorbar(h_bkg_x, h_bkg_y, yerr=np.sqrt(h_bkg_y), fmt='o', label='Data')
-    x = np.linspace(4.7, 5.8, 100)
+    x = np.linspace(4.5, 6.0, 100)
     plt.plot(x, expo(x, *popt), 'r-', label='Background fit')
     #plt.plot(x, scipy.stats.expon.pdf(x, *popt), 'r-', label='Background fit')
     plt.xlabel(r'$m(K^{+}e^{+}e^{-}) [GeV/c^{2}]$')
@@ -279,7 +280,7 @@ if __name__ == "__main__":
     plt.legend(loc='upper right')
     plt.savefig('{}_bkgfit_{}.pdf'.format(outputfile, mvaCutReplace), bbox_inches='tight')
 
-    N_BKG = quad(expo, 5.0, 5.4, args=(popt[0], popt[1]))[0] / h_steps / 0.25#0.25
+    N_BKG = quad(expo, B_LOW, B_UP, args=(popt[0], popt[1]))[0] / h_steps / 0.25#0.25
     N_SIG = (LUMI_DATA / LUMI_MC) * (NMC_SELECTED) / 0.25#0.25
     #N_SIG = CutBasedWP['S'] * (NMC_SELECTED / NMC_CUTBASED)
 

@@ -8,6 +8,8 @@ from keras.models import load_model
 import xgboost as xgb
 import ROOT
 from ROOT import RooFit
+ROOT.gROOT.ProcessLine(open('models.cc').read())
+from ROOT import DoubleCBFast
 ROOT.gErrorIgnoreLevel=ROOT.kError
 ROOT.RooMsgService.instance().setGlobalKillBelow(RooFit.FATAL)
 
@@ -22,18 +24,20 @@ parser.add_argument("-l", "--lowmodel", dest="lowmodel", default="xgb_fulldata_l
 parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Store histograms or tree")
 args = parser.parse_args()
 
-outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
-                  'BToKEE_mll_fullfit': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mll_llfit': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mass': {'nbins': 50, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_l1_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_l2_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_l1_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_l2_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_l1_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
-                  'BToKEE_l2_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
-                  'BToKEE_l1_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
-                  'BToKEE_l2_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
+outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 2.5, 'xmax': 3.5},
+                  'BToKEE_mll_fullfit': {'nbins': 50, 'xmin': 2.5, 'xmax': 3.5},
+                  'BToKEE_mll_llfit': {'nbins': 50, 'xmin': 2.5, 'xmax': 3.5},
+                  #'BToKEE_mass': {'nbins': 100, 'xmin': 4.5, 'xmax': 6.0},
+                  'BToKEE_fit_mass': {'nbins': 50, 'xmin': 4.7, 'xmax': 6.0},
+                  'BToKEE_fit_massErr': {'nbins': 50, 'xmin': 0.0, 'xmax': 0.5},
+                  'BToKEE_fit_l1_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_fit_l2_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_fit_l1_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_fit_l2_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_fit_l1_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
+                  'BToKEE_fit_l2_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
+                  'BToKEE_fit_l1_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
+                  'BToKEE_fit_l2_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
                   'BToKEE_l1_dxy_sig': {'nbins': 50, 'xmin': -30.0, 'xmax': 30.0},
                   'BToKEE_l2_dxy_sig': {'nbins': 50, 'xmin': -30.0, 'xmax': 30.0},
                   'BToKEE_l1_dz': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
@@ -50,37 +54,31 @@ outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
                   'BToKEE_l2_isLowPt': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                   'BToKEE_l1_isPFoverlap': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                   'BToKEE_l2_isPFoverlap': {'nbins': 2, 'xmin': 0, 'xmax': 2},
-                  'BToKEE_k_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
-                  'BToKEE_k_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
-                  'BToKEE_k_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
-                  'BToKEE_k_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
+                  'BToKEE_fit_k_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                  'BToKEE_fit_k_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                  'BToKEE_fit_k_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
+                  'BToKEE_fit_k_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
                   'BToKEE_k_DCASig': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
-                  'BToKEE_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_fit_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_fit_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
                   'BToKEE_svprob': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
-                  'BToKEE_cos2D': {'nbins': 50, 'xmin': 0.999, 'xmax': 1.0},
+                  'BToKEE_fit_cos2D': {'nbins': 50, 'xmin': 0.999, 'xmax': 1.0},
                   'BToKEE_l_xy_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
                   'BToKEE_keras_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
                   'BToKEE_keras_low': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
                   'BToKEE_keras_mix': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
                   }
-'''
-outputbranches = {'BToKEE_mass_all': {'nbins': 50, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_mass_pf': {'nbins': 50, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_mass_low_pfveto': {'nbins': 50, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_mass_mix_net': {'nbins': 50, 'xmin': 4.7, 'xmax': 6.0},
-                  }
-'''
 
 ELECTRON_MASS = 0.000511
 K_MASS = 0.493677
-JPSI_LOW = 2.9
-JPSI_UP = 3.3
-B_LOWSB_LOW = 4.75
-B_LOWSB_UP = 5.0
-B_UPSB_LOW = 5.5
-B_UPSB_UP = 5.75
-B_MIN = 4.7
+JPSI_MC = 3.08812
+JPSI_SIGMA_MC = 0.04757
+JPSI_LOW = JPSI_MC - 3.0*JPSI_SIGMA_MC
+JPSI_UP = JPSI_MC + 3.0*JPSI_SIGMA_MC
+B_MC = 5.25538
+B_SIGMA_MC = 0.07581
+B_UP = B_MC + 3.0*B_SIGMA_MC
+B_MIN = 4.5
 B_MAX = 6.0
 
 def CMS_lumi():
@@ -104,223 +102,231 @@ def CMS_lumi():
     mark.SetTextAlign(31)
     mark.DrawLatex(1 - ROOT.gPad.GetRightMargin(), 1 - (ROOT.gPad.GetTopMargin() - 0.017), lumistamp)
 
-def fit(tree, eType):
-  wspace = ROOT.RooWorkspace('myWorkSpace')
-  ROOT.gStyle.SetOptFit(0000);
-  ROOT.gROOT.SetBatch(True);
-  ROOT.gROOT.SetStyle("Plain");
-  ROOT.gStyle.SetGridStyle(3);
-  ROOT.gStyle.SetOptStat(000000);
-  ROOT.gStyle.SetOptTitle(0)
+def fit(tree, eType, sigPDF=5, bkgPDF=2, fitJpsi=False, isMC=False, doPartial=False, partialinputfile=None):
 
-  xmin = 4.7 
-  xmax = 6.0 
+    #msgservice = ROOT.RooMsgService.instance()
+    #msgservice.setGlobalKillBelow(RooFit.FATAL)
+    wspace = ROOT.RooWorkspace('myWorkSpace')
+    ROOT.gStyle.SetOptFit(0000);
+    #ROOT.gStyle.SetOptFit(1);
+    ROOT.gROOT.SetBatch(True);
+    ROOT.gROOT.SetStyle("Plain");
+    ROOT.gStyle.SetGridStyle(3);
+    ROOT.gStyle.SetOptStat(000000);
+    ROOT.gStyle.SetOptTitle(0)
 
-  bMass = ROOT.RooRealVar("BToKEE_mass", "m(K^{+}e^{+}e^{-})", 4.7, 6.0, "GeV")
-  thevars = ROOT.RooArgSet()
-  thevars.add(bMass)
+    thevars = ROOT.RooArgSet()
 
-  fulldata = ROOT.RooDataSet('fulldata', 'fulldata', tree, ROOT.RooArgSet(thevars))
-  theBMassfunc = ROOT.RooFormulaVar("x", "x", "@0", ROOT.RooArgList(bMass) )
-  theBMass     = fulldata.addColumn(theBMassfunc) ;
-  theBMass.setRange(xmin,xmax);
-  thevars.add(theBMass)
-  #x = wspace.set('x')
+    if fitJpsi:
+      xmin, xmax = 2.5, 3.5
+      bMass = ROOT.RooRealVar("BToKEE_mll_fullfit", "m(e^{+}e^{-})", 2.0, 4.0, "GeV")
+      wspace.factory('mean[3.096916, 2.9, 3.3]')
 
-  cut = ''
-
-  print cut    
-  data = fulldata.reduce(thevars, cut)
-
-  getattr(wspace,'import')(data, RooFit.Rename("data"))
-
-  wspace.factory('nsig[100.0, 0.0, 100000.0]')
-  wspace.factory('nbkg[500.0, 0.0, 1000000.0]')
-  sigPDF = 4
-  bkgPDF = 2
-
-  if sigPDF == 0:
-      # Voigtian
+    else:
+      xmin, xmax = 4.5, 6.0
+      bMass = ROOT.RooRealVar("BToKEE_fit_mass", "m(K^{+}e^{+}e^{-})", 4.0, 6.0, "GeV")
+      dieleMass = ROOT.RooRealVar("BToKEE_mll_fullfit", "m(e^{+}e^{-})", 2.0, 4.0, "GeV")
       wspace.factory('mean[5.27929e+00, 5.2e+00, 5.3e+00]')
-      wspace.factory('width[1.000e-02, 1.000e-04, 1.000e-01]')
-      wspace.factory('sigma[7.1858e-02, 1.e-3, 1.e-1]')
-      width = wspace.var('width')
-      wspace.factory('Voigtian::sig(x,mean,width,sigma)')
+      thevars.add(dieleMass)
 
-  if sigPDF == 1:
-      # Gaussian
-      wspace.factory('mean[5.2418e+00, 5.20e+00, 5.35e+00]')
-      #wspace.factory('mean[3.0969+00, 3.06e+00, 3.10e+00]')
-      wspace.factory('sigma[7.1858e-02, 1.e-3, 5.e-1]')
-      wspace.factory('Gaussian::sig(x,mean,sigma)')
+    thevars.add(bMass)
 
-  if sigPDF == 2:
-      # Crystal-ball
-      wspace.factory('mean[5.2418e+00, 5.20e+00, 5.35e+00]')
-      wspace.factory('sigma[7.1858e-02, 1.e-4, 5.e-1]')
-      wspace.factory('alpha[1.0e-1, 0.0, 100.0]')
-      wspace.factory('n[10, 10, 10]')
-      wspace.factory('CBShape::sig(x,mean,sigma,alpha,n)')
+    fulldata = ROOT.RooDataSet('fulldata', 'fulldata', tree, ROOT.RooArgSet(thevars))
+    theBMassfunc = ROOT.RooFormulaVar("x", "x", "@0", ROOT.RooArgList(bMass) )
+    theBMass     = fulldata.addColumn(theBMassfunc) ;
+    theBMass.setRange(xmin,xmax);
+    thevars.add(theBMass)
 
-  if sigPDF == 4:
-      # Double Crystal-ball
-      '''
-      wspace.factory('mean[5.2418e+00, 5.20e+00, 5.35e+00]')
-      wspace.factory('sigma[7.1858e-02, 1.e-6, 5.e-1]')
-      wspace.factory('alpha[1.0e-1, 0.0, 100.0]')
-      wspace.factory('n[1, 5, 100]')
-      wspace.factory('CBShape::cb1(x,mean,sigma,alpha,n)')
-      wspace.factory('sigma2[7.1858e-02, 1.e-6, 5.e-1]')
-      wspace.factory('alpha2[1.0e-1, 0.0, 100.0]')
-      wspace.factory('n2[1, 5, 100]')
-      wspace.factory('CBShape::cb2(x,mean,sigma2,alpha2,n2)')
-      wspace.factory('f1[0.5, 0.0, 1.0]')
-      '''
-      # MVA
-      if eType == 'pf':
-        wspace.factory('mean[5.2701e+00, 5.2701e+00, 5.2701e+00]')
-        wspace.factory('sigma[1.0869e-01, 1.0869e-01, 1.0869e-01]')
-        wspace.factory('alpha[2.6632e+00, 2.6632e+00, 2.6632e+00]')
-        wspace.factory('n[5.2500e+01 , 5.2500e+01, 5.2500e+01]')
-        wspace.factory('CBShape::cb1(x,mean,sigma,alpha,n)')
-        wspace.factory('sigma2[3.2178e-02, 3.2178e-02, 3.2178e-02]')
-        wspace.factory('alpha2[4.1014e-01, 4.1014e-01, 4.1014e-01]')
-        wspace.factory('n2[5.2500e+01, 5.2500e+01, 5.2500e+01]')
+    if fitJpsi:
+      cut = ''
+    else:
+      m0 = 3.08812
+      si = 0.04757
+      cut = '(BToKEE_mll_fullfit > {}) & (BToKEE_mll_fullfit < {})'.format(m0 - 3.0*si, m0 + 3.0*si)
+
+    print cut    
+    data = fulldata.reduce(thevars, cut)
+    getattr(wspace,'import')(data, RooFit.Rename("data"))
+
+    wspace.factory('nsig[100.0, 0.0, 1000000.0]')
+    wspace.factory('nbkg[500.0, 0.0, 1000000.0]')
+    wspace.factory('npartial[500.0, 0.0, 1000000.0]')
+
+    if sigPDF == 0:
+        # Voigtian
+        wspace.factory('width[1.000e-02, 1.000e-04, 1.000e-01]')
+        wspace.factory('sigma[7.1858e-02, 1.e-3, 1.e-1]')
+        wspace.factory('Voigtian::sig(x,mean,width,sigma)')
+
+    if sigPDF == 1:
+        # Gaussian
+        wspace.factory('sigma[7.1858e-02, 1.0e-3, 5.0e-1]')
+        wspace.factory('Gaussian::sig(x,mean,sigma)')
+
+    if sigPDF == 2:
+        # Crystal-ball
+        wspace.factory('sigma[7.1858e-02, 1.0e-6, 5.0e-1]')
+        wspace.factory('alpha[1.0, 0.0, 10.0]')
+        wspace.factory('n[2, 1, 10]')
+        wspace.factory('CBShape::sig(x,mean,sigma,alpha,n)')
+
+    if sigPDF == 3:
+        # Double Gaussian
+        wspace.factory('sigma1[7.1858e-02, 1.0e-3, 5.0e-1]')
+        wspace.factory('Gaussian::gaus1(x,mean,sigma1)')
+        wspace.factory('sigma2[7.1858e-02, 1.0e-6, 5.0e-1]')
+        wspace.factory('Gaussian::gaus2(x,mean,sigma2)')
+        wspace.factory('f1[0.5, 0.0, 1.0]')
+        wspace.factory('SUM::sig(f1*gaus1, gaus2)')
+
+    if sigPDF == 4:
+        # Double Crystal-ball
+        wspace.factory('sigma1[7.1858e-02, 1.0e-6, 5.0e-1]')
+        wspace.factory('alpha1[1.0, 0.0, 10.0]')
+        wspace.factory('n1[2.0, 1, 10]')
+        wspace.factory('CBShape::cb1(x,mean,sigma1,alpha1,n1)')
+        wspace.factory('sigma2[7.1858e-03, 1.0e-6, 5.0e-1]')
+        wspace.factory('alpha2[1.0, 0.0, 10.0]')
+        wspace.factory('n2[2.0, 1, 10]')
         wspace.factory('CBShape::cb2(x,mean,sigma2,alpha2,n2)')
-        wspace.factory('f1[6.1236e-01, 6.1236e-01, 6.1236e-01]')
+        wspace.factory('f1[0.5, 0.0, 1.0]')
+        wspace.factory('SUM::sig(f1*cb1, cb2)')
+
+    if sigPDF == 5:
+        # Double-sided Crystal-ball
+        wspace.factory('width[7.1858e-02, 1.0e-6, 5.0e-1]')
+        wspace.factory('alpha1[1.0, 0.0, 10.0]')
+        wspace.factory('n1[2.0, 1.0, 10.0]')
+        wspace.factory('alpha2[1.0, 0.0, 10.0]')
+        wspace.factory('n2[2.0, 1.0, 10.0]')
+        wspace.factory('GenericPdf::sig("DoubleCBFast(x,mean,width,alpha1,n1,alpha2,n2)", {x,mean,width,alpha1,n1,alpha2,n2})')
+
+    if bkgPDF == 0:
+        # Polynomial
+        wspace.factory('c0[1.0, -1.0, 1.0]')
+        wspace.factory('c1[-0.1, -1.0, 1.0]')
+        wspace.factory('c2[-0.1, -1.0, 1.0]')
+        wspace.factory('Chebychev::bkg(x,{c0,c1,c2})')
+
+    if bkgPDF == 1:
+        wspace.factory('c1[0.0, -100.0, 100.0]')
+        wspace.factory('Polynomial::bkg(x,{c1})')
+
+    if bkgPDF == 2:
+        # Exponential
+        wspace.factory('exp_alpha[-1.0, -100.0, -1.0e-5]')
+        alpha = wspace.var('alpha')
+        wspace.factory('Exponential::bkg(x,exp_alpha)')
+
+    if not isMC:
+      if doPartial:
+        partialMass = ROOT.RooRealVar("BToKEE_fit_mass", "m(K^{+}e^{+}e^{-})", 4.0, 6.0, "GeV")
+        partialtree = ROOT.TChain('tree')
+        partialtree.AddFile(partialinputfile)
+        partialthevars = ROOT.RooArgSet()
+        partialthevars.add(partialMass)
+
+        partialdata = ROOT.RooDataSet('partialdata', 'partialdata', partialtree, ROOT.RooArgSet(partialthevars))
+        thePartialfunc = ROOT.RooFormulaVar("y", "y", "@0", ROOT.RooArgList(partialMass) )
+        thePartialMass = partialdata.addColumn(thePartialfunc) ;
+        thePartialMass.setRange(xmin,xmax);
+        partialthevars.add(thePartialMass)
+
+        partialdata = partialdata.reduce(partialthevars, '')
+        getattr(wspace,'import')(data, RooFit.Rename("partialdata"))
+        wspace.factory('SUM::model1(nsig*sig,nbkg*bkg)')
+        wspace.factory('KeysPdf::partial(y,partialdata,MirrorBoth,2)')
+        wspace.factory('SUM::model(model1,npartial*partial)')
+
       else:
-        wspace.factory('mean[5.2695e+00, 5.2695e+00, 5.2695e+00]')
-        wspace.factory('sigma[1.1716e-01, 1.1716e-01, 1.1716e-01]')
-        wspace.factory('alpha[3.0430e+00, 3.0430e+00, 3.0430e+00]')
-        wspace.factory('n[5.2500e+01 , 5.2500e+01, 5.2500e+01]')
-        wspace.factory('CBShape::cb1(x,mean,sigma,alpha,n)')
-        wspace.factory('sigma2[5.2612e-02, 5.2612e-02, 5.2612e-02]')
-        wspace.factory('alpha2[8.3173e-01, 8.3173e-01, 8.3173e-01]')
-        wspace.factory('n2[5.2500e+01, 5.2500e+01, 5.2500e+01]')
-        wspace.factory('CBShape::cb2(x,mean,sigma2,alpha2,n2)')
-        wspace.factory('f1[5.0383e-01, 5.0383e-01, 5.0383e-01]')
+        wspace.factory('SUM::model(nsig*sig,nbkg*bkg)')
+            
+    model = wspace.pdf('sig' if isMC else 'model')
+    bkg = wspace.pdf('bkg')
+    sig = wspace.pdf('sig')
 
-      wspace.factory('SUM::sig(f1*cb1, cb2)')
+    # define the set obs = (x)
+    wspace.defineSet('obs', 'x')
 
-  if bkgPDF == 0:
-      # Polynomial
-      wspace.factory('c0[1.0, -1.0, 1.0]')
-      wspace.factory('c1[-0.1, -1.0, 1.0]')
-      wspace.factory('c2[-0.1, -1.0, 1.0]')
-      c0 = wspace.var('c0')
-      c1 = wspace.var('c1')
-      c2 = wspace.var('c2')
-      wspace.factory('Chebychev::bkg(x,{c0,c1,c2})')
+    # make the set obs known to Python
+    obs  = wspace.set('obs')
 
-  if bkgPDF == 1:
-      wspace.factory('c1[0.0, -100.0, 100.0]')
-      c1 = wspace.var('c1')
-      wspace.factory('Polynomial::bkg(x,{c1})')
+    ## fit the model to the data.
+    results = model.fitTo(data, RooFit.Extended(True), RooFit.Save(), RooFit.Range(xmin,xmax), RooFit.PrintLevel(-1))
+    results.Print()
 
-  if bkgPDF == 2:
-      # Exponential
-      wspace.factory('exp_alpha[-1.0, -100.0, -1.0e-5]')
-      alpha = wspace.var('alpha')
-      wspace.factory('Exponential::bkg(x,exp_alpha)')
+    theBMass.setRange("window",B_LOW,B_UP) ;
+    fracBkgRange = bkg.createIntegral(obs,obs,"window") ;
 
-  #x = wspace.var('x')
-  mean = wspace.var('mean')
-  sigma = wspace.var('sigma')
-  nsig = wspace.var('nsig')
-  nbkg = wspace.var('nbkg')
+    #fracBkgRange = bkg.createIntegral(bkgRangeArgSet,"window") ;
+    nbkgWindow = nbkg.getVal() * fracBkgRange.getVal()
+    #print(nbkg.getVal(), fracBkgRange.getVal())
+    print("Number of signals: %f, Number of background: %f, S/sqrt(S+B): %f"%(nsig.getVal(), nbkgWindow, nsig.getVal()/np.sqrt(nsig.getVal() + nbkgWindow)))
 
-  #parameters = ['c0', 'c1', 'c2', 'mean', 'width', 'sigma', 'nsig', 'nbkg']
- 
-  # NUMBER OF PARAMETERS
-  #P = len(parameters)
-  
-  wspace.factory('SUM::model(nsig*sig,nbkg*bkg)')
-          
-  model = wspace.pdf('model')
-  bkg = wspace.pdf('bkg')
-  sig = wspace.pdf('sig')
+    # Plot results of fit on a different frame
+    c2 = ROOT.TCanvas('fig_binnedFit', 'fit', 800, 600)
+    c2.SetGrid()
+    c2.cd()
+    ROOT.gPad.SetLeftMargin(0.10)
+    ROOT.gPad.SetRightMargin(0.05)
 
-  # define the set obs = (x)
-  wspace.defineSet('obs', 'x')
+    #xframe = wspace.var('x').frame(RooFit.Title("PF electron"))
+    xframe = theBMass.frame()
+    data.plotOn(xframe, RooFit.Binning(50), RooFit.Name("data"))
+    model.plotOn(xframe,RooFit.Name("global"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
+    if not isMC:
+      model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.LineStyle(ROOT.kDashed),RooFit.LineColor(ROOT.kMagenta),RooFit.MoveToBack()) ;
+      model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.DrawOption("FL"),RooFit.FillColor(9),RooFit.FillStyle(3004),RooFit.LineStyle(6),RooFit.LineColor(9)) ;
+      model.plotOn(xframe,RooFit.VisualizeError(results), RooFit.FillColor(ROOT.kOrange), RooFit.MoveToBack()) # this will show fit overlay on canvas
+    else:
+      model.paramOn(xframe,RooFit.Layout(0.15,0.45,0.85))
+      xframe.getAttText().SetTextSize(0.03)
 
-  # make the set obs known to Python
-  obs  = wspace.set('obs')
+    xframe.GetYaxis().SetTitleOffset(0.9)
+    xframe.GetYaxis().SetTitleFont(42)
+    xframe.GetYaxis().SetTitleSize(0.05)
+    xframe.GetYaxis().SetLabelSize(0.04)
+    xframe.GetYaxis().SetLabelFont(42)
+    xframe.GetXaxis().SetTitleOffset(0.9)
+    xframe.GetXaxis().SetTitleFont(42)
+    xframe.GetXaxis().SetTitleSize(0.05)
+    xframe.GetXaxis().SetLabelSize(0.04)
+    xframe.GetXaxis().SetLabelFont(42)
 
-  ## fit the model to the data.
-  results = model.fitTo(data, RooFit.Extended(True), RooFit.Save(), RooFit.Range(xmin,xmax), RooFit.PrintLevel(-1))
-  results.Print()
+    xframe.GetYaxis().SetTitle("Events")
+    if fitJpsi:
+      xframe.GetXaxis().SetTitle("m(e^{+}e^{-}) [GeV]")
+    else:
+      xframe.GetXaxis().SetTitle("m(K^{+}e^{+}e^{-}) [GeV]")
+    xframe.SetStats(0)
+    xframe.SetMinimum(0)
+    xframe.Draw()
 
-  #B_SIGNAL_LOW = mean.getVal() - 3.0*sigma.getVal()
-  #B_SIGNAL_UP = mean.getVal() + 3.0*sigma.getVal()
-  B_SIGNAL_LOW = 5.0
-  B_SIGNAL_UP = 5.4
-  theBMass.setRange("window",B_SIGNAL_LOW,B_SIGNAL_UP) ;
-  fracBkgRange = bkg.createIntegral(obs,obs,"window") ;
+    CMS_lumi(isMC)
 
-  #fracBkgRange = bkg.createIntegral(bkgRangeArgSet,"window") ;
-  nbkgWindow = nbkg.getVal() * fracBkgRange.getVal()
-  #print(nbkg.getVal(), fracBkgRange.getVal())
-  print("Number of signals: %f, Number of background: %f, S/sqrt(S+B): %f"%(nsig.getVal(), nbkgWindow, nsig.getVal()/np.sqrt(nsig.getVal() + nbkgWindow)))
+    legend = ROOT.TLegend(0.65,0.75,0.92,0.85);
+    #legend = ROOT.TLegend(0.65,0.15,0.92,0.35);
+    legend.SetTextFont(72);
+    legend.SetTextSize(0.04);
+    legend.AddEntry(xframe.findObject("data"),"Data","lpe");
+    legend.AddEntry(xframe.findObject("global"),"Global Fit","l");
+    if not isMC:
+      legend.AddEntry(xframe.findObject("bkg"),"Background fit","l");
+      legend.AddEntry(xframe.findObject("sig"),"Signal fit","l");
+    legend.Draw();
 
-  # Plot results of fit on a different frame
-  c2 = ROOT.TCanvas('fig_binnedFit', 'fit', 800, 600)
-  c2.SetGrid()
-  c2.cd()
-  ROOT.gPad.SetLeftMargin(0.10)
-  ROOT.gPad.SetRightMargin(0.05)
+    c2.cd()
+    c2.Update()
 
-  #xframe = wspace.var('x').frame(RooFit.Title("PF electron"))
-  xframe = theBMass.frame()
-  data.plotOn(xframe, RooFit.Binning(50), RooFit.Name("data"))
-  model.plotOn(xframe,RooFit.Name("global"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
-  model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.LineStyle(ROOT.kDashed),RooFit.LineColor(ROOT.kMagenta),RooFit.MoveToBack()) ;
-  model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.DrawOption("FL"),RooFit.FillColor(9),RooFit.FillStyle(3004),RooFit.LineStyle(6),RooFit.LineColor(9)) ;
-  model.plotOn(xframe,RooFit.VisualizeError(results), RooFit.FillColor(ROOT.kOrange), RooFit.MoveToBack()) # this will show fit overlay on canvas
-
-  xframe.GetYaxis().SetTitleOffset(0.9)
-  xframe.GetYaxis().SetTitleFont(42)
-  xframe.GetYaxis().SetTitleSize(0.05)
-  xframe.GetYaxis().SetLabelSize(0.065)
-  xframe.GetYaxis().SetLabelSize(0.04)
-  xframe.GetYaxis().SetLabelFont(42)
-  xframe.GetXaxis().SetTitleOffset(0.9)
-  xframe.GetXaxis().SetTitleFont(42)
-  xframe.GetXaxis().SetTitleSize(0.05)
-  xframe.GetXaxis().SetLabelSize(0.065)
-  xframe.GetXaxis().SetLabelSize(0.04)
-  xframe.GetXaxis().SetLabelFont(42)
-
-  xframe.GetYaxis().SetTitle("Events")
-  xframe.GetXaxis().SetTitle("m(K^{+}e^{+}e^{-}) [GeV]")
-  #xframe.GetXaxis().SetTitle("m(e^{+}e^{-}) [GeV/c^{2}]")
-  xframe.SetStats(0)
-  xframe.SetMinimum(0)
-  xframe.Draw()
-
-  CMS_lumi()
-
-  legend = ROOT.TLegend(0.65,0.65,0.92,0.85);
-  #legend = ROOT.TLegend(0.65,0.15,0.92,0.35);
-  legend.SetTextFont(72);
-  legend.SetTextSize(0.04);
-  legend.AddEntry(xframe.findObject("data"),"Data","lpe");
-  legend.AddEntry(xframe.findObject("bkg"),"Background fit","l");
-  legend.AddEntry(xframe.findObject("sig"),"Signal fit","l");
-  legend.AddEntry(xframe.findObject("global"),"Global Fit","l");
-  legend.Draw();
-
-  c2.cd()
-  c2.Update()
-
-  c2.SaveAs('{}_mvafit_{}.pdf'.format(args.outputfile, eType))
-  return nsig.getVal(), nsig.getError(), nbkgWindow
+    c2.SaveAs('{}_mvafit_{}.pdf'.format(args.outputfile, eType))
+    return nsig.getVal(), nsig.getError(), nbkgWindow
 
 
 if __name__ == "__main__":
-  inputfile = args.inputfile.replace('.h5','')+'.h5'
+  inputfile = args.inputfile
   outputfile = args.outputfile.replace('.root','').replace('.h5','')
 
-  ele_type = {'all': False, 'pf': False, 'low_pfveto': False, 'mix_net': True}
+  ele_type = {'all': False, 'pf': True, 'low_pfveto': False, 'mix_net': False}
   ele_selection = {'all': 'all_mva_selection', 'pf': 'pf_mva_selection', 'low_pfveto': 'low_mva_selection', 'mix_net': 'mix_mva_selection'}
 
   branches = pd.read_hdf(inputfile, 'branches')
@@ -364,7 +370,7 @@ if __name__ == "__main__":
   #mvaCut_pf = 0.89
   #mvaCut_mix = 0.93
   #mvaCut_low = 0.90
-  mvaCut_pf = 2.10526315789
+  mvaCut_pf = 3.63157894737
   mvaCut_mix = 3.05263157895
   mvaCut_low = 2.57894736842
 

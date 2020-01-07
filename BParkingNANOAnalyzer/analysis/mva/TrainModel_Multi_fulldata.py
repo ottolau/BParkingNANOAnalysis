@@ -101,8 +101,10 @@ if __name__ == "__main__":
     filename['bkg'] = args.background
     filename['sig'] = args.signal
 
-    branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
-    #branches = sorted(['BToKEE_l1_normpt', 'BToKEE_l1_eta', 'BToKEE_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l2_normpt', 'BToKEE_l2_eta', 'BToKEE_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_k_normpt', 'BToKEE_k_eta', 'BToKEE_k_phi', 'BToKEE_k_DCASig', 'BToKEE_normpt', 'BToKEE_svprob', 'BToKEE_cos2D', 'BToKEE_l_xy_sig'])
+    #branches = sorted(['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig'])
+
+    branches = sorted(['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig'])
+
 
     input_dim = len(branches)
 
@@ -172,10 +174,7 @@ if __name__ == "__main__":
 
     if use_classifiers['XGB']:
         print('Training XGBoost...')
-        #hyper_params = {'colsample_bytree': 0.9044646018957753, 'subsample': 0.6626530919329603, 'eta': 0.013916755880706982, 'alpha': 0.07979819085895129, 'max_depth': 6, 'gamma': 0.14271732920694105, 'lambda': 1.212350804702256} # PF
-        #hyper_params = {'colsample_bytree': 0.6607323533198513, 'subsample': 0.8549783548086116, 'eta': 0.12721398718375884, 'alpha': 0.08311984221421874, 'max_depth': 7, 'gamma': 0.571135630090849, 'lambda': 1.2855493741184907} # Mix
-        #hyper_params = {'colsample_bytree': 0.8020747383215419, 'subsample': 0.7014327644533827, 'eta': 0.02973077790685988, 'alpha': 0.0015234991615051378, 'max_depth': 6, 'gamma': 0.9183332340428476, 'lambda': 1.2443558028940713}
-        hyper_params = {'colsample_bytree': 0.7265861505610647, 'subsample': 0.5726850720377014, 'eta': 0.02777478451843462, 'alpha': 0.04311540168298377, 'max_depth': 4, 'gamma': 0.6948236527284698, 'lambda': 1.1769525359431465}
+        hyper_params = {'colsample_bytree': 0.7265861505610647, 'subsample': 0.5726850720377014, 'eta': 0.02777478451843462, 'alpha': 0.04311540168298377, 'max_depth': 5, 'gamma': 0.6948236527284698, 'lambda': 1.1769525359431465}
 
         #model['XGB'] = build_custom_model(hyper_params, 'XGB')
         model['XGB'] = train(None, 'XGB', hyper_params=hyper_params)

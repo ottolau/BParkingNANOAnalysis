@@ -43,6 +43,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             #'Electron_pt',
                             #'Electron_eta',
                             #'Electron_phi',
+                            'Electron_charge',
                             'Electron_dz',
                             'Electron_dxy',
                             'Electron_dxyErr',
@@ -55,6 +56,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'Electron_mvaId',
                             #'Electron_pfmvaId',
                             #'Electron_lostHits',
+                            'ProbeTracks_charge',
                             'ProbeTracks_pt',
                             'ProbeTracks_DCASig',
                             'ProbeTracks_eta',
@@ -121,6 +123,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_svprob': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
                              'BToKEE_fit_cos2D': {'nbins': 50, 'xmin': 0.999, 'xmax': 1.0},
                              'BToKEE_l_xy_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
+                             'BToKEE_Dmass': {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0},
                              'BToKEE_event': {'nbins': 10, 'xmin': 0, 'xmax': 10},
                              }
 
@@ -129,6 +132,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
   def run(self):
     ELECTRON_MASS = 0.000511
     K_MASS = 0.493677
+    PI_MASS = 0.139570
     JPSI_LOW = 2.9
     JPSI_UP = 3.3
     B_MASS = 5.245
@@ -195,13 +199,12 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
 
       del self._branches['nBToKEE']
 
-
-
-      #l1_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_l1_pt'], self._branches['BToKEE_l1_eta'], self._branches['BToKEE_l1_phi'], ELECTRON_MASS)
-      #l2_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_l2_pt'], self._branches['BToKEE_l2_eta'], self._branches['BToKEE_l2_phi'], ELECTRON_MASS)
-      #k_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_k_pt'], self._branches['BToKEE_k_eta'], self._branches['BToKEE_k_phi'], K_MASS)
-      #self._branches['BToKEE_mll_raw'] = (l1_p4 + l2_p4).mass
-      #self._branches['BToKEE_mass'] = (l1_p4 + l2_p4 + k_p4).mass
+      # mass hypothesis to veto fake event from semi-leptonic decay D
+      l1_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l1_pt'], self._branches['BToKEE_fit_l1_eta'], self._branches['BToKEE_fit_l1_phi'], PI_MASS)
+      l2_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l2_pt'], self._branches['BToKEE_fit_l2_eta'], self._branches['BToKEE_fit_l2_phi'], PI_MASS)
+      k_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_k_pt'], self._branches['BToKEE_fit_k_eta'], self._branches['BToKEE_fit_k_phi'], K_MASS)
+      self._branches['BToKEE_Dmass_l1'] = (l1_pihypo_p4 + k_p4).mass
+      self._branches['BToKEE_Dmass_l2'] = (l2_pihypo_p4 + k_p4).mass
 
       # flatten the jagged arrays to a normal numpy array, turn the whole dictionary to pandas dataframe
       self._branches = pd.DataFrame.from_dict({branch: array.flatten() for branch, array in self._branches.items()})
@@ -216,6 +219,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       self._branches['BToKEE_fit_l2_normpt'] = self._branches['BToKEE_fit_l2_pt'] / self._branches['BToKEE_fit_mass']
       self._branches['BToKEE_fit_k_normpt'] = self._branches['BToKEE_fit_k_pt'] / self._branches['BToKEE_fit_mass']
       self._branches['BToKEE_fit_normpt'] = self._branches['BToKEE_fit_pt'] / self._branches['BToKEE_fit_mass']
+      self._branches['BToKEE_Dmass'] = self._branches.apply(self.GetDMass, axis=1)
 
       # general selection
       
@@ -235,7 +239,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       if self._isMC:
         self._branches['BToKEE_decay'] = self._branches.apply(self.DecayCats, axis=1)
         #self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
-        #self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
+        self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
             
 
       # fill output
@@ -285,8 +289,11 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
     elif Rphi_resonant_chain_selection: return 5
     else: return -1
 
-
-
+  def GetDMass(self, row):
+    if (row['BToKEE_k_charge'] * row['BToKEE_l1_charge']) < 0.0:
+      return row['BToKEE_Dmass_l1']
+    else:
+      return row['BToKEE_Dmass_l2']
 
 
 

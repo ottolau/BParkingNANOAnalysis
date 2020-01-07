@@ -54,7 +54,7 @@ def fit(inputfile, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False):
 
     #msgservice = ROOT.RooMsgService.instance()
     #msgservice.setGlobalKillBelow(RooFit.FATAL)
-    wspace = ROOT.RooWorkspace('myWorkSpace')
+    wspace = ROOT.RooWorkspace('myPartialWorkSpace')
     ROOT.gStyle.SetOptFit(0000);
     #ROOT.gStyle.SetOptFit(1);
     ROOT.gROOT.SetBatch(True);
@@ -88,8 +88,8 @@ def fit(inputfile, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False):
 
     # make the set obs known to Python
     obs  = wspace.set('obs')
-    wspace.factory('KeysPdf::model(x,data,MirrorBoth,2)')
-    model = wspace.pdf('model')
+    wspace.factory('KeysPdf::partial(x,data,MirrorBoth,2)')
+    model = wspace.pdf('partial')
 
     # Plot results of fit on a different frame
     c2 = ROOT.TCanvas('fig_binnedFit', 'fit', 800, 600)
@@ -134,6 +134,9 @@ def fit(inputfile, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False):
     c2.Update()
 
     c2.SaveAs(outputfile)
+    wf = ROOT.TFile("part_workspace.root", "RECREATE")
+    wspace.Write()
+    wf.Close()
 
     print("="*80)
 
