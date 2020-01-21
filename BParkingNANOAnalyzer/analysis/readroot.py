@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from rootpy.io import root_open
-from rootpy.plotting import Hist
+from rootpy.plotting import Hist, Hist2D
 from root_numpy import fill_hist, array2root
 from root_pandas import to_root
 import uproot
@@ -56,20 +56,36 @@ outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 2.5, 'xmax': 3.5},
                   'BToKEE_svprob': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
                   'BToKEE_fit_cos2D': {'nbins': 50, 'xmin': 0.999, 'xmax': 1.0},
                   'BToKEE_l_xy_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
+                  'BToKEE_Dmass': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
+                  'BToKEE_event': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                  #'BToKEE_fit_mass_decorr': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
+                  #'BToKEE_mll_fullfit_decorr': {'nbins': 50, 'xmin': -0.2, 'xmax': 0.2},
                   }
+
+outputbranches_mva = {'BToKEE_xgb': {'nbins': 50, 'xmin': -20.0, 'xmax': 20.0},
+                     }
+
+outputhist2d = {'BToKEE_fit_mass_vs_BToKEE_q2': {'nbinx': 50, 'xmin': 4.5, 'xmax': 6.0, 'nbiny': 50, 'ymin': 0.0, 'ymax': 20.0},
+                'BToKEE_fit_mass_vs_BToKEE_mll_fullfit': {'nbinx': 50, 'xmin': 4.5, 'xmax': 6.0, 'nbiny': 50, 'ymin': 2.5, 'ymax': 3.5},
+                #'BToKEE_fit_mass_decorr_vs_BToKEE_mll_fullfit_decorr': {'nbinx': 50, 'xmin': -1.0, 'xmax': 1.0, 'nbiny': 50, 'ymin': -0.2, 'ymax': 0.2},
+               }
 
 ELECTRON_MASS = 0.000511
 K_MASS = 0.493677
-JPSI_MC = 3.08812
-JPSI_SIGMA_MC = 0.04757
-JPSI_LOW = JPSI_MC - 3.0*JPSI_SIGMA_MC
+JPSI_MC = 3.0882
+JPSI_SIGMA_MC = 0.0475
+JPSI_LOW = np.sqrt(6.0)
 JPSI_UP = JPSI_MC + 3.0*JPSI_SIGMA_MC
+JPSI_DECORR_MC = 2.5001e-03
+JPSI_DECORR_SIGMA_MC = 1.4728e-02
+JPSI_DECORR_LOW = JPSI_DECORR_MC - 3.0*JPSI_DECORR_SIGMA_MC
+JPSI_DECORR_UP = JPSI_DECORR_MC + 3.0*JPSI_DECORR_SIGMA_MC
 B_MC = 5.25538
 B_SIGMA_MC = 0.07581
 B_UP = B_MC + 3.0*B_SIGMA_MC
 B_MIN = 4.5
 B_MAX = 6.0
-
+D_MASS_CUT = 1.9
 
 if __name__ == "__main__":
   inputfile = args.inputfile.replace('.root','').replace('.h5','')+'.root'
@@ -80,12 +96,20 @@ if __name__ == "__main__":
 
   events = uproot.open(inputfile)['tree']
 
-  #training_branches = sorted(['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig'])
-  training_branches = sorted(['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig'])
+  isMVAEvaluate = False
+  prepareMVA = False
+  plot2D = True
+  isGetDecorr = False
 
-  mvaCut_pf = 3.63157894737 
-  #model_pf = xgb.Booster({'nthread': 4})
-  #model_pf.load_model('xgb_fulldata_pf.model')
+  if isMVAEvaluate:
+    #training_branches = sorted(['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig'])
+    training_branches = sorted(['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig'])
+
+    #mvaCut = 5.26315789474 
+    outputbranches.update(outputbranches_mva)
+    mvaCut = 2.0
+    model = xgb.Booster({'nthread': 6})
+    model.load_model('xgb_fulldata_Dveto_JpsiWindow_pf.model')
 
   #params = events.arrays()
   startTime = time.time()
@@ -93,14 +117,32 @@ if __name__ == "__main__":
     print('Reading chunk {}... Finished opening file in {} s'.format(i, time.time() - startTime))
     branches = pd.DataFrame(params).sort_index(axis=1)
 
-    output_branches = {}
+    branches['BToKEE_q2'] = pow(branches['BToKEE_mll_fullfit'], 2)
+    '''
+    mll_mean = np.mean(branches['BToKEE_mll_fullfit']) if isGetDecorr else 3.00233006477
+    fit_mass_mean = np.mean(branches['BToKEE_fit_mass']) if isGetDecorr else 5.17608833313
+    branches['BToKEE_mll_fullfit_centered'] = branches['BToKEE_mll_fullfit'] - mll_mean
+    branches['BToKEE_fit_mass_centered'] = branches['BToKEE_fit_mass'] - fit_mass_mean
+    data_centered = np.array([branches['BToKEE_fit_mass_centered'],branches['BToKEE_mll_fullfit_centered']]).T
+    if isGetDecorr:
+      CovMatrix = np.cov(data_centered, rowvar=False, bias=True)
+      eigVals, eigVecs = np.linalg.eig(CovMatrix)
+    else:
+      eigVecs = np.array([[0.74743269, -0.66433754], [0.66433754, 0.74743269]])
+
+    print('Rotation matrix: {}'.format(eigVecs))
+    #print('BToKEE_mll_fullfit mean: {}, BToKEE_fit_mass mean: {}'.format(np.mean(branches['BToKEE_mll_fullfit']), np.mean(branches['BToKEE_fit_mass'])))
+    data_decorr = data_centered.dot(eigVecs)
+    branches['BToKEE_fit_mass_decorr'] = data_decorr[:,0]
+    branches['BToKEE_mll_fullfit_decorr'] = data_decorr[:,1]
+    '''
 
     jpsi_selection = (branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_UP)
+    #jpsi_selection = (branches['BToKEE_mll_fullfit_decorr'] > JPSI_DECORR_LOW) & (branches['BToKEE_mll_fullfit_decorr'] < JPSI_DECORR_UP)
     #b_selection = jpsi_selection & (branches['BToKEE_fit_mass'] > B_LOWSB_UP) & (branches['BToKEE_fit_mass'] < B_UPSB_LOW)
     b_upsb_selection = jpsi_selection & (branches['BToKEE_fit_mass'] > B_UP)
     b_sb_selection = b_upsb_selection
-  
-
+    d_veto_selection = branches['BToKEE_Dmass'] > D_MASS_CUT
 
     #sv_selection = (branches['BToKEE_pt'] > 10.0) & (branches['BToKEE_l_xy_sig'] > 6.0 ) & (branches['BToKEE_svprob'] > 0.1) & (branches['BToKEE_cos2D'] > 0.999)
     #l1_selection = (branches['BToKEE_l1_convVeto']) & (branches['BToKEE_l1_pt'] > 1.5) & (branches['BToKEE_l1_mvaId'] > 3.0) #& (np.logical_not(branches['BToKEE_l1_isPFoverlap']))
@@ -109,8 +151,9 @@ if __name__ == "__main__":
     #additional_selection = (branches['BToKEE_mass'] > B_LOW) & (branches['BToKEE_mass'] < B_UP)
     #general_selection = jpsi_selection & sv_selection & k_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94)
 
-    #general_selection = (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & b_sb_selection
-    general_selection = (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & jpsi_selection
+    #general_selection = (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & b_sb_selection & d_veto_selection
+    #general_selection = (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & jpsi_selection & d_veto_selection
+    general_selection = d_veto_selection
 
     branches = branches[general_selection]
 
@@ -134,18 +177,19 @@ if __name__ == "__main__":
     #nBToKEE_selected = branches['BToKEE_event'][count_selection].values
     #_, nBToKEE_selected = np.unique(nBToKEE_selected[np.isfinite(nBToKEE_selected)], return_counts=True)
 
-    #branches = branches[pf_selection]
-    #branches['BToKEE_xgb_pf'] = model_pf.predict(xgb.DMatrix(branches[training_branches].sort_index(axis=1).values))
-    #branches = branches[(branches['BToKEE_xgb_pf'] > mvaCut_pf)]
+    if isMVAEvaluate:
+      branches = branches[pf_selection]
+      branches['BToKEE_xgb'] = model.predict(xgb.DMatrix(branches[training_branches].sort_index(axis=1).values))
+      branches = branches[(branches['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')
 
-    prepareMVA = False
+    output_branches = {}
 
     for eType, eBool in ele_type.items():
       if not eBool: continue
       if eType == 'all':
-        output_branches[eType] = branches
+        output_branches[eType] = branches.copy()
       else:
-        output_branches[eType] = branches[eval(ele_selection[eType])]
+        output_branches[eType] = branches[eval(ele_selection[eType])].copy()
 
       if args.hist:
         file_out = root_open('{}_{}.root'.format(outputfile, eType), 'recreate')
@@ -155,6 +199,14 @@ if __name__ == "__main__":
             branch_np = output_branches[eType][hist_name].values
             fill_hist(hist_list[hist_name], branch_np[np.isfinite(branch_np)])
             hist_list[hist_name].write()
+        if plot2D:
+          hist2d_list = {hist_name: Hist2D(hist_bins['nbinx'], hist_bins['xmin'], hist_bins['xmax'], hist_bins['nbiny'], hist_bins['ymin'], hist_bins['ymax'], name=hist_name, title='', type='F') for hist_name, hist_bins in sorted(outputhist2d.items())}
+          for hist_name in hist2d_list.keys():
+            xvar, yvar = hist_name.split('_vs_')
+            xvar_np = output_branches[eType][xvar].values
+            yvar_np = output_branches[eType][yvar].values
+            fill_hist(hist2d_list[hist_name], np.vstack((xvar_np[np.isfinite(xvar_np)], yvar_np[np.isfinite(yvar_np)])).T)
+            hist2d_list[hist_name].write()
         file_out.close()
 
       else:

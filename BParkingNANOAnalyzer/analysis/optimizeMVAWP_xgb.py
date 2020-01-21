@@ -51,7 +51,7 @@ ROOT.RooMsgService.instance().setGlobalKillBelow(RooFit.FATAL)
 import argparse
 parser = argparse.ArgumentParser(description="A simple ttree plotter")
 parser.add_argument("-s", "--signal", dest="signal", default="RootTree_BParkingNANO_2019Oct25_BuToKJpsi_Toee_mvaTraining_sig_testing_pf.root", help="Signal file")
-parser.add_argument("-b", "--background", dest="background", default="RootTree_BParkingNANO_2019Oct21_Run2018A2A3B2B3C2D2_mvaTraining_bkg_testing_pf.root", help="Background file")
+parser.add_argument("-b", "--background", dest="background", default="RootTree_BParkingNANO_2019Oct21_Run2018A2A3B2B3C2D2_2020Jan10_mvaTraining_bkg_testing_pf.root", help="Background file")
 parser.add_argument("-o", "--outputfile", dest="outputfile", default="test", help="Output file containing plots")
 parser.add_argument("-m", "--model", dest="model", default="xgb_fulldata_pf.model", help="Trainned model")
 args = parser.parse_args()
@@ -67,33 +67,105 @@ B_MC = 5.25538
 B_SIGMA_MC = 0.07581
 B_UP = B_MC + 3.0*B_SIGMA_MC
 B_LOW = B_MC - 3.0*B_SIGMA_MC
-B_MIN = 4.5
+B_MIN = 4.8
 B_MAX = 6.0
 
-def unbinned_exp_LLH(data, loc_init, scale_init, limit_loc, limit_scale):
-    # Define function to fit
-    def exp_func(x, loc):
-        return scipy.stats.expon.pdf(x, loc)
+def fit(tree, outputfile, mvaCutReplace):
+    wspace = ROOT.RooWorkspace('myWorkSpace')
+    ROOT.gStyle.SetOptFit(0000);
+    ROOT.gROOT.SetBatch(True);
+    ROOT.gROOT.SetStyle("Plain");
+    ROOT.gStyle.SetGridStyle(3);
+    ROOT.gStyle.SetOptStat(000000);
+    ROOT.gStyle.SetOptTitle(0)
 
-    # Define initial parameters
-    init_params = dict(loc = loc_init, scale = scale_init)
+    thevars = ROOT.RooArgSet()
+    xmin, xmax = B_UP, 6.0
+    bMass = ROOT.RooRealVar("BToKEE_fit_mass", "m(K^{+}e^{+}e^{-})", 4.0, 6.0, "GeV")
+    #dieleMass = ROOT.RooRealVar("BToKEE_mll_fullfit", "m(e^{+}e^{-})", 2.0, 4.0, "GeV")
+    wspace.factory('mean[5.27929e+00, 5.2e+00, 5.3e+00]')
+    #thevars.add(dieleMass)
+    thevars.add(bMass)
 
-    print(iminuit.describe(exp_func))
-    # Create an unbinned likelihood object with function and data.
-    unbin = probfit.UnbinnedLH(exp_func, data)
+    fulldata = ROOT.RooDataSet('fulldata', 'fulldata', tree, ROOT.RooArgSet(thevars))
+    theBMassfunc = ROOT.RooFormulaVar("x", "x", "@0", ROOT.RooArgList(bMass) )
+    theBMass     = fulldata.addColumn(theBMassfunc) ;
+    theBMass.setRange(xmin,xmax);
+    thevars.add(theBMass)
 
-    # Minimizes the unbinned likelihood for the given function
-    m = iminuit.Minuit(unbin, loc=1.0, scale=1.0, print_level=0)#,
-                       #*init_params,
-                       #limit_scale = limit_loc,
-                       #limit_loc = limit_scale,
-                       #print_level=0)
-    m.migrad()
-    unbin.show(m)
-    params = m.values.values() # Get out fit values
-    errs   = m.errors.values()
-    return params, errs
+    m0 = 3.08812
+    si = 0.04757
+    #cut = '(BToKEE_mll_fullfit > {}) & (BToKEE_mll_fullfit < {})'.format(m0 - 3.0*si, m0 + 3.0*si)
+    cut=''
+    print cut    
+    data = fulldata.reduce(thevars, cut)
+    getattr(wspace,'import')(data, RooFit.Rename("data"))
 
+    # Exponential
+    wspace.factory('exp_alpha[-1.0, -100.0, -1.0e-5]')
+    alpha = wspace.var('alpha')
+    wspace.factory('Exponential::bkg(x,exp_alpha)')
+
+    model = wspace.pdf('bkg')
+    bkg = wspace.pdf('bkg')
+
+    # define the set obs = (x)
+    wspace.defineSet('obs', 'x')
+
+    # make the set obs known to Python
+    obs  = wspace.set('obs')
+
+    ## fit the model to the data.
+    results = model.fitTo(data, RooFit.Extended(False), RooFit.Save(), RooFit.Range(xmin,xmax), RooFit.PrintLevel(-1))
+    results.Print()
+
+    theBMass.setRange("window",B_LOW,B_UP)
+    theBMass.setRange("sideband",B_UP,xmax)
+    fracSigRange = bkg.createIntegral(obs,obs,"window") ;
+    fracSBRange = bkg.createIntegral(obs,obs,"sideband") ;
+    print("Number of background: %f"%(data.sumEntries()*(fracSigRange.getVal()/fracSBRange.getVal())))
+
+    # Plot results of fit on a different frame
+    c2 = ROOT.TCanvas('fig_binnedFit', 'fit', 800, 600)
+    c2.SetGrid()
+    c2.cd()
+    ROOT.gPad.SetLeftMargin(0.10)
+    ROOT.gPad.SetRightMargin(0.05)
+
+    #xframe = wspace.var('x').frame(RooFit.Title("PF electron"))
+    xframe = theBMass.frame()
+    data.plotOn(xframe, RooFit.Binning(10), RooFit.Name("data"))
+    model.plotOn(xframe,RooFit.Name("global"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
+
+    xframe.GetYaxis().SetTitleOffset(0.9)
+    xframe.GetYaxis().SetTitleFont(42)
+    xframe.GetYaxis().SetTitleSize(0.05)
+    xframe.GetYaxis().SetLabelSize(0.04)
+    xframe.GetYaxis().SetLabelFont(42)
+    xframe.GetXaxis().SetTitleOffset(0.9)
+    xframe.GetXaxis().SetTitleFont(42)
+    xframe.GetXaxis().SetTitleSize(0.05)
+    xframe.GetXaxis().SetLabelSize(0.04)
+    xframe.GetXaxis().SetLabelFont(42)
+
+    xframe.GetYaxis().SetTitle("Events")
+    xframe.GetXaxis().SetTitle("m(K^{+}e^{+}e^{-}) [GeV]")
+    xframe.SetStats(0)
+    xframe.SetMinimum(0)
+    xframe.Draw()
+
+    legend = ROOT.TLegend(0.65,0.75,0.92,0.85);
+    legend.SetTextFont(72);
+    legend.SetTextSize(0.04);
+    legend.AddEntry(xframe.findObject("data"),"Data","lpe");
+    legend.AddEntry(xframe.findObject("global"),"Fit","l");
+    legend.Draw();
+
+    c2.cd()
+    c2.Update()
+
+    c2.SaveAs('{}_bkgfit_{}.pdf'.format(outputfile, mvaCutReplace))
+    return data.sumEntries()*(fracSigRange.getVal()/fracSBRange.getVal())
 
 
 def plotSNR(cut, sig, bkg, CutBasedWP):
@@ -194,7 +266,7 @@ if __name__ == "__main__":
     b_upsb_selection = jpsi_selection & (branches['BToKEE_fit_mass'] > B_UP)
     b_sb_selection = b_upsb_selection
 
-    general_selection = jpsi_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94)
+    general_selection = (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94)
 
     # additional cuts, allows various lengths
     l1_pf_selection = (branches['BToKEE_l1_isPF'])
@@ -244,16 +316,22 @@ if __name__ == "__main__":
   SErrList = []
   BList = []
   
-  mvaCutList = np.linspace(3.0, 5.0, 20)
+  mvaCutList = np.linspace(4.0, 8.0, 20)
+  #mvaCutList = np.linspace(3.0, 4.0, 1)
+
   for mvaCut in mvaCutList:
     mvaCutReplace = '{0:.3f}'.format(mvaCut).replace('.','_')
     # mva selection
     selected_branches_sig = df['sig'][(df['sig']['BToKEE_xgb'] > mvaCut)]['BToKEE_fit_mass']
-    selected_branches_bkg = df['bkg'][(df['bkg']['BToKEE_xgb'] > mvaCut)]['BToKEE_fit_mass'].values
+    selected_branches_bkg = df['bkg'][(df['bkg']['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')['BToKEE_fit_mass'].values
+    #selected_branches_bkg = df['bkg'][(df['bkg']['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')
+
     #selected_branches_sig = df['sig'][(df['sig']['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')['BToKEE_fit_mass']
     #selected_branches_bkg = df['bkg'][(df['bkg']['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')['BToKEE_fit_mass'].values
 
     NMC_SELECTED = float(selected_branches_sig.count())
+
+    
     h_BToKEE_mass_bkg = Hist(50, 4.5, 6.0, name='h_BToKEE_mass_bkg', title='', type='F') 
     fill_hist(h_BToKEE_mass_bkg, selected_branches_bkg[np.isfinite(selected_branches_bkg)])
     #selected_branches_bkg = selected_branches_bkg[np.isfinite(selected_branches_bkg)]
@@ -281,6 +359,12 @@ if __name__ == "__main__":
     plt.savefig('{}_bkgfit_{}.pdf'.format(outputfile, mvaCutReplace), bbox_inches='tight')
 
     N_BKG = quad(expo, B_LOW, B_UP, args=(popt[0], popt[1]))[0] / h_steps / 0.25#0.25
+    
+    #tree = array2tree(np.array(branches[['BToKEE_fit_mass','BToKEE_mll_fullfit']], dtype=[('BToKEE_fit_mass', 'f4'), ('BToKEE_mll_fullfit', 'f4')]))
+    #tree = array2tree(np.array(selected_branches_bkg['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')]))
+
+
+    #N_BKG = fit(tree, outputfile, mvaCutReplace) / 0.25
     N_SIG = (LUMI_DATA / LUMI_MC) * (NMC_SELECTED) / 0.25#0.25
     #N_SIG = CutBasedWP['S'] * (NMC_SELECTED / NMC_CUTBASED)
 

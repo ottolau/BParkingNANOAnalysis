@@ -199,12 +199,6 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
 
       del self._branches['nBToKEE']
 
-      # mass hypothesis to veto fake event from semi-leptonic decay D
-      l1_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l1_pt'], self._branches['BToKEE_fit_l1_eta'], self._branches['BToKEE_fit_l1_phi'], PI_MASS)
-      l2_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l2_pt'], self._branches['BToKEE_fit_l2_eta'], self._branches['BToKEE_fit_l2_phi'], PI_MASS)
-      k_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_k_pt'], self._branches['BToKEE_fit_k_eta'], self._branches['BToKEE_fit_k_phi'], K_MASS)
-      self._branches['BToKEE_Dmass_l1'] = (l1_pihypo_p4 + k_p4).mass
-      self._branches['BToKEE_Dmass_l2'] = (l2_pihypo_p4 + k_p4).mass
 
       # flatten the jagged arrays to a normal numpy array, turn the whole dictionary to pandas dataframe
       self._branches = pd.DataFrame.from_dict({branch: array.flatten() for branch, array in self._branches.items()})
@@ -219,7 +213,6 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       self._branches['BToKEE_fit_l2_normpt'] = self._branches['BToKEE_fit_l2_pt'] / self._branches['BToKEE_fit_mass']
       self._branches['BToKEE_fit_k_normpt'] = self._branches['BToKEE_fit_k_pt'] / self._branches['BToKEE_fit_mass']
       self._branches['BToKEE_fit_normpt'] = self._branches['BToKEE_fit_pt'] / self._branches['BToKEE_fit_mass']
-      self._branches['BToKEE_Dmass'] = self._branches.apply(self.GetDMass, axis=1)
 
       # general selection
       
@@ -238,9 +231,16 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       self._branches = self._branches[selection]
       if self._isMC:
         self._branches['BToKEE_decay'] = self._branches.apply(self.DecayCats, axis=1)
-        #self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
-        self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
-            
+        self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
+        #self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
+
+      # mass hypothesis to veto fake event from semi-leptonic decay D
+      l1_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l1_pt'], self._branches['BToKEE_fit_l1_eta'], self._branches['BToKEE_fit_l1_phi'], PI_MASS)
+      l2_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l2_pt'], self._branches['BToKEE_fit_l2_eta'], self._branches['BToKEE_fit_l2_phi'], PI_MASS)
+      k_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_k_pt'], self._branches['BToKEE_fit_k_eta'], self._branches['BToKEE_fit_k_phi'], K_MASS)
+      self._branches['BToKEE_Dmass_l1'] = (l1_pihypo_p4 + k_p4).mass
+      self._branches['BToKEE_Dmass_l2'] = (l2_pihypo_p4 + k_p4).mass
+      self._branches['BToKEE_Dmass'] = self._branches.apply(self.GetDMass, axis=1)    
 
       # fill output
       self.fill_output()

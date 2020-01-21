@@ -27,7 +27,7 @@ import uproot
 import pandas as pd
 import h5py
 import time
-
+from matplotlib import pyplot as plt
 
 def build_custom_model(hyper_params, classifier):
     if classifier == 'Keras':
@@ -125,8 +125,8 @@ if __name__ == "__main__":
     nData = min(df['sig'].shape[0], df['bkg'].shape[0])
     print(nData)
 
-    #df['sig'] = df['sig'].sample(frac=1)[:nData]
-    #df['bkg'] = df['bkg'].sample(frac=1)[:nData]
+    df['sig'] = df['sig'].sample(frac=1)#[:nData]
+    df['bkg'] = df['bkg'].sample(frac=1)[:80000]
 
     # add isSignal variable
     df['sig']['isSignal'] = np.ones(len(df['sig']))
@@ -174,7 +174,7 @@ if __name__ == "__main__":
 
     if use_classifiers['XGB']:
         print('Training XGBoost...')
-        hyper_params = {'colsample_bytree': 0.7265861505610647, 'subsample': 0.5726850720377014, 'eta': 0.02777478451843462, 'alpha': 0.04311540168298377, 'max_depth': 5, 'gamma': 0.6948236527284698, 'lambda': 1.1769525359431465}
+        hyper_params = {'colsample_bytree': 0.7185156092296114, 'subsample': 0.8911729653856808, 'eta': 0.13775090549674937, 'alpha': 0.10533204337826008, 'max_depth': 6, 'gamma': 0.7830403454095708, 'lambda': 1.2251850441755825}
 
         #model['XGB'] = build_custom_model(hyper_params, 'XGB')
         model['XGB'] = train(None, 'XGB', hyper_params=hyper_params)
@@ -182,6 +182,9 @@ if __name__ == "__main__":
         #cwd = os.getcwd()
         #joblib.dump(model['XGB'], os.path.join(cwd, "xgb_fulldata_{}.joblib.dat".format(args.suffix)))
         model['XGB'].save_model('xgb_fulldata_{}.model'.format(args.suffix))
+        plt.figure()
+        xgb.plot_importance(model['XGB'])
+        plt.savefig('training_results_feature_importance_{}.pdf'.format(args.suffix), bbox_inches='tight')
 
     if use_classifiers['SVM']:
         print('Training Support Vector Machine...')

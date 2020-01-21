@@ -182,7 +182,7 @@ if __name__ == "__main__":
     print(nData)
 
     df['sig'] = df['sig'].sample(frac=1)#[:nData]
-    df['bkg'] = df['bkg'].sample(frac=1)#[:nData]
+    df['bkg'] = df['bkg'].sample(frac=1)[:80000]
 
     # add isSignal variable
     df['sig']['isSignal'] = np.ones(len(df['sig']))
@@ -232,7 +232,7 @@ if __name__ == "__main__":
 
     if use_classifiers['XGB']:
         print('Initializing XGBoost...')
-        hyper_params['XGB'] = {'colsample_bytree': 0.7265861505610647, 'subsample': 0.5726850720377014, 'eta': 0.02777478451843462, 'alpha': 0.04311540168298377, 'max_depth': 5, 'gamma': 0.6948236527284698, 'lambda': 1.1769525359431465}
+        hyper_params['XGB'] = {'colsample_bytree': 0.8380017432637168, 'subsample': 0.7771020436861611, 'eta': 0.043554653675279234, 'alpha': 0.13978587730419964, 'max_depth': 5, 'gamma': 0.5966218064835417, 'lambda': 1.380893119219306}
 
         #model['XGB'] = build_custom_model(hyper_params, 'XGB')
         tprs['XGB'] = []

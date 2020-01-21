@@ -68,8 +68,8 @@ def objective(**X):
 
 import argparse
 parser = argparse.ArgumentParser(description="A simple ttree plotter")
-parser.add_argument("-s", "--signal", dest="signal", default="RootTree_BParkingNANO_2019Sep12_BuToKJpsi_Toee_mvaTraining_sig_training_pf.root", help="Signal file")
-parser.add_argument("-b", "--background", dest="background", default="RootTree_BParkingNANO_2019Sep12_Run2018A2A3B2B3C2C3D2_mvaTraining_bkg_training_pf.root", help="Background file")
+parser.add_argument("-s", "--signal", dest="signal", default="RootTree_BParkingNANO_2019Oct25_BuToKJpsi_Toee_2020Jan08_mvaTraining_sig_Dveto_JpsiDecorrCut_training_pf.root", help="Signal file")
+parser.add_argument("-b", "--background", dest="background", default="RootTree_BParkingNANO_2019Oct21_Run2018A2A3B2B3C2D2_2020Jan10_mvaTraining_bkg_Dveto_JpsiDecorrCut_training_pf.root", help="Background file")
 parser.add_argument("-f", "--suffix", dest="suffix", default=None, help="Suffix of the output name")
 args = parser.parse_args()
 
@@ -93,8 +93,8 @@ upfile['sig'] = uproot.open(filename['sig'])
 params['bkg'] = upfile['bkg']['tree'].arrays(branches)
 params['sig'] = upfile['sig']['tree'].arrays(branches)
 
-df['sig'] = pd.DataFrame(params['sig'])#[:30]
-df['bkg'] = pd.DataFrame(params['bkg'])#[:30]
+df['sig'] = pd.DataFrame(params['sig'])[:30]
+df['bkg'] = pd.DataFrame(params['bkg'])[:30]
 
 df['sig'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
 df['bkg'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
@@ -120,7 +120,7 @@ begt = time.time()
 print("Begin Bayesian optimization")
 best_auc = 0.0
 best_config = {}
-res_gp = gp_minimize(objective, space, n_calls=200, n_random_starts=100, random_state=3)
+res_gp = gp_minimize(objective, space, n_calls=5, n_random_starts=3, random_state=3)
 print("Finish optimization in {}s".format(time.time()-begt))
 
 plt.figure()
