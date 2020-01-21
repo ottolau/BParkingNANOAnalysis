@@ -96,7 +96,7 @@ if __name__ == "__main__":
 
   events = uproot.open(inputfile)['tree']
 
-  isMVAEvaluate = False
+  isMVAEvaluate = True
   prepareMVA = False
   plot2D = True
   isGetDecorr = False
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     outputbranches.update(outputbranches_mva)
     mvaCut = 2.0
     model = xgb.Booster({'nthread': 6})
-    model.load_model('xgb_fulldata_Dveto_JpsiWindow_pf.model')
+    model.load_model('xgb_fulldata_Dveto_JpsiWindow_pf_update.model')
 
   #params = events.arrays()
   startTime = time.time()
@@ -152,8 +152,8 @@ if __name__ == "__main__":
     #general_selection = jpsi_selection & sv_selection & k_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94)
 
     #general_selection = (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & b_sb_selection & d_veto_selection
-    #general_selection = (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & jpsi_selection & d_veto_selection
-    general_selection = d_veto_selection
+    general_selection = (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & jpsi_selection & d_veto_selection
+    #general_selection = d_veto_selection
 
     branches = branches[general_selection]
 
