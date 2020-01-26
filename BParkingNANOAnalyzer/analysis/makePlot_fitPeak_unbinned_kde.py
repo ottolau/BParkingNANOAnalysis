@@ -88,7 +88,8 @@ def fit(inputfile, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False):
 
     # make the set obs known to Python
     obs  = wspace.set('obs')
-    wspace.factory('KeysPdf::partial(x,data,MirrorBoth,2)')
+    #wspace.factory('KeysPdf::partial(x,data,MirrorBoth,2.0)')
+    wspace.factory('KeysPdf::partial(x,data,MirrorLeft,2.0)')
     model = wspace.pdf('partial')
 
     # Plot results of fit on a different frame

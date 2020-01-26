@@ -46,7 +46,7 @@ def CMS_lumi(isMC):
     mark.DrawLatex(1 - ROOT.gPad.GetRightMargin(), 1 - (ROOT.gPad.GetTopMargin() - 0.017), lumistamp)
 
 
-def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doPartial=False, partialinputfile='part_workspace.root'):
+def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doPartial=False, partialinputfile='part_workspace.root', drawSNR=False, mvaCut=0.0):
     msgservice = ROOT.RooMsgService.instance()
     msgservice.setGlobalKillBelow(RooFit.FATAL)
     wspace = ROOT.RooWorkspace('myWorkSpace')
@@ -147,11 +147,11 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
           wspace.factory('alpha2[1.0, 0.0, 10.0]')
           wspace.factory('n2[1.0, 1.0, 10.0]')
         else:
-          wspace.factory('width[0.06216, 0.06216, 0.06216]')
-          wspace.factory('alpha1[0.587, 0.587, 0.587]')
-          wspace.factory('n1[2.45, 2.45, 2.45]')
-          wspace.factory('alpha2[1.7453, 1.7453, 1.7453]')
-          wspace.factory('n2[6.31, 6.31, 6.31]')
+          wspace.factory('width[0.0591, 0.0591, 0.0591]')
+          wspace.factory('alpha1[0.623, 0.623, 0.623]')
+          wspace.factory('n1[2.58, 2.58, 2.58]')
+          wspace.factory('alpha2[1.90, 1.90, 1.90]')
+          wspace.factory('n2[6.3, 6.3, 6.3]')
 
         wspace.factory('GenericPdf::sig("DoubleCBFast(x,mean,width,alpha1,n1,alpha2,n2)", {x,mean,width,alpha1,n1,alpha2,n2})')
 
@@ -204,7 +204,8 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
       wspace.factory('ExtendPdf::model(sig,nsig)')
             
     model = wspace.pdf('model' if isMC else 'model')
-    bkg = wspace.pdf('bkg')
+    #bkg = wspace.pdf('bkg')
+    bkg = wspace.pdf('model1')
     sig = wspace.pdf('sig')
     nsig = wspace.var('nsig')
     nbkg = wspace.var('nbkg')
@@ -224,6 +225,7 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
       theBMass.setRange("window",B_LOW,B_UP) ;
       fracBkgRange = bkg.createIntegral(obs,obs,"window") ;
       nbkgWindow = nbkg.getVal() * fracBkgRange.getVal()
+      print(nbkg.getVal(), fracBkgRange.getVal())
       print("Number of signals: %f, Number of background: %f, S/sqrt(S+B): %f"%(nsig.getVal(), nbkgWindow, nsig.getVal()/np.sqrt(nsig.getVal() + nbkgWindow)))
     else:
       theBMass.setRange("window",B_LOW,B_UP) ;
@@ -254,7 +256,8 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
       if doPartial:
         model.plotOn(xframe,RooFit.Name("partial"),RooFit.Components("bkg,partial"),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(40),RooFit.LineColor(40),RooFit.LineWidth(1),RooFit.MoveToBack()) ;
       model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.DrawOption("L"),RooFit.LineStyle(2),RooFit.LineColor(1)) ;
-      
+
+
     else:
       #if fitJpsi:
         #model.paramOn(xframe,RooFit.Layout(0.15,0.45,0.85))
@@ -287,8 +290,31 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
 
     if isMC:
       legend = ROOT.TLegend(0.65,0.75,0.92,0.85);
+      if drawSNR:
+        pt = ROOT.TPaveText(0.72,0.38,0.92,0.50,"brNDC")
+        pt.SetFillColor(0)
+        pt.SetBorderSize(1)
+        pt.SetTextFont(42);
+        pt.SetTextSize(0.04);
+        pt.SetTextAlign(12)
+        pt.AddText("MVA cut: {0:.2f}".format(mvaCut))
+        pt.AddText("S: {0:.0f}#pm{1:.0f}".format(nsig.getVal(),nsig.getError()))
+        pt.Draw()
+
     else:
       legend = ROOT.TLegend(0.60,0.65,0.92,0.85);
+      if drawSNR:
+        pt = ROOT.TPaveText(0.72,0.38,0.92,0.63,"brNDC")
+        pt.SetFillColor(0)
+        pt.SetBorderSize(1)
+        pt.SetTextFont(42);
+        pt.SetTextSize(0.04);
+        pt.SetTextAlign(12)
+        pt.AddText("MVA cut: {0:.2f}".format(mvaCut))
+        pt.AddText("S: {0:.0f}#pm{1:.0f}".format(nsig.getVal(),nsig.getError()))
+        pt.AddText("B: {0:.0f}".format(nbkgWindow))
+        pt.AddText("S/#sqrt{{S+B}}: {0:.1f}".format(nsig.getVal()/np.sqrt(nsig.getVal() + nbkgWindow)))
+        pt.Draw()
 
     #legend = ROOT.TLegend(0.65,0.15,0.92,0.35);
     legend.SetTextFont(42);
@@ -310,6 +336,8 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
     print("="*80)
     if not isMC:
       return nsig.getVal(), nsig.getError(), nbkgWindow 
+    else:
+      return 0.0, 0.0, 0.0
 
 if __name__ == "__main__":
     import argparse
@@ -320,7 +348,8 @@ if __name__ == "__main__":
 
     tree = ROOT.TChain('tree')
     tree.AddFile(args.inputfile)
-    #fit(tree, args.outputfile, sigPDF=5, bkgPDF=2, fitJpsi=False, isMC=True)
-    fit(tree, args.outputfile, sigPDF=5, bkgPDF=2, doPartial=True)
+    fit(tree, args.outputfile, sigPDF=5, bkgPDF=2, fitJpsi=False, isMC=True)
+    #fit(tree, args.outputfile, sigPDF=5, bkgPDF=2, doPartial=True)
+    #fit(tree, args.outputfile, sigPDF=5, bkgPDF=2, doPartial=True, drawSNR=True, mvaCut=2.0)
 
 

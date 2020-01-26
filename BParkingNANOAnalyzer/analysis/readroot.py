@@ -16,48 +16,65 @@ parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Stor
 args = parser.parse_args()
 
 
-outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 2.5, 'xmax': 3.5},
-                  'BToKEE_mll_fullfit': {'nbins': 50, 'xmin': 2.5, 'xmax': 3.5},
-                  'BToKEE_mll_llfit': {'nbins': 50, 'xmin': 2.5, 'xmax': 3.5},
-                  #'BToKEE_mass': {'nbins': 100, 'xmin': 4.5, 'xmax': 6.0},
-                  'BToKEE_fit_mass': {'nbins': 50, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_fit_massErr': {'nbins': 50, 'xmin': 0.0, 'xmax': 0.5},
-                  'BToKEE_fit_l1_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_fit_l2_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_fit_l1_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_fit_l2_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_fit_l1_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
-                  'BToKEE_fit_l2_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
-                  'BToKEE_fit_l1_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
-                  'BToKEE_fit_l2_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
-                  'BToKEE_l1_dxy_sig': {'nbins': 50, 'xmin': -30.0, 'xmax': 30.0},
-                  'BToKEE_l2_dxy_sig': {'nbins': 50, 'xmin': -30.0, 'xmax': 30.0},
-                  'BToKEE_l1_dz': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
-                  'BToKEE_l2_dz': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
+outputbranches = {'BToKEE_mll_raw': {'nbins': 100, 'xmin': 0.0, 'xmax': 4.5},
+                  'BToKEE_mll_fullfit': {'nbins': 100, 'xmin': 0.0, 'xmax': 4.5},
+                  'BToKEE_mll_llfit': {'nbins': 100, 'xmin': 0.0, 'xmax': 4.5},
+                  'BToKEE_fit_mass': {'nbins': 100, 'xmin': 4.5, 'xmax': 6.0},
+                  'BToKEE_fit_massErr': {'nbins': 100, 'xmin': 0.0, 'xmax': 0.5},
+                  'BToKEE_fit_pt': {'nbins': 100, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_fit_normpt': {'nbins': 100, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_fit_eta': {'nbins': 100, 'xmin': -3.0, 'xmax': 3.0},
+                  'BToKEE_fit_phi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
+                  #'BToKEE_b_iso03_rel': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
+                  #'BToKEE_b_iso04_rel': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
+                  'BToKEE_fit_l1_pt': {'nbins': 100, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_fit_l2_pt': {'nbins': 100, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_fit_l1_normpt': {'nbins': 100, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_fit_l2_normpt': {'nbins': 100, 'xmin': 0.0, 'xmax': 30.0},
+                  'BToKEE_fit_l1_eta': {'nbins': 100, 'xmin': -3.0, 'xmax': 3.0},
+                  'BToKEE_fit_l2_eta': {'nbins': 100, 'xmin': -3.0, 'xmax': 3.0},
+                  'BToKEE_fit_l1_phi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
+                  'BToKEE_fit_l2_phi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
+                  'BToKEE_l1_dxy_sig': {'nbins': 100, 'xmin': -30.0, 'xmax': 30.0},
+                  'BToKEE_l2_dxy_sig': {'nbins': 100, 'xmin': -30.0, 'xmax': 30.0},
+                  'BToKEE_l1_dz': {'nbins': 100, 'xmin': -1.0, 'xmax': 1.0},
+                  'BToKEE_l2_dz': {'nbins': 100, 'xmin': -1.0, 'xmax': 1.0},
                   #'BToKEE_l1_unBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                   #'BToKEE_l2_unBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                   #'BToKEE_l1_ptBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                   #'BToKEE_l2_ptBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
-                  'BToKEE_l1_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
-                  'BToKEE_l2_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                  'BToKEE_l1_mvaId': {'nbins': 100, 'xmin': -2.0, 'xmax': 10.0},
+                  'BToKEE_l2_mvaId': {'nbins': 100, 'xmin': -2.0, 'xmax': 10.0},
+                  #'BToKEE_l1_pfmvaId': {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0},
+                  #'BToKEE_l2_pfmvaId': {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0},
                   'BToKEE_l1_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                   'BToKEE_l2_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                   'BToKEE_l1_isLowPt': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                   'BToKEE_l2_isLowPt': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                   'BToKEE_l1_isPFoverlap': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                   'BToKEE_l2_isPFoverlap': {'nbins': 2, 'xmin': 0, 'xmax': 2},
-                  'BToKEE_fit_k_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
-                  'BToKEE_fit_k_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
-                  'BToKEE_fit_k_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
-                  'BToKEE_fit_k_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
-                  'BToKEE_k_DCASig': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
-                  'BToKEE_fit_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_fit_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_svprob': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
-                  'BToKEE_fit_cos2D': {'nbins': 50, 'xmin': 0.999, 'xmax': 1.0},
-                  'BToKEE_l_xy_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
-                  'BToKEE_Dmass': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
-                  'BToKEE_event': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                  #'BToKEE_l1_iso03_rel': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
+                  #'BToKEE_l2_iso03_rel': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
+                  #'BToKEE_l1_iso04_rel': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
+                  #'BToKEE_l2_iso04_rel': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
+                  'BToKEE_fit_k_pt': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
+                  'BToKEE_fit_k_normpt': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
+                  'BToKEE_fit_k_eta': {'nbins': 100, 'xmin': -3.0, 'xmax': 3.0},
+                  'BToKEE_fit_k_phi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
+                  'BToKEE_k_DCASig': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
+                  #'BToKEE_k_dz': {'nbins': 100, 'xmin': -1.0, 'xmax': 1.0},
+                  #'BToKEE_k_nValidHits': {'nbins': 100, 'xmin': 0.0, 'xmax': 100.0},
+                  #'BToKEE_k_iso03_rel': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
+                  #'BToKEE_k_iso04_rel': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
+                  'BToKEE_svprob': {'nbins': 100, 'xmin': 0.0, 'xmax': 1.0},
+                  'BToKEE_fit_cos2D': {'nbins': 100, 'xmin': 0.999, 'xmax': 1.0},
+                  'BToKEE_l_xy_sig': {'nbins': 100, 'xmin': 0.0, 'xmax': 50.0},
+                  'BToKEE_Dmass': {'nbins': 100, 'xmin': 0.0, 'xmax': 5.0},
+                  'BToKEE_pill_mass': {'nbins': 100, 'xmin': 0.0, 'xmax': 5.0},
+                  #'BToKEE_maxDR': {'nbins': 100, 'xmin': 0.0, 'xmax': 4.0},
+                  #'BToKEE_minDR': {'nbins': 100, 'xmin': 0.0, 'xmax': 4.0},
+                  'BToKEE_eleEtaCats': {'nbins': 3, 'xmin': 0.0, 'xmax': 3.0},
+                  'BToKEE_event': {'nbins': 10, 'xmin': 0.0, 'xmax': 10.0},
                   #'BToKEE_fit_mass_decorr': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
                   #'BToKEE_mll_fullfit_decorr': {'nbins': 50, 'xmin': -0.2, 'xmax': 0.2},
                   }
@@ -66,14 +83,14 @@ outputbranches_mva = {'BToKEE_xgb': {'nbins': 50, 'xmin': -20.0, 'xmax': 20.0},
                      }
 
 outputhist2d = {'BToKEE_fit_mass_vs_BToKEE_q2': {'nbinx': 50, 'xmin': 4.5, 'xmax': 6.0, 'nbiny': 50, 'ymin': 0.0, 'ymax': 20.0},
-                'BToKEE_fit_mass_vs_BToKEE_mll_fullfit': {'nbinx': 50, 'xmin': 4.5, 'xmax': 6.0, 'nbiny': 50, 'ymin': 2.5, 'ymax': 3.5},
+                'BToKEE_fit_mass_vs_BToKEE_mll_fullfit': {'nbinx': 50, 'xmin': 4.5, 'xmax': 6.0, 'nbiny': 50, 'ymin': 0.0, 'ymax': 4.5},
                 #'BToKEE_fit_mass_decorr_vs_BToKEE_mll_fullfit_decorr': {'nbinx': 50, 'xmin': -1.0, 'xmax': 1.0, 'nbiny': 50, 'ymin': -0.2, 'ymax': 0.2},
                }
 
 ELECTRON_MASS = 0.000511
 K_MASS = 0.493677
-JPSI_MC = 3.0882
-JPSI_SIGMA_MC = 0.0475
+JPSI_MC = 3.08844
+JPSI_SIGMA_MC = 0.04571
 JPSI_LOW = np.sqrt(6.0)
 JPSI_UP = JPSI_MC + 3.0*JPSI_SIGMA_MC
 JPSI_DECORR_MC = 2.5001e-03
@@ -87,6 +104,15 @@ B_MIN = 4.5
 B_MAX = 6.0
 D_MASS_CUT = 1.9
 
+def EleEtaCats(row):    
+    etaCut = 1.44
+    if (abs(row['BToKEE_fit_l1_eta']) < etaCut) and (abs(row['BToKEE_fit_l2_eta']) < etaCut):
+      return 0
+    elif (abs(row['BToKEE_fit_l1_eta']) > etaCut) and (abs(row['BToKEE_fit_l2_eta']) > etaCut):
+      return 1
+    else:
+      return 2
+
 if __name__ == "__main__":
   inputfile = args.inputfile.replace('.root','').replace('.h5','')+'.root'
   outputfile = args.outputfile.replace('.root','').replace('.h5','')
@@ -96,7 +122,7 @@ if __name__ == "__main__":
 
   events = uproot.open(inputfile)['tree']
 
-  isMVAEvaluate = True
+  isMVAEvaluate = False
   prepareMVA = False
   plot2D = True
   isGetDecorr = False
@@ -105,8 +131,8 @@ if __name__ == "__main__":
     #training_branches = sorted(['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_mvaId', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_mvaId', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig'])
     training_branches = sorted(['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig'])
 
-    #mvaCut = 5.26315789474 
     outputbranches.update(outputbranches_mva)
+    #mvaCut = 4.52631578947
     mvaCut = 2.0
     model = xgb.Booster({'nthread': 6})
     model.load_model('xgb_fulldata_Dveto_JpsiWindow_pf_update.model')
@@ -117,7 +143,19 @@ if __name__ == "__main__":
     print('Reading chunk {}... Finished opening file in {} s'.format(i, time.time() - startTime))
     branches = pd.DataFrame(params).sort_index(axis=1)
 
-    branches['BToKEE_q2'] = pow(branches['BToKEE_mll_fullfit'], 2)
+    #branches['BToKEE_q2'] = pow(branches['BToKEE_mll_fullfit'], 2)
+    #branches['BToKEE_eleEtaCats'] = branches.apply(EleEtaCats, axis=1)
+
+    '''
+    branches['BToKEE_b_iso03_rel'] = branches['BToKEE_b_iso03'] / branches['BToKEE_fit_pt']
+    branches['BToKEE_b_iso04_rel'] = branches['BToKEE_b_iso04'] / branches['BToKEE_fit_pt']
+    branches['BToKEE_l1_iso03_rel'] = branches['BToKEE_l1_iso03'] / branches['BToKEE_fit_l1_pt']
+    branches['BToKEE_l1_iso04_rel'] = branches['BToKEE_l1_iso04'] / branches['BToKEE_fit_l1_pt']
+    branches['BToKEE_l2_iso03_rel'] = branches['BToKEE_l2_iso03'] / branches['BToKEE_fit_l2_pt']
+    branches['BToKEE_l2_iso04_rel'] = branches['BToKEE_l2_iso04'] / branches['BToKEE_fit_l2_pt']
+    branches['BToKEE_k_iso03_rel'] = branches['BToKEE_k_iso03'] / branches['BToKEE_fit_k_pt']
+    branches['BToKEE_k_iso04_rel'] = branches['BToKEE_k_iso04'] / branches['BToKEE_fit_k_pt']
+    '''
     '''
     mll_mean = np.mean(branches['BToKEE_mll_fullfit']) if isGetDecorr else 3.00233006477
     fit_mass_mean = np.mean(branches['BToKEE_fit_mass']) if isGetDecorr else 5.17608833313
@@ -138,6 +176,7 @@ if __name__ == "__main__":
     '''
 
     jpsi_selection = (branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_UP)
+    #jpsi_selection = (branches['BToKEE_mll_fullfit'] > np.sqrt(1.1)) & (branches['BToKEE_mll_fullfit'] < np.sqrt(6.0)) #JPSI_UP)
     #jpsi_selection = (branches['BToKEE_mll_fullfit_decorr'] > JPSI_DECORR_LOW) & (branches['BToKEE_mll_fullfit_decorr'] < JPSI_DECORR_UP)
     #b_selection = jpsi_selection & (branches['BToKEE_fit_mass'] > B_LOWSB_UP) & (branches['BToKEE_fit_mass'] < B_UPSB_LOW)
     b_upsb_selection = jpsi_selection & (branches['BToKEE_fit_mass'] > B_UP)
@@ -152,8 +191,11 @@ if __name__ == "__main__":
     #general_selection = jpsi_selection & sv_selection & k_selection & (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94)
 
     #general_selection = (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & b_sb_selection & d_veto_selection
-    general_selection = (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & jpsi_selection & d_veto_selection
-    #general_selection = d_veto_selection
+    #general_selection = (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & jpsi_selection & d_veto_selection
+    #general_selection = (branches['BToKEE_l1_mvaId'] > 3.94) & (branches['BToKEE_l2_mvaId'] > 3.94) & jpsi_selection & d_veto_selection & (branches['BToKEE_eleEtaCats'] == 2)
+    general_selection = d_veto_selection
+    general_selection &= (branches['BToKEE_eleEtaCats'] == 0)
+    #general_selection &= np.logical_not(branches['BToKEE_k_isKaon'])
 
     branches = branches[general_selection]
 

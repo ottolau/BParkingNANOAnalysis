@@ -40,9 +40,16 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'BToKEE_fit_k_phi',
                             'BToKEE_svprob',
                             'BToKEE_fit_cos2D',
-                            #'Electron_pt',
-                            #'Electron_eta',
-                            #'Electron_phi',
+                            'BToKEE_maxDR',
+                            'BToKEE_minDR',
+                            'BToKEE_k_iso03',
+                            'BToKEE_k_iso04',
+                            'BToKEE_l1_iso03',
+                            'BToKEE_l1_iso04',
+                            'BToKEE_l2_iso03',
+                            'BToKEE_l2_iso04',
+                            'BToKEE_b_iso03',
+                            'BToKEE_b_iso04',
                             'Electron_charge',
                             'Electron_dz',
                             'Electron_dxy',
@@ -54,7 +61,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'Electron_isPF',
                             'Electron_isPFoverlap',
                             'Electron_mvaId',
-                            #'Electron_pfmvaId',
+                            'Electron_pfmvaId',
                             #'Electron_lostHits',
                             'ProbeTracks_charge',
                             'ProbeTracks_pt',
@@ -62,6 +69,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'ProbeTracks_eta',
                             'ProbeTracks_phi',
                             'ProbeTracks_dz',
+                            'ProbeTracks_nValidHits',
                             #'ProbeTracks_isLostTrk',
                             #'ProbeTracks_isPacked',
                             #'HLT_Mu9_IP6_*',
@@ -82,6 +90,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_mll_llfit': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
                              'BToKEE_mllErr_llfit': {'nbins': 30, 'xmin': 0.0, 'xmax': 3.0},
                              'BToKEE_mll_fullfit': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
+                             'BToKEE_q2': {'nbins': 50, 'xmin': 0.0, 'xmax': 20.0},
                              'BToKEE_mass': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_fit_mass': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
                              'BToKEE_fit_massErr': {'nbins': 30, 'xmin': 0.0, 'xmax': 3.0},
@@ -103,8 +112,8 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_l2_ptBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                              'BToKEE_l1_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                              'BToKEE_l2_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
-                             #'BToKEE_l1_pfmvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
-                             #'BToKEE_l2_pfmvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                             'BToKEE_l1_pfmvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                             'BToKEE_l2_pfmvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                              'BToKEE_l1_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                              'BToKEE_l2_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                              'BToKEE_l1_isLowPt': {'nbins': 2, 'xmin': 0, 'xmax': 2},
@@ -115,7 +124,10 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_fit_k_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
                              'BToKEE_fit_k_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
                              'BToKEE_fit_k_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
+                             'BToKEE_k_dz': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
                              'BToKEE_k_DCASig': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                             'BToKEE_k_nValidHits': {'nbins': 30, 'xmin': 0.0, 'xmax': 30.0},
+                             'BToKEE_k_isKaon': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                              'BToKEE_fit_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
                              'BToKEE_fit_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
                              'BToKEE_fit_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
@@ -124,6 +136,18 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_fit_cos2D': {'nbins': 50, 'xmin': 0.999, 'xmax': 1.0},
                              'BToKEE_l_xy_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
                              'BToKEE_Dmass': {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0},
+                             'BToKEE_pill_mass': {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0},
+                             'BToKEE_maxDR': {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0},
+                             'BToKEE_minDR': {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0},
+                             'BToKEE_k_iso03_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                             'BToKEE_k_iso04_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                             'BToKEE_l1_iso03_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                             'BToKEE_l1_iso04_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                             'BToKEE_l2_iso03_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                             'BToKEE_l2_iso04_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                             'BToKEE_b_iso03_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                             'BToKEE_b_iso04_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                             'BToKEE_eleEtaCats': {'nbins': 3, 'xmin': 0.0, 'xmax': 3.0},
                              'BToKEE_event': {'nbins': 10, 'xmin': 0, 'xmax': 10},
                              }
 
@@ -157,6 +181,8 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
 
       if self._isMC:
         # reconstruct full decay chain
+        self._branches['BToKEE_k_genPdfId'] = self._branches['GenPart_pdgId'][self._branches['ProbeTracks_genPartIdx'][self._branches['BToKEE_kIdx']]]
+
         self._branches['BToKEE_l1_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['Electron_genPartIdx'][self._branches['BToKEE_l1Idx']]]
         self._branches['BToKEE_l2_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['Electron_genPartIdx'][self._branches['BToKEE_l2Idx']]]
         self._branches['BToKEE_k_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['ProbeTracks_genPartIdx'][self._branches['BToKEE_kIdx']]]
@@ -213,13 +239,24 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       self._branches['BToKEE_fit_l2_normpt'] = self._branches['BToKEE_fit_l2_pt'] / self._branches['BToKEE_fit_mass']
       self._branches['BToKEE_fit_k_normpt'] = self._branches['BToKEE_fit_k_pt'] / self._branches['BToKEE_fit_mass']
       self._branches['BToKEE_fit_normpt'] = self._branches['BToKEE_fit_pt'] / self._branches['BToKEE_fit_mass']
+      self._branches['BToKEE_q2'] = pow(self._branches['BToKEE_mll_fullfit'], 2)
+      self._branches['BToKEE_eleEtaCats'] = self._branches.apply(self.EleEtaCats, axis=1)
+      self._branches['BToKEE_b_iso03_rel'] = self._branches['BToKEE_b_iso03'] / self._branches['BToKEE_fit_pt']
+      self._branches['BToKEE_b_iso04_rel'] = self._branches['BToKEE_b_iso04'] / self._branches['BToKEE_fit_pt']
+      self._branches['BToKEE_l1_iso03_rel'] = self._branches['BToKEE_l1_iso03'] / self._branches['BToKEE_fit_l1_pt']
+      self._branches['BToKEE_l1_iso04_rel'] = self._branches['BToKEE_l1_iso04'] / self._branches['BToKEE_fit_l1_pt']
+      self._branches['BToKEE_l2_iso03_rel'] = self._branches['BToKEE_l2_iso03'] / self._branches['BToKEE_fit_l2_pt']
+      self._branches['BToKEE_l2_iso04_rel'] = self._branches['BToKEE_l2_iso04'] / self._branches['BToKEE_fit_l2_pt']
+      self._branches['BToKEE_k_iso03_rel'] = self._branches['BToKEE_k_iso03'] / self._branches['BToKEE_fit_k_pt']
+      self._branches['BToKEE_k_iso04_rel'] = self._branches['BToKEE_k_iso04'] / self._branches['BToKEE_fit_k_pt']
+      self._branches['BToKEE_k_isKaon'] = True
 
       # general selection
       
       sv_selection = (self._branches['BToKEE_fit_pt'] > 3.0) #& (self._branches['BToKEE_l_xy_sig'] > 6.0 ) & (self._branches['BToKEE_svprob'] > 0.01) & (self._branches['BToKEE_fit_cos2D'] > 0.9)
       l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_fit_l1_pt'] > 1.5) & (self._branches['BToKEE_l1_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
       l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_fit_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
-      k_selection = (self._branches['BToKEE_fit_k_pt'] > 0.5) #& (self._branches['BToKEE_k_DCASig'] > 2.0)
+      k_selection = (self._branches['BToKEE_fit_k_pt'] > 0.7) #& (self._branches['BToKEE_k_DCASig'] > 2.0)
       additional_selection = (self._branches['BToKEE_fit_mass'] > B_LOW) & (self._branches['BToKEE_fit_mass'] < B_UP)
 
       b_lowsb_selection = (self._branches['BToKEE_fit_mass'] > B_LOWSB_LOW) & (self._branches['BToKEE_fit_mass'] < B_LOWSB_UP)
@@ -230,17 +267,22 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
 
       self._branches = self._branches[selection]
       if self._isMC:
+        self._branches['BToKEE_k_isKaon'] = self._branches['BToKEE_k_genPdfId'].apply(lambda x: True if abs(x) == 321 else False)
         self._branches['BToKEE_decay'] = self._branches.apply(self.DecayCats, axis=1)
+        #self._branches.query('BToKEE_decay == 0', inplace=True) # B->K ll
         self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
+        #self._branches.query('BToKEE_decay == 2', inplace=True) # B->K*(K pi) ll
         #self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
 
       # mass hypothesis to veto fake event from semi-leptonic decay D
       l1_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l1_pt'], self._branches['BToKEE_fit_l1_eta'], self._branches['BToKEE_fit_l1_phi'], PI_MASS)
       l2_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l2_pt'], self._branches['BToKEE_fit_l2_eta'], self._branches['BToKEE_fit_l2_phi'], PI_MASS)
       k_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_k_pt'], self._branches['BToKEE_fit_k_eta'], self._branches['BToKEE_fit_k_phi'], K_MASS)
+      k_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_k_pt'], self._branches['BToKEE_fit_k_eta'], self._branches['BToKEE_fit_k_phi'], PI_MASS)
       self._branches['BToKEE_Dmass_l1'] = (l1_pihypo_p4 + k_p4).mass
       self._branches['BToKEE_Dmass_l2'] = (l2_pihypo_p4 + k_p4).mass
       self._branches['BToKEE_Dmass'] = self._branches.apply(self.GetDMass, axis=1)    
+      self._branches['BToKEE_pill_mass'] = (l1_pihypo_p4 + l2_pihypo_p4 + k_pihypo_p4).mass
 
       # fill output
       self.fill_output()
@@ -295,6 +337,14 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
     else:
       return row['BToKEE_Dmass_l2']
 
+  def EleEtaCats(self, row):    
+    etaCut = 1.44
+    if (abs(row['BToKEE_fit_l1_eta']) < etaCut) and (abs(row['BToKEE_fit_l2_eta']) < etaCut):
+      return 0
+    elif (abs(row['BToKEE_fit_l1_eta']) > etaCut) and (abs(row['BToKEE_fit_l2_eta']) > etaCut):
+      return 1
+    else:
+      return 2
 
 
 

@@ -36,6 +36,7 @@ varUnitMap = OrderedDict([("k_pt", "kaon p_{T} [GeV]"),
               ("isLowPt", "isLowPt"),
               ("isPFoverlap", "isPFoverlap"),
               ("isPF", "isPF"),
+              ("Dmass", "m(K^{+}l^{-}[#rightarrow #pi^{-}]) [GeV]"),
               ])
 
 def setup_pad():
@@ -199,7 +200,7 @@ def make_comparisons(signalfile, backgroundfile, outputFolder='Figures'):
     dir_list_bkg = ROOT.gDirectory.GetListOfKeys()
     outputfile = signalfile.replace('.root','') + "_comparisons"
 
-    skipHist = ['BToKEE_l1_mvaId', 'BToKEE_l1_unBiased', 'BToKEE_l1_ptBiased', 'BToKEE_l1_isLowPt', 'BToKEE_l1_isPF', 'BToKEE_l1_isPFoverlap', 'BToKEE_l2_mvaId', 'BToKEE_l2_unBiased', 'BToKEE_l2_ptBiased', 'BToKEE_l2_isLowPt', 'BToKEE_l2_isPF', 'BToKEE_l2_isPFoverlap']
+    skipHist = ['BToKEE_l1_mvaId', 'BToKEE_l1_unBiased', 'BToKEE_l1_ptBiased', 'BToKEE_l1_isLowPt', 'BToKEE_l1_isPF', 'BToKEE_l1_isPFoverlap', 'BToKEE_l2_mvaId', 'BToKEE_l2_unBiased', 'BToKEE_l2_ptBiased', 'BToKEE_l2_isLowPt', 'BToKEE_l2_isPF', 'BToKEE_l2_isPFoverlap', 'BToKEE_event']
 
     nItems = sum(1 for prob in product(dir_list_sig, dir_list_bkg) if prob[0].GetClassName() == "TH1F" and prob[1].GetClassName() == "TH1F" and prob[0].ReadObj().GetName() == prob[1].ReadObj().GetName() and (prob[0].ReadObj().GetName() not in skipHist))
     nPages = 0

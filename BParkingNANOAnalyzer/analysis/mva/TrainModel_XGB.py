@@ -79,7 +79,7 @@ def plot_roc_curve(df, score_column, tpr_threshold=0.0, ax=None, color=None, lin
         ax = plt.gca()
     if label is None:
         label = score_column
-    fpr, tpr, thresholds = roc_curve(df["isSignal"], df[score_column], drop_intermediate=False)
+    fpr, tpr, thresholds = roc_curve(df["isSignal"], df[score_column], drop_intermediate=True)
     roc_auc = roc_auc_score(df["isSignal"], df[score_column])
     print("auc: {}".format(roc_auc))
     mask = tpr > tpr_threshold
@@ -191,18 +191,13 @@ def EleMVACats(row):
     elif 1.57 < abs(row['scl_eta']) < 2.5: return 2
     else: return 3
 
-
-# define the preprocessing function
-# used to return the preprocessed training, test data, and parameter
-# we can use this to do weight rescale, etc.
-# as a example, we try to set scale_pos_weight
 def fpreproc(dtrain, dtest, param):
     label = dtrain.get_label()
     ratio = float(np.sum(label == 0)) / np.sum(label == 1)
     param['scale_pos_weight'] = ratio
     return (dtrain, dtest, param)
 
-space  = [Integer(5, 7, name='max_depth'),
+space  = [Integer(4, 8, name='max_depth'),
          Real(0.01, 0.2, name='eta'),
          Real(0.0, 1.0, name='gamma'),
          Real(0.5, 1.0, name='subsample'),
@@ -218,10 +213,9 @@ def objective(**X):
     params = X.copy()
     params['objective'] = 'binary:logitraw'
     params['eval_metric'] = 'auc'
-    params['early_stopping_rounds'] = 100
     params['nthread'] = 6
     params['silent'] = 1
-    cv_result = xgb.cv(params, dmatrix_train, num_boost_round=n_boost_rounds, nfold=5, shuffle=True, fpreproc=fpreproc)
+    cv_result = xgb.cv(params, dmatrix_train, num_boost_round=n_boost_rounds, nfold=5, shuffle=True, stratified=True, early_stopping_rounds=75, fpreproc=fpreproc)
     ave_auc = cv_result['test-auc-mean'].iloc[-1]
     print("Average auc: {}".format(ave_auc))
     if ave_auc > best_auc:
@@ -230,9 +224,7 @@ def objective(**X):
     print("Best auc: {}, Best configuration: {}".format(best_auc, best_params))
     return -ave_auc
 
-def train(X_train_val, Y_train_val, X_test, Y_test, hyper_params=None):
-    xgtrain = xgb.DMatrix(X_train_val, label=Y_train_val)
-    xgtest  = xgb.DMatrix(X_test , label=Y_test )
+def train(xgtrain, xgtest, hyper_params=None):
     watchlist = [(xgtrain, 'train'), (xgtest, 'eval')]
     params = hyper_params.copy()
     label = xgtrain.get_label()
@@ -240,18 +232,24 @@ def train(X_train_val, Y_train_val, X_test, Y_test, hyper_params=None):
     params['scale_pos_weight'] = ratio
     params['objective'] = 'binary:logitraw'
     params['eval_metric'] = 'auc'
-    params['early_stopping_rounds'] = 100
-    params['nthread'] = 6
+    params['nthread'] = 10
     params['silent'] = 1
-
     results = {}
-    model = xgb.train(params, xgtrain, num_boost_round=n_boost_rounds, evals=watchlist, evals_result=results, verbose_eval=False)
+    model = xgb.train(params, xgtrain, num_boost_round=n_boost_rounds, evals=watchlist, evals_result=results, early_stopping_rounds=75, verbose_eval=False)
+    best_iteration = model.best_iteration + 1
+    if best_iteration < n_boost_rounds:
+        print("early stopping after {0} boosting rounds".format(best_iteration))
+    return model, results
+
+def train_cv(X_train_val, Y_train_val, X_test, Y_test, hyper_params=None):
+    xgtrain = xgb.DMatrix(X_train_val, label=Y_train_val)
+    xgtest  = xgb.DMatrix(X_test , label=Y_test )
+    model, results = train(xgtrain, xgtest, hyper_params=hyper_params)
     Y_predict = model.predict(xgb.DMatrix(X_test), ntree_limit=model.best_iteration+1)
-    fpr, tpr, thresholds = roc_curve(Y_test, Y_predict, drop_intermediate=False)
+    fpr, tpr, thresholds = roc_curve(Y_test, Y_predict, drop_intermediate=True)
     roc_auc = roc_auc_score(Y_test, Y_predict)
     print("Best auc: {}".format(roc_auc))
     return model, fpr, tpr, thresholds, roc_auc, results
-
 
 if __name__ == '__main__':
     import argparse
@@ -262,7 +260,9 @@ if __name__ == '__main__':
     parser.add_argument("-o", "--optimization", dest="optimization", action='store_true', help="Perform Bayesian optimization")
     args = parser.parse_args()
 
-    features = sorted(['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig'])
+    features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig']
+
+    features = sorted(features)
 
     ddf = {}
     ddf['sig'] = get_df(args.signal, features)
@@ -273,8 +273,8 @@ if __name__ == '__main__':
 
     nSig = ddf['sig'].shape[0]
     nBkg = 80000
-    #nSig = 1000
-    #nBkg = 1000
+    #nSig = 30
+    #nBkg = 30
     ddf['sig'] = ddf['sig'].sample(frac=1)[:nSig]
     ddf['bkg'] = ddf['bkg'].sample(frac=1)[:nBkg]
 
@@ -295,21 +295,18 @@ if __name__ == '__main__':
     best_params = {'colsample_bytree': 0.8380017432637168, 'subsample': 0.7771020436861611, 'eta': 0.043554653675279234, 'alpha': 0.13978587730419964, 'max_depth': 5, 'gamma': 0.5966218064835417, 'lambda': 1.380893119219306}
 
     # split X and y up in train and test samples
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.0, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.20, random_state=47)
 
     # Get the number of positive and nevative training examples in this category
     n_pos = np.sum(y_train == 1)
     n_neg = np.sum(y_train == 0)
 
-    print("training on {0} signal and {1} background electrons".format(n_pos, n_neg))
+    print("training on {0} signal and {1} background".format(n_pos, n_neg))
    
-    # Fortunately we are dealing with pandas DataFrames here, so we can just get the indices correspondng to the testing and training samples.
-    # This will come in handy when we want to figure out which rows in the original dataframe where used for trainingand testing.
+    # get the indices correspondng to the testing and training samples
     idx_train = X_train.index
     idx_test = X_test.index
 
-    # XGBoost has it's own data format, so we have to create these structures.
-    # The copies have no specific purpose other than silencing an xgboost warning.
     dmatrix_train = xgb.DMatrix(X_train.copy(), label=np.copy(y_train), feature_names=[f.replace('_','-') for f in features])
     dmatrix_test  = xgb.DMatrix(X_test.copy(), label=np.copy(y_test), feature_names=[f.replace('_','-') for f in features])
 
@@ -337,7 +334,8 @@ if __name__ == '__main__':
         tprs = []
         aucs = []
         figs, axs = plt.subplots()
-        cv = KFold(n_splits=5, shuffle=True)
+        #cv = KFold(n_splits=5, shuffle=True)
+        cv = StratifiedKFold(n_splits=5, shuffle=True)
         mean_fpr = np.logspace(-5, 0, 100)
 
         iFold = 0
@@ -347,7 +345,7 @@ if __name__ == '__main__':
             Y_train_cv = y_train.iloc[train_idx]
             Y_test_cv = y_train.iloc[test_idx]
 
-            model, fpr, tpr, thresholds, roc_auc, results = train(X_train_cv, Y_train_cv, X_test_cv, Y_test_cv, hyper_params=best_params)
+            model, fpr, tpr, thresholds, roc_auc, results = train_cv(X_train_cv, Y_train_cv, X_test_cv, Y_test_cv, hyper_params=best_params)
             epochs = len(results['train']['auc'])
             x_axis = range(0, epochs)
             fig, ax = plt.subplots()
@@ -357,7 +355,7 @@ if __name__ == '__main__':
             plt.ylabel('AUC')
             plt.xlabel('Epoch')
             plt.title('Fold: {}'.format(iFold))
-            fig.savefig('training_results_learning_curve_{}_{}.pdf'.format(suffix,iFold), bbox_inches='tight')
+            fig.savefig('training_results_learning_curve_cv_fold_{}_{}.pdf'.format(suffix,iFold), bbox_inches='tight')
 
             tprs.append(interp(mean_fpr, fpr, tpr))
             tprs[-1][0] = 0.0
@@ -388,46 +386,23 @@ if __name__ == '__main__':
     xgboost_params = best_params.copy()
 
     # Re-train the whole dataset with the best hyper-parameters (without doing any cross validation)
-
-    # There is one additional hyperparameter that we have to set per catoegy: `scale_pos_weight`.
-    # It corresponds  to a weight given to every positive sample, and it usually set to
-    # n_neg / n_pos when you have imbalanced datasets to balance the total contributions
-    # of the positive and negative classes in the loss function
-    xgboost_params["scale_pos_weight"] = 1. * n_neg / n_pos
-    xgboost_params['objective'] = 'binary:logitraw'
-    xgboost_params['eval_metric'] = 'auc'
-    xgboost_params['early_stopping_rounds'] = 100
-    xgboost_params['nthread'] = 6
-    xgboost_params['silent'] = 1
-
-    # In this line, we actually train the model.
-    # Notice the `early_stopping_rounds`, which cause the boosting to automatically stop
-    # when the test AUC has not decreased for 10 rounds. How does xgboost know what the training set is?
-    # You pass it some dmatrices with labels as a list of tuples to the `evals` keyword argument.
-    # The last entry in this list will be used for the early stopping criterion, in our case `dmatrix_test`.
-    model = xgb.train(xgboost_params, dmatrix_train, num_boost_round=n_boost_rounds, verbose_eval=False)
-    
+    print('Training full model...')
+    model, results = train(dmatrix_train, dmatrix_test, hyper_params=xgboost_params)
+  
     # We want to know if and when the training was early stopped.
-    # `best_iteration` counts the first iteration as zero, so we increment by one.
+    # `best_iteration` counts the first iteration as zero, so we increase by one.
     best_iteration = model.best_iteration + 1
     if best_iteration < n_boost_rounds:
-        print("early stopping after {0} boosting rounds".format(best_iteration))
+        print("Final model: early stopping after {0} boosting rounds".format(best_iteration))
     print("")
     
-    # Hence, we also save the model in xgboosts own binary format just to be sure.
     model.save_model("xgb_fulldata_{}.model".format(suffix))
 
-    # Now we see why it's good to have the indices corresponding to the train and test set!
-    # We can now calculate classification scores with our freshly-trained model and store them
-    # in a new column `score` of the original DataFrame at the appropriate places.
-    df.loc[idx_train, "score"] = model.predict(dmatrix_train)
-    df.loc[idx_test, "score"] = model.predict(dmatrix_test)
+    df.loc[idx_train, "score"] = model.predict(dmatrix_train, ntree_limit=model.best_iteration+1)
+    df.loc[idx_test, "score"] = model.predict(dmatrix_test, ntree_limit=model.best_iteration+1)
     
-    # When we look at how the model performs later, we are mostly interested in the performance on the
-    # test set. We can add another boolean column to indicate whether an electron is in the test set or not.
     df.loc[idx_train, "test"] = False
     df.loc[idx_test, "test"] = True
-
 
     print("Best hyper-parameters: {}".format(best_params))
    
@@ -437,8 +412,18 @@ if __name__ == '__main__':
     df_test = df[df['test']]
     #df_test.to_csv('training_results_testdf_{}.csv'.format(suffix))
 
+    epochs = len(results['train']['auc'])
+    x_axis = range(0, epochs)
     fig, ax = plt.subplots()
-    plot_roc_curve(df_train, "score", ax=ax, label="XGB")
+    ax.plot(x_axis, results['train']['auc'], label='Train')
+    ax.plot(x_axis, results['eval']['auc'], label='Test')
+    ax.legend()
+    plt.ylabel('AUC')
+    plt.xlabel('Epoch')
+    fig.savefig('training_results_learning_curve_{}.pdf'.format(suffix), bbox_inches='tight')
+
+    fig, ax = plt.subplots()
+    plot_roc_curve(df_test, "score", ax=ax, label="XGB")
     ax.plot(np.logspace(-4, 0, 1000), np.logspace(-4, 0, 1000), linestyle='--', color='k')
     ax.set_xscale('log')
     ax.set_xlabel("False Alarm Rate")
