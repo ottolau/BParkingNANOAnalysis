@@ -50,6 +50,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'BToKEE_l2_iso04',
                             'BToKEE_b_iso03',
                             'BToKEE_b_iso04',
+                            'Electron_pt',
                             'Electron_charge',
                             'Electron_dz',
                             'Electron_dxy',
@@ -114,6 +115,8 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_l2_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                              'BToKEE_l1_pfmvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
                              'BToKEE_l2_pfmvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
+                             'BToKEE_l1_pfmvaCats': {'nbins': 2, 'xmin': 0.0, 'xmax': 2.0},
+                             'BToKEE_l2_pfmvaCats': {'nbins': 2, 'xmin': 0.0, 'xmax': 2.0},
                              'BToKEE_l1_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                              'BToKEE_l2_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                              'BToKEE_l1_isLowPt': {'nbins': 2, 'xmin': 0, 'xmax': 2},
@@ -249,6 +252,8 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       self._branches['BToKEE_l2_iso04_rel'] = self._branches['BToKEE_l2_iso04'] / self._branches['BToKEE_fit_l2_pt']
       self._branches['BToKEE_k_iso03_rel'] = self._branches['BToKEE_k_iso03'] / self._branches['BToKEE_fit_k_pt']
       self._branches['BToKEE_k_iso04_rel'] = self._branches['BToKEE_k_iso04'] / self._branches['BToKEE_fit_k_pt']
+      self._branches['BToKEE_l1_pfmvaCats'] = self._branches['BToKEE_l1_pt'].apply(lambda x: 0 if x < 5.0 else 1)
+      self._branches['BToKEE_l2_pfmvaCats'] = self._branches['BToKEE_l2_pt'].apply(lambda x: 0 if x < 5.0 else 1)
       self._branches['BToKEE_k_isKaon'] = True
 
       # general selection

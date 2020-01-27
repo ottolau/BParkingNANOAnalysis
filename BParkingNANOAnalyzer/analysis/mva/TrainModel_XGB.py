@@ -197,7 +197,7 @@ def fpreproc(dtrain, dtest, param):
     param['scale_pos_weight'] = ratio
     return (dtrain, dtest, param)
 
-space  = [Integer(4, 8, name='max_depth'),
+space  = [Integer(3, 7, name='max_depth'),
          Real(0.01, 0.2, name='eta'),
          Real(0.0, 1.0, name='gamma'),
          Real(0.5, 1.0, name='subsample'),
@@ -215,7 +215,7 @@ def objective(**X):
     params['eval_metric'] = 'auc'
     params['nthread'] = 6
     params['silent'] = 1
-    cv_result = xgb.cv(params, dmatrix_train, num_boost_round=n_boost_rounds, nfold=5, shuffle=True, stratified=True, early_stopping_rounds=75, fpreproc=fpreproc)
+    cv_result = xgb.cv(params, dmatrix_train, num_boost_round=n_boost_rounds, nfold=10, shuffle=True, stratified=True, early_stopping_rounds=75, fpreproc=fpreproc)
     ave_auc = cv_result['test-auc-mean'].iloc[-1]
     print("Average auc: {}".format(ave_auc))
     if ave_auc > best_auc:
@@ -245,7 +245,7 @@ def train_cv(X_train_val, Y_train_val, X_test, Y_test, hyper_params=None):
     xgtrain = xgb.DMatrix(X_train_val, label=Y_train_val)
     xgtest  = xgb.DMatrix(X_test , label=Y_test )
     model, results = train(xgtrain, xgtest, hyper_params=hyper_params)
-    Y_predict = model.predict(xgb.DMatrix(X_test), ntree_limit=model.best_iteration+1)
+    Y_predict = model.predict(xgb.DMatrix(X_test), ntree_limit=model.best_ntree_limit)
     fpr, tpr, thresholds = roc_curve(Y_test, Y_predict, drop_intermediate=True)
     roc_auc = roc_auc_score(Y_test, Y_predict)
     print("Best auc: {}".format(roc_auc))
@@ -262,6 +262,17 @@ if __name__ == '__main__':
 
     features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig']
 
+    '''
+    features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_iso03_rel',
+                'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_iso03_rel',
+                'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_k_dz', 'BToKEE_k_nValidHits', 'BToKEE_k_iso03_rel',
+                'BToKEE_fit_normpt', 'BToKEE_b_iso03_rel', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig',
+                ]
+
+    features += ['BToKEE_l1_pfmvaId', 'BToKEE_l2_pfmvaId']
+    features += ['BToKEE_l1_pfmvaCats', 'BToKEE_l2_pfmvaCats']
+    '''
+
     features = sorted(features)
 
     ddf = {}
@@ -273,8 +284,8 @@ if __name__ == '__main__':
 
     nSig = ddf['sig'].shape[0]
     nBkg = 80000
-    #nSig = 30
-    #nBkg = 30
+    #nSig = 1000
+    #nBkg = 1000
     ddf['sig'] = ddf['sig'].sample(frac=1)[:nSig]
     ddf['bkg'] = ddf['bkg'].sample(frac=1)[:nBkg]
 
@@ -335,8 +346,8 @@ if __name__ == '__main__':
         aucs = []
         figs, axs = plt.subplots()
         #cv = KFold(n_splits=5, shuffle=True)
-        cv = StratifiedKFold(n_splits=5, shuffle=True)
-        mean_fpr = np.logspace(-5, 0, 100)
+        cv = StratifiedKFold(n_splits=10, shuffle=True)
+        mean_fpr = np.logspace(-4, 0, 100)
 
         iFold = 0
         for train_idx, test_idx in cv.split(X_train, y_train):
@@ -379,7 +390,7 @@ if __name__ == '__main__':
         axs.set_xlabel('False Alarm Rate')
         axs.set_ylabel('True Positive Rate')
         axs.set_title('Cross-validation Receiver Operating Curve')
-        axs.legend(loc="upper left") 
+        axs.legend(loc="lower right") 
         figs.savefig('training_results_roc_cv_{}.pdf'.format(suffix), bbox_inches='tight')
 
 
@@ -398,19 +409,26 @@ if __name__ == '__main__':
     
     model.save_model("xgb_fulldata_{}.model".format(suffix))
 
-    df.loc[idx_train, "score"] = model.predict(dmatrix_train, ntree_limit=model.best_iteration+1)
-    df.loc[idx_test, "score"] = model.predict(dmatrix_test, ntree_limit=model.best_iteration+1)
-    
+    df.loc[idx_train, "score"] = model.predict(dmatrix_train, ntree_limit=model.best_ntree_limit)
+    df.loc[idx_test, "score"] = model.predict(dmatrix_test, ntree_limit=model.best_ntree_limit)
+   
     df.loc[idx_train, "test"] = False
     df.loc[idx_test, "test"] = True
 
-    print("Best hyper-parameters: {}".format(best_params))
-   
+    print("")
+    print("Final model: Best hyper-parameters: {}, ntree_limit: {}".format(best_params, model.best_ntree_limit))
+    print("")
+
     #df_train = df.query("not test")
     #df_test = df.query("test")
     df_train = df[np.logical_not(df['test'])]
     df_test = df[df['test']]
     #df_test.to_csv('training_results_testdf_{}.csv'.format(suffix))
+
+    fpr, tpr, thresholds = roc_curve(df_test["isSignal"], df_test["score"], drop_intermediate=True)
+    roc_dict = {'fpr': fpr, 'tpr': tpr, 'thresholds': thresholds}
+    roc_df = pd.DataFrame(data=roc_dict)
+    roc_df.to_csv('training_results_roc_csv_{}.csv'.format(suffix))
 
     epochs = len(results['train']['auc'])
     x_axis = range(0, epochs)
@@ -422,9 +440,20 @@ if __name__ == '__main__':
     plt.xlabel('Epoch')
     fig.savefig('training_results_learning_curve_{}.pdf'.format(suffix), bbox_inches='tight')
 
+
     fig, ax = plt.subplots()
     plot_roc_curve(df_test, "score", ax=ax, label="XGB")
     ax.plot(np.logspace(-4, 0, 1000), np.logspace(-4, 0, 1000), linestyle='--', color='k')
+    '''
+    mvaCut = np.linspace(0.0, 4.0, 10)
+    wp_fpr = interp(mvaCut, thresholds[::-1], fpr[::-1])
+    wp_tpr = interp(mvaCut, thresholds[::-1], tpr[::-1])
+    ax.scatter(wp_fpr, wp_tpr, c='r', label="Working point")
+    for i, mva in enumerate(mvaCut):
+      ax.annotate(round(mva,2), (wp_fpr[i], wp_tpr[i]), fontsize=10, xytext=(10,-20), textcoords="offset points", arrowprops=dict(arrowstyle="->"))
+    '''
+    ax.set_xlim([1.0e-4, 1.0])
+    ax.set_ylim([0.0, 1.0])
     ax.set_xscale('log')
     ax.set_xlabel("False Alarm Rate")
     ax.set_ylabel("Signal Efficiency")

@@ -47,6 +47,8 @@ outputbranches = {'BToKEE_mll_raw': {'nbins': 100, 'xmin': 0.0, 'xmax': 4.5},
                   'BToKEE_l2_mvaId': {'nbins': 100, 'xmin': -2.0, 'xmax': 10.0},
                   #'BToKEE_l1_pfmvaId': {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0},
                   #'BToKEE_l2_pfmvaId': {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0},
+                  #'BToKEE_l1_pfmvaCats': {'nbins': 2, 'xmin': 0.0, 'xmax': 2.0},
+                  #'BToKEE_l2_pfmvaCats': {'nbins': 2, 'xmin': 0.0, 'xmax': 2.0},
                   'BToKEE_l1_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                   'BToKEE_l2_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
                   'BToKEE_l1_isLowPt': {'nbins': 2, 'xmin': 0, 'xmax': 2},
@@ -134,6 +136,7 @@ if __name__ == "__main__":
     outputbranches.update(outputbranches_mva)
     #mvaCut = 4.52631578947
     mvaCut = 2.0
+    #ntree_limit = 100
     model = xgb.Booster({'nthread': 6})
     model.load_model('xgb_fulldata_Dveto_JpsiWindow_pf_update.model')
 
@@ -143,19 +146,6 @@ if __name__ == "__main__":
     print('Reading chunk {}... Finished opening file in {} s'.format(i, time.time() - startTime))
     branches = pd.DataFrame(params).sort_index(axis=1)
 
-    #branches['BToKEE_q2'] = pow(branches['BToKEE_mll_fullfit'], 2)
-    #branches['BToKEE_eleEtaCats'] = branches.apply(EleEtaCats, axis=1)
-
-    '''
-    branches['BToKEE_b_iso03_rel'] = branches['BToKEE_b_iso03'] / branches['BToKEE_fit_pt']
-    branches['BToKEE_b_iso04_rel'] = branches['BToKEE_b_iso04'] / branches['BToKEE_fit_pt']
-    branches['BToKEE_l1_iso03_rel'] = branches['BToKEE_l1_iso03'] / branches['BToKEE_fit_l1_pt']
-    branches['BToKEE_l1_iso04_rel'] = branches['BToKEE_l1_iso04'] / branches['BToKEE_fit_l1_pt']
-    branches['BToKEE_l2_iso03_rel'] = branches['BToKEE_l2_iso03'] / branches['BToKEE_fit_l2_pt']
-    branches['BToKEE_l2_iso04_rel'] = branches['BToKEE_l2_iso04'] / branches['BToKEE_fit_l2_pt']
-    branches['BToKEE_k_iso03_rel'] = branches['BToKEE_k_iso03'] / branches['BToKEE_fit_k_pt']
-    branches['BToKEE_k_iso04_rel'] = branches['BToKEE_k_iso04'] / branches['BToKEE_fit_k_pt']
-    '''
     '''
     mll_mean = np.mean(branches['BToKEE_mll_fullfit']) if isGetDecorr else 3.00233006477
     fit_mass_mean = np.mean(branches['BToKEE_fit_mass']) if isGetDecorr else 5.17608833313
@@ -221,7 +211,7 @@ if __name__ == "__main__":
 
     if isMVAEvaluate:
       branches = branches[pf_selection]
-      branches['BToKEE_xgb'] = model.predict(xgb.DMatrix(branches[training_branches].sort_index(axis=1).values))
+      branches['BToKEE_xgb'] = model.predict(xgb.DMatrix(branches[training_branches].sort_index(axis=1).values), ntree_limit=model.best_ntree_limit)
       branches = branches[(branches['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')
 
     output_branches = {}

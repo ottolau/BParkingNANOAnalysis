@@ -1,6 +1,7 @@
 import uproot
 import pandas as pd
 import numpy as np
+from scipy import interp
 from rootpy.io import root_open
 from rootpy.plotting import Hist
 from root_numpy import fill_hist, array2root, array2tree
@@ -10,6 +11,36 @@ from ROOT import RooFit
 import makePlot_fitPeak_unbinned as fit_unbinned
 ROOT.gErrorIgnoreLevel=ROOT.kError
 ROOT.RooMsgService.instance().setGlobalKillBelow(RooFit.FATAL)
+
+import matplotlib as mpl
+mpl.use('pdf')
+from matplotlib import pyplot as plt
+from matplotlib import rc
+#.Allow for using TeX mode in matplotlib Figures
+rc('font',**{'family':'sans-serif','sans-serif':['Computer Modern Roman']})
+rc('text', usetex=True)
+plt.rcParams['text.latex.preamble']=[r"\usepackage{lmodern}"]
+
+ratio=5.0/7.0
+fig_width_pt = 3*246.0  # Get this from LaTeX using \showthe\columnwidth
+inches_per_pt = 1.0/72.27               # Convert pt to inch
+golden_mean = ratio if ratio != 0.0 else (np.sqrt(5)-1.0)/2.0         # Aesthetic ratio
+fig_width = fig_width_pt*inches_per_pt  # width in inches
+fig_height = fig_width*golden_mean      # height in inches
+fig_size =  [fig_width,fig_height]
+
+params = {'text.usetex' : True,
+        'axes.labelsize': 24,
+        'font.size': 24,
+        'legend.fontsize': 20,
+        'xtick.labelsize': 24,
+        'ytick.labelsize': 24,
+        'font.family' : 'lmodern',
+        'text.latex.unicode': True,
+        'axes.grid' : False,
+        'text.usetex': True,
+        'figure.figsize': fig_size}
+plt.rcParams.update(params)
 
 
 import argparse
@@ -63,35 +94,6 @@ outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
                   }
 
 def plotSNR(cut, sig, sigError, bkg, CutBasedWP):
-    import matplotlib as mpl
-    mpl.use('pdf')
-    from matplotlib import pyplot as plt
-    from matplotlib import rc
-    #.Allow for using TeX mode in matplotlib Figures
-    rc('font',**{'family':'sans-serif','sans-serif':['Computer Modern Roman']})
-    rc('text', usetex=True)
-    plt.rcParams['text.latex.preamble']=[r"\usepackage{lmodern}"]
-
-    ratio=5.0/7.0
-    fig_width_pt = 3*246.0  # Get this from LaTeX using \showthe\columnwidth
-    inches_per_pt = 1.0/72.27               # Convert pt to inch
-    golden_mean = ratio if ratio != 0.0 else (np.sqrt(5)-1.0)/2.0         # Aesthetic ratio
-    fig_width = fig_width_pt*inches_per_pt  # width in inches
-    fig_height = fig_width*golden_mean      # height in inches
-    fig_size =  [fig_width,fig_height]
-
-    params = {'text.usetex' : True,
-            'axes.labelsize': 24,
-            'font.size': 24,
-            'legend.fontsize': 20,
-            'xtick.labelsize': 24,
-            'ytick.labelsize': 24,
-            'font.family' : 'lmodern',
-            'text.latex.unicode': True,
-            'axes.grid' : False,
-            'text.usetex': True,
-            'figure.figsize': fig_size}
-    plt.rcParams.update(params)
 
     fig, ax1 = plt.subplots()
     #plt.grid(linestyle='--')
@@ -164,12 +166,35 @@ if __name__ == "__main__":
     SErrList.append(SErr)
     BList.append(B)
 
+  df_roc = pd.read_csv('pfretrain_results_testdf_reweighted_unBiased.csv')
+  fpr = df_roc['fpr'].values
+  tpr = df_roc['tpr'].values
+  thresholds = df_roc['thresholds'].values
+  mvaCut = np.linspace(0.0, 4.0, 10)
+  wp_fpr = interp(mvaCut, thresholds[::-1], fpr[::-1])
+  wp_tpr = interp(mvaCut, thresholds[::-1], tpr[::-1])
+
+  fig, ax = plt.subplots()
+  ax.plot(fpr, tpr, label="XGB")
+  ax.plot(np.logspace(-4, 0, 1000), np.logspace(-4, 0, 1000), linestyle='--', color='k')
+  ax.scatter(wp_fpr, wp_tpr, c='r', label="Working point")
+  for i, mva in enumerate(mvaCut):
+    ax.annotate(round(mva,2), (wp_fpr[i], wp_tpr[i]), fontsize=10, xytext=(10,-20), textcoords="offset points", arrowprops=dict(arrowstyle="->"))
+  ax.set_xlim([1.0e-4, 1.0])
+  ax.set_ylim([0.0, 1.0])
+  ax.set_xscale('log')
+  ax.set_xlabel("False Alarm Rate")
+  ax.set_ylabel("Signal Efficiency")
+  ax.set_title('Receiver Operating Curve')
+  ax.legend(loc='upper left')
+  fig.savefig('{}_roc_curve.pdf'.format(args.outputfile), bbox_inches='tight')
+
   SList = np.array(SList)
   SErrList = np.array(SErrList)
   BList = np.array(BList)
-  #CutBasedWP = {'S': 1561, 'B': 1097, 'SNR': 30.2} # PF
+  CutBasedWP = {'S': 1561, 'B': 1097, 'SNR': 30.2} # PF
   #CutBasedWP = {'S': 759, 'B': 1394, 'SNR': 16.3} # Mix
-  CutBasedWP = {'S': 140, 'B': 285, 'SNR': 6.8} # Low
+  #CutBasedWP = {'S': 140, 'B': 285, 'SNR': 6.8} # Low
 
   SNRList = SList/np.sqrt(SList + BList)
   argmax_SNR = np.argmax(SNRList)
