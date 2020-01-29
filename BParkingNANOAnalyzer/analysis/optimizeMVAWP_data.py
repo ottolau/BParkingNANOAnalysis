@@ -166,6 +166,10 @@ if __name__ == "__main__":
     SErrList.append(SErr)
     BList.append(B)
 
+  SList = np.array(SList)
+  SErrList = np.array(SErrList)
+  BList = np.array(BList)
+
   df_roc = pd.read_csv('pfretrain_results_testdf_reweighted_unBiased.csv')
   fpr = df_roc['fpr'].values
   tpr = df_roc['tpr'].values
@@ -179,7 +183,7 @@ if __name__ == "__main__":
   ax.plot(np.logspace(-4, 0, 1000), np.logspace(-4, 0, 1000), linestyle='--', color='k')
   ax.scatter(wp_fpr, wp_tpr, c='r', label="Working point")
   for i, mva in enumerate(mvaCut):
-    ax.annotate(round(mva,2), (wp_fpr[i], wp_tpr[i]), fontsize=10, xytext=(10,-20), textcoords="offset points", arrowprops=dict(arrowstyle="->"))
+    ax.annotate("{0:.2f}, SNR: {0:.1f}".format(mva, S/np.sqrt(S+B)), (wp_fpr[i], wp_tpr[i]), fontsize=10, xytext=(10,-20), textcoords="offset points", arrowprops=dict(arrowstyle="->"))
   ax.set_xlim([1.0e-4, 1.0])
   ax.set_ylim([0.0, 1.0])
   ax.set_xscale('log')
@@ -189,9 +193,6 @@ if __name__ == "__main__":
   ax.legend(loc='upper left')
   fig.savefig('{}_roc_curve.pdf'.format(args.outputfile), bbox_inches='tight')
 
-  SList = np.array(SList)
-  SErrList = np.array(SErrList)
-  BList = np.array(BList)
   CutBasedWP = {'S': 1561, 'B': 1097, 'SNR': 30.2} # PF
   #CutBasedWP = {'S': 759, 'B': 1394, 'SNR': 16.3} # Mix
   #CutBasedWP = {'S': 140, 'B': 285, 'SNR': 6.8} # Low

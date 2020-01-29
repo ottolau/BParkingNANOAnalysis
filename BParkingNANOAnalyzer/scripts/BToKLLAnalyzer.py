@@ -7,6 +7,7 @@ import uproot
 import uproot_methods
 import pandas as pd
 import numpy as np
+import time
 from BParkingNANOAnalysis.BParkingNANOAnalyzer.BaseAnalyzer import BParkingNANOAnalyzer
 
 
@@ -176,121 +177,127 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
     self.init_output()
     for (self._ifile, filename) in enumerate(self._file_in_name):
       print('[BToKLLAnalyzer::run] INFO: FILE: {}/{}. Loading file...'.format(self._ifile+1, self._num_files))
-      tree = uproot.open(filename)['Events']
-      self._branches = tree.arrays(self._inputbranches)
-      self._branches = {key: awkward.fromiter(branch) for key, branch in self._branches.items()} # need this line for the old version of awkward/uproot (for condor job)
+      events = uproot.open(filename)['Events']
+      #self._branches = events.arrays(self._inputbranches)
+      #self._branches = {key: awkward.fromiter(branch) for key, branch in self._branches.items()} # need this line for the old version of awkward/uproot (for condor job)
 
       print('[BToKLLAnalyzer::run] INFO: FILE: {}/{}. Analyzing...'.format(self._ifile+1, self._num_files))
 
-      if self._isMC:
-        # reconstruct full decay chain
-        self._branches['BToKEE_k_genPdfId'] = self._branches['GenPart_pdgId'][self._branches['ProbeTracks_genPartIdx'][self._branches['BToKEE_kIdx']]]
+      startTime = time.time()
+      for i, params in enumerate(events.iterate(branches=self._inputbranches, entrysteps=10000)):
+        #self._branches = {key: awkward.fromiter(branch) for key, branch in params.items()} # need this line for the old version of awkward/uproot (for condor job)
+        self._branches = params
+        print('Reading chunk {}... Finished opening file in {} s'.format(i, time.time() - startTime))
 
-        self._branches['BToKEE_l1_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['Electron_genPartIdx'][self._branches['BToKEE_l1Idx']]]
-        self._branches['BToKEE_l2_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['Electron_genPartIdx'][self._branches['BToKEE_l2Idx']]]
-        self._branches['BToKEE_k_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['ProbeTracks_genPartIdx'][self._branches['BToKEE_kIdx']]]
+        if self._isMC:
+          # reconstruct full decay chain
+          self._branches['BToKEE_k_genPdfId'] = self._branches['GenPart_pdgId'][self._branches['ProbeTracks_genPartIdx'][self._branches['BToKEE_kIdx']]]
 
-        self._branches['BToKEE_l1_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_l1_genMotherIdx']]
-        self._branches['BToKEE_l2_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_l2_genMotherIdx']]
-        self._branches['BToKEE_k_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_k_genMotherIdx']]
+          self._branches['BToKEE_l1_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['Electron_genPartIdx'][self._branches['BToKEE_l1Idx']]]
+          self._branches['BToKEE_l2_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['Electron_genPartIdx'][self._branches['BToKEE_l2Idx']]]
+          self._branches['BToKEE_k_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['ProbeTracks_genPartIdx'][self._branches['BToKEE_kIdx']]]
 
-        self._branches['BToKEE_l1Mother_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['BToKEE_l1_genMotherIdx']]
-        self._branches['BToKEE_l2Mother_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['BToKEE_l2_genMotherIdx']]
-        self._branches['BToKEE_kMother_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['BToKEE_k_genMotherIdx']]
+          self._branches['BToKEE_l1_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_l1_genMotherIdx']]
+          self._branches['BToKEE_l2_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_l2_genMotherIdx']]
+          self._branches['BToKEE_k_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_k_genMotherIdx']]
 
-        self._branches['BToKEE_l1Mother_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_l1Mother_genMotherIdx']]
-        self._branches['BToKEE_l2Mother_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_l2Mother_genMotherIdx']]
-        self._branches['BToKEE_kMother_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_kMother_genMotherIdx']]
+          self._branches['BToKEE_l1Mother_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['BToKEE_l1_genMotherIdx']]
+          self._branches['BToKEE_l2Mother_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['BToKEE_l2_genMotherIdx']]
+          self._branches['BToKEE_kMother_genMotherIdx'] = self._branches['GenPart_genPartIdxMother'][self._branches['BToKEE_k_genMotherIdx']]
+
+          self._branches['BToKEE_l1Mother_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_l1Mother_genMotherIdx']]
+          self._branches['BToKEE_l2Mother_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_l2Mother_genMotherIdx']]
+          self._branches['BToKEE_kMother_genMotherPdgId'] = self._branches['GenPart_pdgId'][self._branches['BToKEE_kMother_genMotherIdx']]
 
 
-      # remove cross referencing
-      for branch in self._branches.keys():
-        if 'Electron_' in branch:
-          self._branches['BToKEE_l1_'+branch.replace('Electron_','')] = self._branches[branch][self._branches['BToKEE_l1Idx']] 
-          self._branches['BToKEE_l2_'+branch.replace('Electron_','')] = self._branches[branch][self._branches['BToKEE_l2Idx']] 
-          del self._branches[branch]
+        # remove cross referencing
+        for branch in self._branches.keys():
+          if 'Electron_' in branch:
+            self._branches['BToKEE_l1_'+branch.replace('Electron_','')] = self._branches[branch][self._branches['BToKEE_l1Idx']] 
+            self._branches['BToKEE_l2_'+branch.replace('Electron_','')] = self._branches[branch][self._branches['BToKEE_l2Idx']] 
+            del self._branches[branch]
 
-        if 'ProbeTracks_' in branch:
-          self._branches['BToKEE_k_'+branch.replace('ProbeTracks_','')] = self._branches[branch][self._branches['BToKEE_kIdx']] 
-          del self._branches[branch]
+          if 'ProbeTracks_' in branch:
+            self._branches['BToKEE_k_'+branch.replace('ProbeTracks_','')] = self._branches[branch][self._branches['BToKEE_kIdx']] 
+            del self._branches[branch]
+          
+          if 'GenPart_' in branch:
+            del self._branches[branch]
+
+          if 'HLT_Mu9_IP6_' in branch:
+            self._branches['BToKEE_'+branch] = np.repeat(self._branches[branch], self._branches['nBToKEE'])
+            del self._branches[branch]
+
+          if branch == 'event':
+            self._branches['BToKEE_'+branch] = np.repeat(self._branches[branch], self._branches['nBToKEE'])
+            del self._branches[branch]
+
+        del self._branches['nBToKEE']
+
+
+        # flatten the jagged arrays to a normal numpy array, turn the whole dictionary to pandas dataframe
+        self._branches = pd.DataFrame.from_dict({branch: array.flatten() for branch, array in self._branches.items()})
+        #self._branches = awkward.topandas(self._branches, flatten=True)
+
+        # general selection
         
-        if 'GenPart_' in branch:
-          del self._branches[branch]
+        sv_selection = (self._branches['BToKEE_fit_pt'] > 3.0) #& (self._branches['BToKEE_l_xy_sig'] > 6.0 ) & (self._branches['BToKEE_svprob'] > 0.01) & (self._branches['BToKEE_fit_cos2D'] > 0.9)
+        l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_fit_l1_pt'] > 1.5) & (self._branches['BToKEE_l1_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
+        l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_fit_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
+        k_selection = (self._branches['BToKEE_fit_k_pt'] > 0.7) #& (self._branches['BToKEE_k_DCASig'] > 2.0)
+        additional_selection = (self._branches['BToKEE_fit_mass'] > B_LOW) & (self._branches['BToKEE_fit_mass'] < B_UP)
 
-        if 'HLT_Mu9_IP6_' in branch:
-          self._branches['BToKEE_'+branch] = np.repeat(self._branches[branch], self._branches['nBToKEE'])
-          del self._branches[branch]
+        b_lowsb_selection = (self._branches['BToKEE_fit_mass'] > B_LOWSB_LOW) & (self._branches['BToKEE_fit_mass'] < B_LOWSB_UP)
+        b_upsb_selection = (self._branches['BToKEE_fit_mass'] > B_UPSB_LOW) & (self._branches['BToKEE_fit_mass'] < B_UPSB_UP)
+        b_sb_selection = b_lowsb_selection | b_upsb_selection
 
-        if branch == 'event':
-          self._branches['BToKEE_'+branch] = np.repeat(self._branches[branch], self._branches['nBToKEE'])
-          del self._branches[branch]
-        
+        selection = sv_selection & l1_selection & l2_selection & k_selection & additional_selection
 
-      del self._branches['nBToKEE']
+        self._branches = self._branches[selection]
 
+        # add additional branches
+        self._branches['BToKEE_l_xy_sig'] = self._branches['BToKEE_l_xy'] / self._branches['BToKEE_l_xy_unc']
+        self._branches['BToKEE_l1_dxy_sig'] = self._branches['BToKEE_l1_dxy'] / self._branches['BToKEE_l1_dxyErr']
+        self._branches['BToKEE_l2_dxy_sig'] = self._branches['BToKEE_l2_dxy'] / self._branches['BToKEE_l2_dxyErr']
+        self._branches['BToKEE_fit_l1_normpt'] = self._branches['BToKEE_fit_l1_pt'] / self._branches['BToKEE_fit_mass']
+        self._branches['BToKEE_fit_l2_normpt'] = self._branches['BToKEE_fit_l2_pt'] / self._branches['BToKEE_fit_mass']
+        self._branches['BToKEE_fit_k_normpt'] = self._branches['BToKEE_fit_k_pt'] / self._branches['BToKEE_fit_mass']
+        self._branches['BToKEE_fit_normpt'] = self._branches['BToKEE_fit_pt'] / self._branches['BToKEE_fit_mass']
+        self._branches['BToKEE_q2'] = pow(self._branches['BToKEE_mll_fullfit'], 2)
+        self._branches['BToKEE_eleEtaCats'] = self._branches.apply(self.EleEtaCats, axis=1)
+        self._branches['BToKEE_b_iso03_rel'] = self._branches['BToKEE_b_iso03'] / self._branches['BToKEE_fit_pt']
+        self._branches['BToKEE_b_iso04_rel'] = self._branches['BToKEE_b_iso04'] / self._branches['BToKEE_fit_pt']
+        self._branches['BToKEE_l1_iso03_rel'] = self._branches['BToKEE_l1_iso03'] / self._branches['BToKEE_fit_l1_pt']
+        self._branches['BToKEE_l1_iso04_rel'] = self._branches['BToKEE_l1_iso04'] / self._branches['BToKEE_fit_l1_pt']
+        self._branches['BToKEE_l2_iso03_rel'] = self._branches['BToKEE_l2_iso03'] / self._branches['BToKEE_fit_l2_pt']
+        self._branches['BToKEE_l2_iso04_rel'] = self._branches['BToKEE_l2_iso04'] / self._branches['BToKEE_fit_l2_pt']
+        self._branches['BToKEE_k_iso03_rel'] = self._branches['BToKEE_k_iso03'] / self._branches['BToKEE_fit_k_pt']
+        self._branches['BToKEE_k_iso04_rel'] = self._branches['BToKEE_k_iso04'] / self._branches['BToKEE_fit_k_pt']
+        self._branches['BToKEE_l1_pfmvaCats'] = self._branches['BToKEE_l1_pt'].apply(lambda x: 0 if x < 5.0 else 1)
+        self._branches['BToKEE_l2_pfmvaCats'] = self._branches['BToKEE_l2_pt'].apply(lambda x: 0 if x < 5.0 else 1)
+        self._branches['BToKEE_k_isKaon'] = True
 
-      # flatten the jagged arrays to a normal numpy array, turn the whole dictionary to pandas dataframe
-      self._branches = pd.DataFrame.from_dict({branch: array.flatten() for branch, array in self._branches.items()})
-      #self._branches = awkward.topandas(self._branches, flatten=True)
+        if self._isMC:
+          self._branches['BToKEE_k_isKaon'] = self._branches['BToKEE_k_genPdfId'].apply(lambda x: True if abs(x) == 321 else False)
+          self._branches['BToKEE_decay'] = self._branches.apply(self.DecayCats, axis=1)
+          #self._branches.query('BToKEE_decay == 0', inplace=True) # B->K ll
+          #self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
+          #self._branches.query('BToKEE_decay == 2', inplace=True) # B->K*(K pi) ll
+          self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
 
+        # mass hypothesis to veto fake event from semi-leptonic decay D
+        l1_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l1_pt'], self._branches['BToKEE_fit_l1_eta'], self._branches['BToKEE_fit_l1_phi'], PI_MASS)
+        l2_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l2_pt'], self._branches['BToKEE_fit_l2_eta'], self._branches['BToKEE_fit_l2_phi'], PI_MASS)
+        k_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_k_pt'], self._branches['BToKEE_fit_k_eta'], self._branches['BToKEE_fit_k_phi'], K_MASS)
+        k_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_k_pt'], self._branches['BToKEE_fit_k_eta'], self._branches['BToKEE_fit_k_phi'], PI_MASS)
+        self._branches['BToKEE_Dmass_l1'] = (l1_pihypo_p4 + k_p4).mass
+        self._branches['BToKEE_Dmass_l2'] = (l2_pihypo_p4 + k_p4).mass
+        self._branches['BToKEE_Dmass'] = self._branches.apply(self.GetDMass, axis=1)    
+        self._branches['BToKEE_pill_mass'] = (l1_pihypo_p4 + l2_pihypo_p4 + k_pihypo_p4).mass
 
-      # add additional branches
-      self._branches['BToKEE_l_xy_sig'] = self._branches['BToKEE_l_xy'] / self._branches['BToKEE_l_xy_unc']
-      self._branches['BToKEE_l1_dxy_sig'] = self._branches['BToKEE_l1_dxy'] / self._branches['BToKEE_l1_dxyErr']
-      self._branches['BToKEE_l2_dxy_sig'] = self._branches['BToKEE_l2_dxy'] / self._branches['BToKEE_l2_dxyErr']
-      self._branches['BToKEE_fit_l1_normpt'] = self._branches['BToKEE_fit_l1_pt'] / self._branches['BToKEE_fit_mass']
-      self._branches['BToKEE_fit_l2_normpt'] = self._branches['BToKEE_fit_l2_pt'] / self._branches['BToKEE_fit_mass']
-      self._branches['BToKEE_fit_k_normpt'] = self._branches['BToKEE_fit_k_pt'] / self._branches['BToKEE_fit_mass']
-      self._branches['BToKEE_fit_normpt'] = self._branches['BToKEE_fit_pt'] / self._branches['BToKEE_fit_mass']
-      self._branches['BToKEE_q2'] = pow(self._branches['BToKEE_mll_fullfit'], 2)
-      self._branches['BToKEE_eleEtaCats'] = self._branches.apply(self.EleEtaCats, axis=1)
-      self._branches['BToKEE_b_iso03_rel'] = self._branches['BToKEE_b_iso03'] / self._branches['BToKEE_fit_pt']
-      self._branches['BToKEE_b_iso04_rel'] = self._branches['BToKEE_b_iso04'] / self._branches['BToKEE_fit_pt']
-      self._branches['BToKEE_l1_iso03_rel'] = self._branches['BToKEE_l1_iso03'] / self._branches['BToKEE_fit_l1_pt']
-      self._branches['BToKEE_l1_iso04_rel'] = self._branches['BToKEE_l1_iso04'] / self._branches['BToKEE_fit_l1_pt']
-      self._branches['BToKEE_l2_iso03_rel'] = self._branches['BToKEE_l2_iso03'] / self._branches['BToKEE_fit_l2_pt']
-      self._branches['BToKEE_l2_iso04_rel'] = self._branches['BToKEE_l2_iso04'] / self._branches['BToKEE_fit_l2_pt']
-      self._branches['BToKEE_k_iso03_rel'] = self._branches['BToKEE_k_iso03'] / self._branches['BToKEE_fit_k_pt']
-      self._branches['BToKEE_k_iso04_rel'] = self._branches['BToKEE_k_iso04'] / self._branches['BToKEE_fit_k_pt']
-      self._branches['BToKEE_l1_pfmvaCats'] = self._branches['BToKEE_l1_pt'].apply(lambda x: 0 if x < 5.0 else 1)
-      self._branches['BToKEE_l2_pfmvaCats'] = self._branches['BToKEE_l2_pt'].apply(lambda x: 0 if x < 5.0 else 1)
-      self._branches['BToKEE_k_isKaon'] = True
-
-      # general selection
-      
-      sv_selection = (self._branches['BToKEE_fit_pt'] > 3.0) #& (self._branches['BToKEE_l_xy_sig'] > 6.0 ) & (self._branches['BToKEE_svprob'] > 0.01) & (self._branches['BToKEE_fit_cos2D'] > 0.9)
-      l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_fit_l1_pt'] > 1.5) & (self._branches['BToKEE_l1_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
-      l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_fit_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
-      k_selection = (self._branches['BToKEE_fit_k_pt'] > 0.7) #& (self._branches['BToKEE_k_DCASig'] > 2.0)
-      additional_selection = (self._branches['BToKEE_fit_mass'] > B_LOW) & (self._branches['BToKEE_fit_mass'] < B_UP)
-
-      b_lowsb_selection = (self._branches['BToKEE_fit_mass'] > B_LOWSB_LOW) & (self._branches['BToKEE_fit_mass'] < B_LOWSB_UP)
-      b_upsb_selection = (self._branches['BToKEE_fit_mass'] > B_UPSB_LOW) & (self._branches['BToKEE_fit_mass'] < B_UPSB_UP)
-      b_sb_selection = b_lowsb_selection | b_upsb_selection
-
-      selection = sv_selection & l1_selection & l2_selection & k_selection & additional_selection
-
-      self._branches = self._branches[selection]
-      if self._isMC:
-        self._branches['BToKEE_k_isKaon'] = self._branches['BToKEE_k_genPdfId'].apply(lambda x: True if abs(x) == 321 else False)
-        self._branches['BToKEE_decay'] = self._branches.apply(self.DecayCats, axis=1)
-        #self._branches.query('BToKEE_decay == 0', inplace=True) # B->K ll
-        self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
-        #self._branches.query('BToKEE_decay == 2', inplace=True) # B->K*(K pi) ll
-        #self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
-
-      # mass hypothesis to veto fake event from semi-leptonic decay D
-      l1_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l1_pt'], self._branches['BToKEE_fit_l1_eta'], self._branches['BToKEE_fit_l1_phi'], PI_MASS)
-      l2_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l2_pt'], self._branches['BToKEE_fit_l2_eta'], self._branches['BToKEE_fit_l2_phi'], PI_MASS)
-      k_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_k_pt'], self._branches['BToKEE_fit_k_eta'], self._branches['BToKEE_fit_k_phi'], K_MASS)
-      k_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_k_pt'], self._branches['BToKEE_fit_k_eta'], self._branches['BToKEE_fit_k_phi'], PI_MASS)
-      self._branches['BToKEE_Dmass_l1'] = (l1_pihypo_p4 + k_p4).mass
-      self._branches['BToKEE_Dmass_l2'] = (l2_pihypo_p4 + k_p4).mass
-      self._branches['BToKEE_Dmass'] = self._branches.apply(self.GetDMass, axis=1)    
-      self._branches['BToKEE_pill_mass'] = (l1_pihypo_p4 + l2_pihypo_p4 + k_pihypo_p4).mass
-
-      # fill output
-      self.fill_output()
+        # fill output
+        self.fill_output()
+        startTime = time.time()
 
     self.finish()
     print('[BToKLLAnalyzer::run] INFO: Finished')

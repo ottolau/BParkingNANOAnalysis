@@ -215,7 +215,7 @@ def objective(**X):
     params['eval_metric'] = 'auc'
     params['nthread'] = 6
     params['silent'] = 1
-    cv_result = xgb.cv(params, dmatrix_train, num_boost_round=n_boost_rounds, nfold=10, shuffle=True, stratified=True, early_stopping_rounds=75, fpreproc=fpreproc)
+    cv_result = xgb.cv(params, dmatrix_train, num_boost_round=n_boost_rounds, nfold=5, shuffle=True, stratified=True, early_stopping_rounds=75, fpreproc=fpreproc)
     ave_auc = cv_result['test-auc-mean'].iloc[-1]
     print("Average auc: {}".format(ave_auc))
     if ave_auc > best_auc:
@@ -346,7 +346,7 @@ if __name__ == '__main__':
         aucs = []
         figs, axs = plt.subplots()
         #cv = KFold(n_splits=5, shuffle=True)
-        cv = StratifiedKFold(n_splits=10, shuffle=True)
+        cv = StratifiedKFold(n_splits=5, shuffle=True)
         mean_fpr = np.logspace(-4, 0, 100)
 
         iFold = 0
@@ -386,7 +386,8 @@ if __name__ == '__main__':
         tprs_lower = np.maximum(mean_tpr - std_tpr, 0)
         axs.fill_between(mean_fpr, tprs_lower, tprs_upper, color='grey', alpha=.2, label=r'$\pm$ 1 std. dev.')
         axs.set_xscale('log')
-        axs.set_ylim([0, 1.0])
+        axs.set_xlim([1.0e-4, 1.0])
+        axs.set_ylim([0.0, 1.0])
         axs.set_xlabel('False Alarm Rate')
         axs.set_ylabel('True Positive Rate')
         axs.set_title('Cross-validation Receiver Operating Curve')
