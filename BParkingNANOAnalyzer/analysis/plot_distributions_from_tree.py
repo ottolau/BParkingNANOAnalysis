@@ -53,9 +53,10 @@ def get_label(name):
     if name == -1:
         return "background"
     if name == 0:
-        return "EB" #"B+ to K+ ee"
+      return "MC: B+ to K+ ee"
+        #return "EB" #"B+ to K+ ee"
     if name == 1:
-      return "EE" #"B0 to K* ee"
+      return "data" #"B0 to K* ee"
     if name == 2:
         return "EBEE" #"B+ to K+ J/psi(ee)"
 
@@ -63,8 +64,9 @@ def plot_hist(df, column, bins=None, logscale=False, ax=None, title=None):
     if ax is None:
         ax = plt.gca()
     #ax.hist(np.clip(df[column], bins[0], bins[-1]), bins=bins, histtype='step', normed=True)
-    for name, group in df.groupby("BToKEE_eleEtaCats"):#df.groupby("Category"):
-        ax.hist(np.clip(group[column], bins[0], bins[-1]), bins=bins, histtype='step', label=get_label(name), normed=True)
+    for name, group in df.groupby("Category"):
+        #ax.hist(np.clip(group[column], bins[0], bins[-1]), bins=bins, histtype='step', label=get_label(name), normed=True)
+        ax.hist(group[column], bins=bins, histtype='step', label=get_label(name), normed=True)
     ax.set_ylabel("density")
     ax.set_xlabel(column)
     ax.legend()
@@ -110,6 +112,10 @@ if __name__ == '__main__':
                             #('BToKEE_l2_mvaId', np.linspace(-2.0, 10.0, 100)),
                             ('BToKEE_l1_pfmvaId', np.linspace(-10.0, 10.0, 100)),
                             ('BToKEE_l2_pfmvaId', np.linspace(-10.0, 10.0, 100)),
+                            ('BToKEE_l1_pfmvaId_lowPt', np.linspace(-10.0, 10.0, 100)),
+                            ('BToKEE_l2_pfmvaId_lowPt', np.linspace(-10.0, 10.0, 100)),
+                            ('BToKEE_l1_pfmvaId_highPt', np.linspace(-10.0, 10.0, 100)),
+                            ('BToKEE_l2_pfmvaId_highPt', np.linspace(-10.0, 10.0, 100)),
                             ('BToKEE_l1_iso03_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_l2_iso03_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_l1_iso04_rel', np.linspace(0.0, 10.0, 100)),
@@ -135,13 +141,14 @@ if __name__ == '__main__':
     #root_files = glob.glob("/eos/user/r/rembserj/ntuples/electron_mva_run3/*.root")[:n_files]
     #df = pd.concat((get_df(f) for f in  tqdm(root_files)), ignore_index=True)
     df1 = get_df(args.signal)
-    #df2 = get_df(args.background)
+    df2 = get_df(args.background)
+    #df2 = df2.sample(frac=1)[:50000]
     print('variables in ntuples: {}'.format(df1.columns))
     df1['Category'] = 0
-    #df2['Category'] = 1
-
-    #df = pd.concat((df1, df2), ignore_index=True)
-    df = df1.copy()
+    df2['Category'] = 1
+    
+    df = pd.concat((df1, df2), ignore_index=True)
+    #df = df1.copy()
 
     with PdfPages(args.outputfile) as pdf:
       for var, bins in features.items():

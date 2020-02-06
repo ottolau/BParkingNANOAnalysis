@@ -17,8 +17,10 @@ JPSI_MC = 3.085053
 JPSI_SIGMA_MC = 0.0516
 JPSI_LOW = JPSI_MC - 3.0*JPSI_SIGMA_MC
 JPSI_UP = JPSI_MC + 3.0*JPSI_SIGMA_MC
-B_MC = 5.2569
-B_SIGMA_MC = 0.073
+#B_MC = 5.2694
+#B_SIGMA_MC = 0.0591
+B_MC = 5.2681
+B_SIGMA_MC = 0.0561
 B_LOW = B_MC - 3.0*B_SIGMA_MC
 B_UP = B_MC + 3.0*B_SIGMA_MC
 B_MIN = 4.5
@@ -73,8 +75,9 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
         xmin, xmax = 4.5, 6.0
         wspace.factory('mean[5.272e+00, 5.22e+00, 5.3e+00]')
       else:
-        xmin, xmax = 5.0, 6.0
-        wspace.factory('mean[5.26818, 5.26818, 5.26818]')
+        xmin, xmax = 4.8, 6.0
+        #wspace.factory('mean[5.2694, 5.2694, 5.2694]')
+        wspace.factory('mean[5.2681, 5.2681, 5.2681]')
       thevars.add(dieleMass)
 
     thevars.add(bMass)
@@ -147,11 +150,19 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
           wspace.factory('alpha2[1.0, 0.0, 10.0]')
           wspace.factory('n2[1.0, 1.0, 10.0]')
         else:
-          wspace.factory('width[0.0591, 0.0591, 0.0591]')
-          wspace.factory('alpha1[0.623, 0.623, 0.623]')
-          wspace.factory('n1[2.58, 2.58, 2.58]')
-          wspace.factory('alpha2[1.90, 1.90, 1.90]')
-          wspace.factory('n2[6.3, 6.3, 6.3]')
+          # PF
+          #wspace.factory('width[0.0591, 0.0591, 0.0591]')
+          #wspace.factory('alpha1[0.623, 0.623, 0.623]')
+          #wspace.factory('n1[2.58, 2.58, 2.58]')
+          #wspace.factory('alpha2[1.90, 1.90, 1.90]')
+          #wspace.factory('n2[6.3, 6.3, 6.3]')
+
+          # Mix
+          wspace.factory('width[0.0561, 0.0561, 0.0561]')
+          wspace.factory('alpha1[0.642, 0.642, 0.642]')
+          wspace.factory('n1[2.31, 2.31, 2.31]')
+          wspace.factory('alpha2[1.700, 1.700, 1.700]')
+          wspace.factory('n2[10.0, 10.0, 10.0]')
 
         wspace.factory('GenericPdf::sig("DoubleCBFast(x,mean,width,alpha1,n1,alpha2,n2)", {x,mean,width,alpha1,n1,alpha2,n2})')
 

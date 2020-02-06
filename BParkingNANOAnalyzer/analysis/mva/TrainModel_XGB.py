@@ -197,13 +197,13 @@ def fpreproc(dtrain, dtest, param):
     param['scale_pos_weight'] = ratio
     return (dtrain, dtest, param)
 
-space  = [Integer(3, 7, name='max_depth'),
+space  = [Integer(5, 8, name='max_depth'),
          Real(0.01, 0.2, name='eta'),
-         Real(0.0, 1.0, name='gamma'),
+         Real(0.0, 10.0, name='gamma'),
          Real(0.5, 1.0, name='subsample'),
-         Real(0.5, 1.0, name='colsample_bytree'),
-         Real(0.0, 0.2, name='alpha'),
-         Real(1.0, 1.5, name='lambda'),
+         Real(0.1, 1.0, name='colsample_bytree'),
+         Real(0.0, 10.0, name='alpha'),
+         Real(0.0, 10.0, name='lambda'),
          ]
 
 @use_named_args(space)
@@ -245,7 +245,7 @@ def train_cv(X_train_val, Y_train_val, X_test, Y_test, hyper_params=None):
     xgtrain = xgb.DMatrix(X_train_val, label=Y_train_val)
     xgtest  = xgb.DMatrix(X_test , label=Y_test )
     model, results = train(xgtrain, xgtest, hyper_params=hyper_params)
-    Y_predict = model.predict(xgb.DMatrix(X_test), ntree_limit=model.best_ntree_limit)
+    Y_predict = model.predict(xgtest, ntree_limit=model.best_ntree_limit)
     fpr, tpr, thresholds = roc_curve(Y_test, Y_predict, drop_intermediate=True)
     roc_auc = roc_auc_score(Y_test, Y_predict)
     print("Best auc: {}".format(roc_auc))
@@ -254,24 +254,24 @@ def train_cv(X_train_val, Y_train_val, X_test, Y_test, hyper_params=None):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description="A simple ttree plotter")
-    parser.add_argument("-s", "--signal", dest="signal", default="RootTree_BParkingNANO_2019Sep12_BuToKJpsi_Toee_mvaTraining_sig_training_pf.root", help="Signal file")
-    parser.add_argument("-b", "--background", dest="background", default="RootTree_BParkingNANO_2019Sep12_Run2018A2A3B2B3C2C3D2_mvaTraining_bkg_training_pf.root", help="Background file")
+    parser.add_argument("-s", "--signal", dest="signal", default="RootTree_2020Jan16_BuToKee_BToKEEAnalyzer_2020Jan28_Dveto_fullq2_EB_pf.root", help="Signal file")
+    parser.add_argument("-b", "--background", dest="background", default="RootTree_2020Jan16_Run2018A1A4B1B3C3D3partial_BToKEEAnalyzer_2020Jan28_partial_Dveto_fullq2_EB_upSB_pf.root", help="Background file")
     parser.add_argument("-f", "--suffix", dest="suffix", default=None, help="Suffix of the output name")
     parser.add_argument("-o", "--optimization", dest="optimization", action='store_true', help="Perform Bayesian optimization")
     args = parser.parse_args()
 
-    features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig']
+    #features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig']
 
-    '''
-    features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_l1_iso03_rel',
-                'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_l2_iso03_rel',
-                'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_k_dz', 'BToKEE_k_nValidHits', 'BToKEE_k_iso03_rel',
-                'BToKEE_fit_normpt', 'BToKEE_b_iso03_rel', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig',
+    
+    features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz',
+                'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 
+                'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_k_dz', 'BToKEE_k_nValidHits',
+                'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig',
                 ]
 
-    features += ['BToKEE_l1_pfmvaId', 'BToKEE_l2_pfmvaId']
-    features += ['BToKEE_l1_pfmvaCats', 'BToKEE_l2_pfmvaCats']
-    '''
+    features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
+    features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
+    
 
     features = sorted(features)
 
@@ -347,7 +347,7 @@ if __name__ == '__main__':
         figs, axs = plt.subplots()
         #cv = KFold(n_splits=5, shuffle=True)
         cv = StratifiedKFold(n_splits=5, shuffle=True)
-        mean_fpr = np.logspace(-4, 0, 100)
+        mean_fpr = np.logspace(-5, 0, 100)
 
         iFold = 0
         for train_idx, test_idx in cv.split(X_train, y_train):
@@ -389,7 +389,7 @@ if __name__ == '__main__':
         axs.set_xlim([1.0e-4, 1.0])
         axs.set_ylim([0.0, 1.0])
         axs.set_xlabel('False Alarm Rate')
-        axs.set_ylabel('True Positive Rate')
+        axs.set_ylabel('Signal Efficiency')
         axs.set_title('Cross-validation Receiver Operating Curve')
         axs.legend(loc="lower right") 
         figs.savefig('training_results_roc_cv_{}.pdf'.format(suffix), bbox_inches='tight')
@@ -459,7 +459,7 @@ if __name__ == '__main__':
     ax.set_xlabel("False Alarm Rate")
     ax.set_ylabel("Signal Efficiency")
     ax.set_title('Receiver Operating Curve')
-    ax.legend(loc='upper left')
+    ax.legend(loc='lower right')
     fig.savefig('training_results_roc_curve_{}.pdf'.format(suffix), bbox_inches='tight')
 
     plt.figure()

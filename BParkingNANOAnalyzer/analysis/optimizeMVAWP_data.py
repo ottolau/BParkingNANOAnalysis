@@ -37,7 +37,7 @@ params = {'text.usetex' : True,
         'ytick.labelsize': 24,
         'font.family' : 'lmodern',
         'text.latex.unicode': True,
-        'axes.grid' : False,
+        'axes.grid' : True,
         'text.usetex': True,
         'figure.figsize': fig_size}
 plt.rcParams.update(params)
@@ -153,7 +153,7 @@ if __name__ == "__main__":
   SErrList = []
   BList = []
   
-  mvaCutList = np.linspace(2.0, 8.0, 20)
+  mvaCutList = np.linspace(4.0, 8.0, 15)
   for mvaCut in mvaCutList:
     # mva selection
     mva_selection = (branches['BToKEE_xgb'] > mvaCut)
@@ -169,28 +169,28 @@ if __name__ == "__main__":
   SList = np.array(SList)
   SErrList = np.array(SErrList)
   BList = np.array(BList)
+  SNR = SList / np.sqrt(SList + BList)
 
-  df_roc = pd.read_csv('pfretrain_results_testdf_reweighted_unBiased.csv')
+  df_roc = pd.read_csv('training_results_roc_csv_04Feb2020_Dveto_fullq2_EB_mix_net_pfmvaId.csv')
   fpr = df_roc['fpr'].values
   tpr = df_roc['tpr'].values
   thresholds = df_roc['thresholds'].values
-  mvaCut = np.linspace(0.0, 4.0, 10)
-  wp_fpr = interp(mvaCut, thresholds[::-1], fpr[::-1])
-  wp_tpr = interp(mvaCut, thresholds[::-1], tpr[::-1])
+  wp_fpr = interp(mvaCutList, thresholds[::-1], fpr[::-1])
+  wp_tpr = interp(mvaCutList, thresholds[::-1], tpr[::-1])
 
   fig, ax = plt.subplots()
   ax.plot(fpr, tpr, label="XGB")
-  ax.plot(np.logspace(-4, 0, 1000), np.logspace(-4, 0, 1000), linestyle='--', color='k')
+  ax.plot(np.logspace(-5, 0, 1000), np.logspace(-5, 0, 1000), linestyle='--', color='k')
   ax.scatter(wp_fpr, wp_tpr, c='r', label="Working point")
-  for i, mva in enumerate(mvaCut):
-    ax.annotate("{0:.2f}, SNR: {0:.1f}".format(mva, S/np.sqrt(S+B)), (wp_fpr[i], wp_tpr[i]), fontsize=10, xytext=(10,-20), textcoords="offset points", arrowprops=dict(arrowstyle="->"))
-  ax.set_xlim([1.0e-4, 1.0])
+  for i, mva in enumerate(mvaCutList):
+    ax.annotate("{0:.2f}, SNR: {1:.1f}".format(mva, SNR[i]), (wp_fpr[i], wp_tpr[i]), fontsize=10, xytext=(10,-20), textcoords="offset points", arrowprops=dict(arrowstyle="->"))
+  ax.set_xlim([1.0e-5, 1.0])
   ax.set_ylim([0.0, 1.0])
   ax.set_xscale('log')
   ax.set_xlabel("False Alarm Rate")
   ax.set_ylabel("Signal Efficiency")
   ax.set_title('Receiver Operating Curve')
-  ax.legend(loc='upper left')
+  ax.legend(loc='lower right', fontsize=10)
   fig.savefig('{}_roc_curve.pdf'.format(args.outputfile), bbox_inches='tight')
 
   CutBasedWP = {'S': 1561, 'B': 1097, 'SNR': 30.2} # PF
