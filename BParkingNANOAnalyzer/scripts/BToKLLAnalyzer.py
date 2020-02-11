@@ -1,15 +1,11 @@
 #! /usr/bin/env python
-
-#import ROOT
-from math import ceil
-import awkward
 import uproot
 import uproot_methods
 import pandas as pd
 import numpy as np
 import time
+from helper import *
 from BParkingNANOAnalysis.BParkingNANOAnalyzer.BaseAnalyzer import BParkingNANOAnalyzer
-
 
 class BToKLLAnalyzer(BParkingNANOAnalyzer):
   def __init__(self, inputfiles, outputfile, hist=False, isMC=False):
@@ -158,35 +154,18 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
     super(BToKLLAnalyzer, self).__init__(inputfiles, outputfile, inputbranches_BToKEE, outputbranches_BToKEE, hist)
 
   def run(self):
-    ELECTRON_MASS = 0.000511
-    K_MASS = 0.493677
-    PI_MASS = 0.139570
-    JPSI_LOW = 2.9
-    JPSI_UP = 3.3
-    B_MASS = 5.245
-    B_SIGMA = 9.155e-02
-    B_LOWSB_LOW = B_MASS - 6.0*B_SIGMA
-    B_LOWSB_UP = B_MASS - 3.0*B_SIGMA
-    B_UPSB_LOW = B_MASS + 3.0*B_SIGMA
-    B_UPSB_UP = B_MASS + 6.0*B_SIGMA
-    B_LOW = 4.5
-    B_UP = 6.0
-
     print('[BToKLLAnalyzer::run] INFO: Running the analyzer...')
     self.print_timestamp()
     self.init_output()
     for (self._ifile, filename) in enumerate(self._file_in_name):
       print('[BToKLLAnalyzer::run] INFO: FILE: {}/{}. Loading file...'.format(self._ifile+1, self._num_files))
       events = uproot.open(filename)['Events']
-      #self._branches = events.arrays(self._inputbranches)
-      #self._branches = {key: awkward.fromiter(branch) for key, branch in self._branches.items()} # need this line for the old version of awkward/uproot (for condor job)
-
       print('[BToKLLAnalyzer::run] INFO: FILE: {}/{}. Analyzing...'.format(self._ifile+1, self._num_files))
 
       startTime = time.time()
       for i, params in enumerate(events.iterate(branches=self._inputbranches, entrysteps=20000)):
         #self._branches = {key: awkward.fromiter(branch) for key, branch in params.items()} # need this line for the old version of awkward/uproot (for condor job)
-        self._branches = params
+        self._branches = params.copy()
         print('Reading chunk {}... Finished opening file in {} s'.format(i, time.time() - startTime))
 
         if self._isMC:
@@ -220,7 +199,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
           if 'ProbeTracks_' in branch:
             self._branches['BToKEE_k_'+branch.replace('ProbeTracks_','')] = self._branches[branch][self._branches['BToKEE_kIdx']] 
             del self._branches[branch]
-          
+
           if 'GenPart_' in branch:
             del self._branches[branch]
 
@@ -234,22 +213,17 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
 
         del self._branches['nBToKEE']
 
-
         # flatten the jagged arrays to a normal numpy array, turn the whole dictionary to pandas dataframe
         self._branches = pd.DataFrame.from_dict({branch: array.flatten() for branch, array in self._branches.items()})
         #self._branches = awkward.topandas(self._branches, flatten=True)
 
         # general selection
         
-        sv_selection = (self._branches['BToKEE_fit_pt'] > 3.0) #& (self._branches['BToKEE_l_xy_sig'] > 6.0 ) & (self._branches['BToKEE_svprob'] > 0.01) & (self._branches['BToKEE_fit_cos2D'] > 0.9)
-        l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_fit_l1_pt'] > 1.5) & (self._branches['BToKEE_l1_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l1_isPFoverlap']))
-        l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_fit_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_mvaId'] > 3.94) #& (np.logical_not(self._branches['BToKEE_l2_isPFoverlap']))
-        k_selection = (self._branches['BToKEE_fit_k_pt'] > 0.7) #& (self._branches['BToKEE_k_DCASig'] > 2.0)
-        additional_selection = (self._branches['BToKEE_fit_mass'] > B_LOW) & (self._branches['BToKEE_fit_mass'] < B_UP)
-
-        b_lowsb_selection = (self._branches['BToKEE_fit_mass'] > B_LOWSB_LOW) & (self._branches['BToKEE_fit_mass'] < B_LOWSB_UP)
-        b_upsb_selection = (self._branches['BToKEE_fit_mass'] > B_UPSB_LOW) & (self._branches['BToKEE_fit_mass'] < B_UPSB_UP)
-        b_sb_selection = b_lowsb_selection | b_upsb_selection
+        sv_selection = (self._branches['BToKEE_fit_pt'] > 3.0)
+        l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_fit_l1_pt'] > 1.5) & (self._branches['BToKEE_l1_mvaId'] > 3.94)
+        l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_fit_l2_pt'] > 0.5) & (self._branches['BToKEE_l2_mvaId'] > 3.94)
+        k_selection = (self._branches['BToKEE_fit_k_pt'] > 0.7)
+        additional_selection = (self._branches['BToKEE_fit_mass'] > B_MIN) & (self._branches['BToKEE_fit_mass'] < B_MAX)
 
         selection = sv_selection & l1_selection & l2_selection & k_selection & additional_selection
 
@@ -274,13 +248,13 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
           self._branches['BToKEE_k_iso03_rel'] = self._branches['BToKEE_k_iso03'] / self._branches['BToKEE_fit_k_pt']
           self._branches['BToKEE_k_iso04_rel'] = self._branches['BToKEE_k_iso04'] / self._branches['BToKEE_fit_k_pt']
           self._branches['BToKEE_k_isKaon'] = True
-          self._branches['BToKEE_eleEtaCats'] = self._branches.apply(self.EleEtaCats, axis=1)
+          self._branches['BToKEE_eleEtaCats'] = self._branches.apply(self.EleEtaCats, axis=1, prefix='BToKEE')
           self._branches['BToKEE_l1_pfmvaCats'] = self._branches['BToKEE_l1_pt'].apply(lambda x: 0 if x < 5.0 else 1)
           self._branches['BToKEE_l2_pfmvaCats'] = self._branches['BToKEE_l2_pt'].apply(lambda x: 0 if x < 5.0 else 1)
 
           if self._isMC:
             self._branches['BToKEE_k_isKaon'] = self._branches['BToKEE_k_genPdgId'].apply(lambda x: True if abs(x) == 321 else False)
-            self._branches['BToKEE_decay'] = self._branches.apply(self.DecayCats, axis=1)
+            self._branches['BToKEE_decay'] = self._branches.apply(self.DecayCats, axis=1, prefix='BToKEE')
             #self._branches.query('BToKEE_decay == 0', inplace=True) # B->K ll
             #self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
             #self._branches.query('BToKEE_decay == 2', inplace=True) # B->K*(K pi) ll
@@ -293,7 +267,6 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
           k_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_k_pt'], self._branches['BToKEE_fit_k_eta'], self._branches['BToKEE_fit_k_phi'], PI_MASS)
           self._branches['BToKEE_Dmass_l1'] = (l1_pihypo_p4 + k_p4).mass
           self._branches['BToKEE_Dmass_l2'] = (l2_pihypo_p4 + k_p4).mass
-          #self._branches['BToKEE_Dmass'] = self._branches.apply(self.GetDMass, axis=1) 
           self._branches['BToKEE_Dmass'] = np.where((self._branches['BToKEE_k_charge'] * self._branches['BToKEE_l1_charge']) < 0.0, self._branches['BToKEE_Dmass_l1'], self._branches['BToKEE_Dmass_l2'])
           self._branches['BToKEE_pill_mass'] = (l1_pihypo_p4 + l2_pihypo_p4 + k_pihypo_p4).mass
 
@@ -306,60 +279,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
     print('[BToKLLAnalyzer::run] INFO: Finished')
     self.print_timestamp()
 
-  def DecayCats(self, row):    
-    mc_matched_selection = (row['BToKEE_l1_genPartIdx'] > -0.5) & (row['BToKEE_l2_genPartIdx'] > -0.5) & (row['BToKEE_k_genPartIdx'] > -0.5)
-    # B->K ll
-    RK_nonresonant_chain_selection = (abs(row['BToKEE_l1_genMotherPdgId']) == 521) & (abs(row['BToKEE_k_genMotherPdgId']) == 521)
-    RK_nonresonant_chain_selection &= (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_l2_genMotherPdgId']) & (row['BToKEE_k_genMotherPdgId'] == row['BToKEE_l1_genMotherPdgId'])
-    RK_nonresonant_chain_selection &= mc_matched_selection
 
-    # B->K J/psi(ll)
-    RK_resonant_chain_selection = (abs(row['BToKEE_l1_genMotherPdgId']) == 443) & (abs(row['BToKEE_k_genMotherPdgId']) == 521)
-    RK_resonant_chain_selection &= (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_l2_genMotherPdgId']) & (row['BToKEE_k_genMotherPdgId'] == row['BToKEE_l1Mother_genMotherPdgId']) & (row['BToKEE_k_genMotherPdgId'] == row['BToKEE_l2Mother_genMotherPdgId'])
-    RK_resonant_chain_selection &= mc_matched_selection
-
-    # B->K*(K pi) ll
-    RKstar_nonresonant_chain_selection = (abs(row['BToKEE_l1_genMotherPdgId']) == 511) & (abs(row['BToKEE_k_genMotherPdgId']) == 313)
-    RKstar_nonresonant_chain_selection &= (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_l2_genMotherPdgId']) & (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_kMother_genMotherPdgId']) 
-    RKstar_nonresonant_chain_selection &= mc_matched_selection
-
-    # B->K*(K pi) J/psi(ll)
-    RKstar_resonant_chain_selection = (abs(row['BToKEE_l1_genMotherPdgId']) == 443) & (abs(row['BToKEE_k_genMotherPdgId']) == 313)
-    RKstar_resonant_chain_selection &= (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_l2_genMotherPdgId']) & (row['BToKEE_l1Mother_genMotherPdgId'] == row['BToKEE_kMother_genMotherPdgId']) 
-    RKstar_resonant_chain_selection &= mc_matched_selection
-
-    # Bs->phi(K K) ll
-    Rphi_nonresonant_chain_selection = (abs(row['BToKEE_l1_genMotherPdgId']) == 531) & (abs(row['BToKEE_k_genMotherPdgId']) == 333)
-    Rphi_nonresonant_chain_selection &= (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_l2_genMotherPdgId']) & (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_kMother_genMotherPdgId']) 
-    Rphi_nonresonant_chain_selection &= mc_matched_selection
-
-    # Bs->phi(K K) J/psi(ll)
-    Rphi_resonant_chain_selection = (abs(row['BToKEE_l1_genMotherPdgId']) == 443) & (abs(row['BToKEE_k_genMotherPdgId']) == 333)
-    Rphi_resonant_chain_selection &= (row['BToKEE_l1_genMotherPdgId'] == row['BToKEE_l2_genMotherPdgId']) & (row['BToKEE_l1Mother_genMotherPdgId'] == row['BToKEE_kMother_genMotherPdgId']) 
-    Rphi_resonant_chain_selection &= mc_matched_selection
-
-    if RK_nonresonant_chain_selection: return 0
-    elif RK_resonant_chain_selection: return 1
-    elif RKstar_nonresonant_chain_selection: return 2
-    elif RKstar_resonant_chain_selection: return 3
-    elif Rphi_nonresonant_chain_selection: return 4
-    elif Rphi_resonant_chain_selection: return 5
-    else: return -1
-
-  def GetDMass(self, row):
-    if (row['BToKEE_k_charge'] * row['BToKEE_l1_charge']) < 0.0:
-      return row['BToKEE_Dmass_l1']
-    else:
-      return row['BToKEE_Dmass_l2']
-
-  def EleEtaCats(self, row):    
-    etaCut = 1.44
-    if (abs(row['BToKEE_fit_l1_eta']) < etaCut) and (abs(row['BToKEE_fit_l2_eta']) < etaCut):
-      return 0
-    elif (abs(row['BToKEE_fit_l1_eta']) > etaCut) and (abs(row['BToKEE_fit_l2_eta']) > etaCut):
-      return 1
-    else:
-      return 2
 
 
 

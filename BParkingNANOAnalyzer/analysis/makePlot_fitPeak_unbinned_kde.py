@@ -134,8 +134,9 @@ def fit(inputfile, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False):
     c2.cd()
     c2.Update()
 
-    c2.SaveAs(outputfile)
-    wf = ROOT.TFile("part_workspace.root", "RECREATE")
+    c2.SaveAs(outputfile.replace('.root','')+'.pdf')
+    #wf = ROOT.TFile("part_workspace.root", "RECREATE")
+    wf = ROOT.TFile(outputfile.replace('.root','')+'.root', "RECREATE")
     wspace.Write()
     wf.Close()
 

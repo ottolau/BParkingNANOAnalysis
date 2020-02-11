@@ -200,6 +200,7 @@ def fpreproc(dtrain, dtest, param):
 space  = [Integer(5, 8, name='max_depth'),
          Real(0.01, 0.2, name='eta'),
          Real(0.0, 10.0, name='gamma'),
+         Integer(1.0, 10.0, name='min_child_weight'),
          Real(0.5, 1.0, name='subsample'),
          Real(0.1, 1.0, name='colsample_bytree'),
          Real(0.0, 10.0, name='alpha'),
@@ -241,8 +242,8 @@ def train(xgtrain, xgtest, hyper_params=None):
         print("early stopping after {0} boosting rounds".format(best_iteration))
     return model, results
 
-def train_cv(X_train_val, Y_train_val, X_test, Y_test, hyper_params=None):
-    xgtrain = xgb.DMatrix(X_train_val, label=Y_train_val)
+def train_cv(X_train_val, Y_train_val, X_test, Y_test, w_train_val, hyper_params=None):
+    xgtrain = xgb.DMatrix(X_train_val, label=Y_train_val, weight=w_train_val)
     xgtest  = xgb.DMatrix(X_test , label=Y_test )
     model, results = train(xgtrain, xgtest, hyper_params=hyper_params)
     Y_predict = model.predict(xgtest, ntree_limit=model.best_ntree_limit)
@@ -254,30 +255,30 @@ def train_cv(X_train_val, Y_train_val, X_test, Y_test, hyper_params=None):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description="A simple ttree plotter")
-    parser.add_argument("-s", "--signal", dest="signal", default="RootTree_2020Jan16_BuToKee_BToKEEAnalyzer_2020Jan28_Dveto_fullq2_EB_pf.root", help="Signal file")
-    parser.add_argument("-b", "--background", dest="background", default="RootTree_2020Jan16_Run2018A1A4B1B3C3D3partial_BToKEEAnalyzer_2020Jan28_partial_Dveto_fullq2_EB_upSB_pf.root", help="Background file")
+    parser.add_argument("-s", "--signal", dest="signal", default="RootTree_2020Jan16_BuToKee_BToKEEAnalyzer_2020Jan28_Dveto_fullq2_EB_separatePFMVA_pf.root", help="Signal file")
+    parser.add_argument("-b", "--background", dest="background", default="RootTree_2020Jan16_Run2018A1A4B1B3C3D3partial_BToKEEAnalyzer_2020Jan28_partial_Dveto_fullq2_EB_separatePFMVA_upSB_pf.root", help="Background file")
     parser.add_argument("-f", "--suffix", dest="suffix", default=None, help="Suffix of the output name")
     parser.add_argument("-o", "--optimization", dest="optimization", action='store_true', help="Perform Bayesian optimization")
     args = parser.parse_args()
 
-    #features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz', 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig']
-
     
     features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz',
                 'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 
-                'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_k_dz', 'BToKEE_k_nValidHits',
+                'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_k_dz',
                 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig',
                 ]
 
     features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
+    #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
     features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
     
 
     features = sorted(features)
+    branches = features + ['BToKEE_fit_massErr']
 
     ddf = {}
-    ddf['sig'] = get_df(args.signal, features)
-    ddf['bkg'] = get_df(args.background, features)
+    ddf['sig'] = get_df(args.signal, branches)
+    ddf['bkg'] = get_df(args.background, branches)
 
     ddf['sig'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
     ddf['bkg'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
@@ -294,8 +295,11 @@ if __name__ == '__main__':
     ddf['bkg']['isSignal'] = 0
 
     df = pd.concat([ddf['sig'],ddf['bkg']]).sort_index(axis=1).sample(frac=1).reset_index(drop=True)
+    df['weights'] = np.where(df['isSignal'], 1.0/df['BToKEE_fit_massErr'].replace(np.nan, 1.0), 1.0)
+
     X = df[features]
     y = df['isSignal']
+    W = df['weights']
 
     suffix = args.suffix
     n_boost_rounds = 800
@@ -306,7 +310,7 @@ if __name__ == '__main__':
     best_params = {'colsample_bytree': 0.8380017432637168, 'subsample': 0.7771020436861611, 'eta': 0.043554653675279234, 'alpha': 0.13978587730419964, 'max_depth': 5, 'gamma': 0.5966218064835417, 'lambda': 1.380893119219306}
 
     # split X and y up in train and test samples
-    X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.20, random_state=47)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.20)
 
     # Get the number of positive and nevative training examples in this category
     n_pos = np.sum(y_train == 1)
@@ -318,7 +322,9 @@ if __name__ == '__main__':
     idx_train = X_train.index
     idx_test = X_test.index
 
-    dmatrix_train = xgb.DMatrix(X_train.copy(), label=np.copy(y_train), feature_names=[f.replace('_','-') for f in features])
+    w_train = W.loc[idx_train]
+
+    dmatrix_train = xgb.DMatrix(X_train.copy(), label=np.copy(y_train), feature_names=[f.replace('_','-') for f in features], weight=np.copy(w_train))
     dmatrix_test  = xgb.DMatrix(X_test.copy(), label=np.copy(y_test), feature_names=[f.replace('_','-') for f in features])
 
     # Bayesian optimization
@@ -327,7 +333,7 @@ if __name__ == '__main__':
         print("Begin Bayesian optimization")
         best_auc = 0.0
         best_params = {}
-        res_gp = gp_minimize(objective, space, n_calls=n_calls, n_random_starts=n_random_starts, random_state=3, verbose=True)
+        res_gp = gp_minimize(objective, space, n_calls=n_calls, n_random_starts=n_random_starts, verbose=True)
         print("Finish optimization in {}s".format(time.time()-begt))
         plt.figure()
         plot_convergence(res_gp)
@@ -347,7 +353,7 @@ if __name__ == '__main__':
         figs, axs = plt.subplots()
         #cv = KFold(n_splits=5, shuffle=True)
         cv = StratifiedKFold(n_splits=5, shuffle=True)
-        mean_fpr = np.logspace(-5, 0, 100)
+        mean_fpr = np.logspace(-6, 0, 100)
 
         iFold = 0
         for train_idx, test_idx in cv.split(X_train, y_train):
@@ -355,8 +361,9 @@ if __name__ == '__main__':
             X_test_cv = X_train.iloc[test_idx]
             Y_train_cv = y_train.iloc[train_idx]
             Y_test_cv = y_train.iloc[test_idx]
+            w_train_cv = w_train.loc[X_train_cv.index]
 
-            model, fpr, tpr, thresholds, roc_auc, results = train_cv(X_train_cv, Y_train_cv, X_test_cv, Y_test_cv, hyper_params=best_params)
+            model, fpr, tpr, thresholds, roc_auc, results = train_cv(X_train_cv, Y_train_cv, X_test_cv, Y_test_cv, w_train_cv, hyper_params=best_params)
             epochs = len(results['train']['auc'])
             x_axis = range(0, epochs)
             fig, ax = plt.subplots()
@@ -379,14 +386,14 @@ if __name__ == '__main__':
         mean_auc = auc(mean_fpr, mean_tpr)
         std_auc = np.std(aucs)
         axs.plot(mean_fpr, mean_tpr, color='b', label=r'Mean ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc), lw=2, alpha=.8)
-        axs.plot(np.logspace(-4, 0, 1000), np.logspace(-4, 0, 1000), linestyle='--', lw=2, color='k', label='Random chance')
+        axs.plot(np.logspace(-5, 0, 1000), np.logspace(-5, 0, 1000), linestyle='--', lw=2, color='k', label='Random chance')
 
         std_tpr = np.std(tprs, axis=0)
         tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
         tprs_lower = np.maximum(mean_tpr - std_tpr, 0)
         axs.fill_between(mean_fpr, tprs_lower, tprs_upper, color='grey', alpha=.2, label=r'$\pm$ 1 std. dev.')
         axs.set_xscale('log')
-        axs.set_xlim([1.0e-4, 1.0])
+        axs.set_xlim([1.0e-5, 1.0])
         axs.set_ylim([0.0, 1.0])
         axs.set_xlabel('False Alarm Rate')
         axs.set_ylabel('Signal Efficiency')
@@ -444,7 +451,7 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots()
     plot_roc_curve(df_test, "score", ax=ax, label="XGB")
-    ax.plot(np.logspace(-4, 0, 1000), np.logspace(-4, 0, 1000), linestyle='--', color='k')
+    ax.plot(np.logspace(-5, 0, 1000), np.logspace(-5, 0, 1000), linestyle='--', color='k')
     '''
     mvaCut = np.linspace(0.0, 4.0, 10)
     wp_fpr = interp(mvaCut, thresholds[::-1], fpr[::-1])
@@ -453,7 +460,7 @@ if __name__ == '__main__':
     for i, mva in enumerate(mvaCut):
       ax.annotate(round(mva,2), (wp_fpr[i], wp_tpr[i]), fontsize=10, xytext=(10,-20), textcoords="offset points", arrowprops=dict(arrowstyle="->"))
     '''
-    ax.set_xlim([1.0e-4, 1.0])
+    ax.set_xlim([1.0e-5, 1.0])
     ax.set_ylim([0.0, 1.0])
     ax.set_xscale('log')
     ax.set_xlabel("False Alarm Rate")

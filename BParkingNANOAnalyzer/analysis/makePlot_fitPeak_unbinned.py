@@ -7,24 +7,9 @@ from ROOT import RooFit
 import numpy as np
 ROOT.gROOT.ProcessLine(open('models.cc').read())
 from ROOT import DoubleCBFast
-
+from helper import *
 #ROOT.gErrorIgnoreLevel=ROOT.kError
 #ROOT.RooMsgService.instance().setGlobalKillBelow(RooFit.FATAL)
-
-ELECTRON_MASS = 0.000511
-K_MASS = 0.493677
-JPSI_MC = 3.085053
-JPSI_SIGMA_MC = 0.0516
-JPSI_LOW = JPSI_MC - 3.0*JPSI_SIGMA_MC
-JPSI_UP = JPSI_MC + 3.0*JPSI_SIGMA_MC
-#B_MC = 5.2694
-#B_SIGMA_MC = 0.0591
-B_MC = 5.2681
-B_SIGMA_MC = 0.0561
-B_LOW = B_MC - 3.0*B_SIGMA_MC
-B_UP = B_MC + 3.0*B_SIGMA_MC
-B_MIN = 4.5
-B_MAX = 6.0
 
 def CMS_lumi(isMC):
     mark = ROOT.TLatex()
@@ -48,7 +33,7 @@ def CMS_lumi(isMC):
     mark.DrawLatex(1 - ROOT.gPad.GetRightMargin(), 1 - (ROOT.gPad.GetTopMargin() - 0.017), lumistamp)
 
 
-def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doPartial=False, partialinputfile='part_workspace.root', drawSNR=False, mvaCut=0.0):
+def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doPartial=False, partialinputfile='part_workspace.root', drawSNR=False, mvaCut=0.0, blinded=False, expS=100):
     msgservice = ROOT.RooMsgService.instance()
     msgservice.setGlobalKillBelow(RooFit.FATAL)
     wspace = ROOT.RooWorkspace('myWorkSpace')
@@ -75,9 +60,9 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
         xmin, xmax = 4.5, 6.0
         wspace.factory('mean[5.272e+00, 5.22e+00, 5.3e+00]')
       else:
-        xmin, xmax = 4.8, 6.0
-        #wspace.factory('mean[5.2694, 5.2694, 5.2694]')
-        wspace.factory('mean[5.2681, 5.2681, 5.2681]')
+        xmin, xmax = FIT_LOW, FIT_UP
+        wspace.factory('mean[5.2694, 5.2694, 5.2694]')
+        #wspace.factory('mean[5.2681, 5.2681, 5.2681]')
       thevars.add(dieleMass)
 
     thevars.add(bMass)
@@ -97,7 +82,10 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
     data = fulldata.reduce(thevars, cut)
     getattr(wspace,'import')(data, RooFit.Rename("data"))
 
-    wspace.factory('nsig[100.0, 0.0, 1000000.0]')
+    if not blinded:
+      wspace.factory('nsig[100.0, 0.0, 1000000.0]')
+    else:
+      wspace.factory('nsig[{0}, {0}, {0}]'.format(expS))
     wspace.factory('nbkg[500.0, 0.0, 1000000.0]')
     wspace.factory('npartial[100.0, 0.0, 100000.0]')
 
@@ -120,28 +108,6 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
         wspace.factory('CBShape::sig(x,mean,sigma,alpha,n)')
 
     if sigPDF == 3:
-        # Double Gaussian
-        wspace.factory('sigma1[7.1858e-02, 1.0e-3, 5.0e-1]')
-        wspace.factory('Gaussian::gaus1(x,mean,sigma1)')
-        wspace.factory('sigma2[7.1858e-02, 1.0e-6, 5.0e-1]')
-        wspace.factory('Gaussian::gaus2(x,mean,sigma2)')
-        wspace.factory('f1[0.5, 0.0, 1.0]')
-        wspace.factory('SUM::sig(f1*gaus1, gaus2)')
-
-    if sigPDF == 4:
-        # Double Crystal-ball
-        wspace.factory('sigma1[7.1858e-02, 1.0e-6, 5.0e-1]')
-        wspace.factory('alpha1[1.0, 0.0, 10.0]')
-        wspace.factory('n1[2.0, 1, 10]')
-        wspace.factory('CBShape::cb1(x,mean,sigma1,alpha1,n1)')
-        wspace.factory('sigma2[7.1858e-03, 1.0e-6, 5.0e-1]')
-        wspace.factory('alpha2[1.0, 0.0, 10.0]')
-        wspace.factory('n2[2.0, 1, 10]')
-        wspace.factory('CBShape::cb2(x,mean,sigma2,alpha2,n2)')
-        wspace.factory('f1[0.5, 0.0, 1.0]')
-        wspace.factory('SUM::sig(f1*cb1, cb2)')
-
-    if sigPDF == 5:
         # Double-sided Crystal-ball
         if isMC:
           wspace.factory('width[4.1858e-02, 1.0e-6, 5.0e-1]')
@@ -151,22 +117,22 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
           wspace.factory('n2[1.0, 1.0, 10.0]')
         else:
           # PF
-          #wspace.factory('width[0.0591, 0.0591, 0.0591]')
-          #wspace.factory('alpha1[0.623, 0.623, 0.623]')
-          #wspace.factory('n1[2.58, 2.58, 2.58]')
-          #wspace.factory('alpha2[1.90, 1.90, 1.90]')
-          #wspace.factory('n2[6.3, 6.3, 6.3]')
+          wspace.factory('width[0.0591, 0.0591, 0.0591]')
+          wspace.factory('alpha1[0.623, 0.623, 0.623]')
+          wspace.factory('n1[2.58, 2.58, 2.58]')
+          wspace.factory('alpha2[1.90, 1.90, 1.90]')
+          wspace.factory('n2[6.3, 6.3, 6.3]')
 
           # Mix
-          wspace.factory('width[0.0561, 0.0561, 0.0561]')
-          wspace.factory('alpha1[0.642, 0.642, 0.642]')
-          wspace.factory('n1[2.31, 2.31, 2.31]')
-          wspace.factory('alpha2[1.700, 1.700, 1.700]')
-          wspace.factory('n2[10.0, 10.0, 10.0]')
+          #wspace.factory('width[0.0561, 0.0561, 0.0561]')
+          #wspace.factory('alpha1[0.642, 0.642, 0.642]')
+          #wspace.factory('n1[2.31, 2.31, 2.31]')
+          #wspace.factory('alpha2[1.700, 1.700, 1.700]')
+          #wspace.factory('n2[10.0, 10.0, 10.0]')
 
         wspace.factory('GenericPdf::sig("DoubleCBFast(x,mean,width,alpha1,n1,alpha2,n2)", {x,mean,width,alpha1,n1,alpha2,n2})')
 
-    if sigPDF == 6:
+    if sigPDF == 4:
         # Two Double-sided Crystal-ball
         wspace.factory('width[7.1858e-02, 1.0e-6, 5.0e-1]')
         wspace.factory('alpha1[1.0, 0.0, 10.0]')
@@ -207,15 +173,17 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
         wspace.factory('SUM::model1(f1[0.5,0.0,1.0]*partial,bkg)')
         print('Finished loading KDE!')
         wspace.factory('SUM::model(nsig*sig,nbkg*model1)')
-        #wspace.Print()
+        #if not blinded:
+          #wspace.factory('SUM::model(nsig*sig,nbkg*model1)')
+        #else:
+          #wspace.factory('ExtendPdf::model(model1,nbkg)')
 
       else:
         wspace.factory('SUM::model(nsig*sig,nbkg*bkg)')
     else:
       wspace.factory('ExtendPdf::model(sig,nsig)')
             
-    model = wspace.pdf('model' if isMC else 'model')
-    #bkg = wspace.pdf('bkg')
+    model = wspace.pdf('model')
     bkg = wspace.pdf('model1')
     sig = wspace.pdf('sig')
     nsig = wspace.var('nsig')
@@ -227,19 +195,25 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
     # make the set obs known to Python
     obs  = wspace.set('obs')
 
+    theBMass.setRange("window",B_LOW,B_UP) 
+    theBMass.setRange("SB1",FIT_LOW,BLIND_LOW) 
+    theBMass.setRange("SB2",BLIND_UP,B_MAX) 
+
     ## fit the model to the data.
     print('Fitting data...')
-    results = model.fitTo(data, RooFit.Extended(True), RooFit.Save(), RooFit.Range(xmin,xmax), RooFit.PrintLevel(-1))
+    if not blinded:
+      results = model.fitTo(data, RooFit.Extended(True), RooFit.Save(), RooFit.Range(xmin,xmax), RooFit.PrintLevel(-1))
+    else:
+      results = model.fitTo(data, RooFit.Extended(True), RooFit.Save(), RooFit.Range("SB1,SB2"), RooFit.PrintLevel(-1))
+
     results.Print()
 
     if not isMC:
-      theBMass.setRange("window",B_LOW,B_UP) ;
       fracBkgRange = bkg.createIntegral(obs,obs,"window") ;
       nbkgWindow = nbkg.getVal() * fracBkgRange.getVal()
       print(nbkg.getVal(), fracBkgRange.getVal())
       print("Number of signals: %f, Number of background: %f, S/sqrt(S+B): %f"%(nsig.getVal(), nbkgWindow, nsig.getVal()/np.sqrt(nsig.getVal() + nbkgWindow)))
     else:
-      theBMass.setRange("window",B_LOW,B_UP) ;
       fracSigRange = sig.createIntegral(obs,obs,"window") ;
       print(data.sumEntries(),fracSigRange.getVal())
 
@@ -253,7 +227,7 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
     #xframe = wspace.var('x').frame(RooFit.Title("PF electron"))
     xframe = theBMass.frame()
     data.plotOn(xframe, RooFit.Binning(50), RooFit.Name("data"))
-    model.plotOn(xframe,RooFit.Name("global"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
+    model.plotOn(xframe,RooFit.Name("global"),RooFit.Range("Full"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
     if not isMC:
       '''
       model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.LineStyle(ROOT.kDashed),RooFit.LineColor(ROOT.kMagenta),RooFit.MoveToBack()) ;
@@ -263,11 +237,10 @@ def fit(tree, outputfile, sigPDF=0, bkgPDF=0, fitJpsi=False, isMC=False, doParti
       model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.DrawOption("FL"),RooFit.FillColor(9),RooFit.FillStyle(3004),RooFit.LineStyle(6),RooFit.LineColor(9)) ;
       #model.plotOn(xframe,RooFit.VisualizeError(results), RooFit.FillColor(ROOT.kOrange), RooFit.MoveToBack()) # this will show fit overlay on canvas
       '''
-      model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(42),RooFit.LineColor(42),RooFit.LineWidth(1),RooFit.MoveToBack())
+      model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.Range("Full"),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(42),RooFit.LineColor(42),RooFit.LineWidth(1),RooFit.MoveToBack())
       if doPartial:
-        model.plotOn(xframe,RooFit.Name("partial"),RooFit.Components("bkg,partial"),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(40),RooFit.LineColor(40),RooFit.LineWidth(1),RooFit.MoveToBack()) ;
-      model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.DrawOption("L"),RooFit.LineStyle(2),RooFit.LineColor(1)) ;
-
+        model.plotOn(xframe,RooFit.Name("partial"),RooFit.Components("bkg,partial"),RooFit.Range("Full"),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(40),RooFit.LineColor(40),RooFit.LineWidth(1),RooFit.MoveToBack()) ;
+      model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.Range("Full"),RooFit.DrawOption("L"),RooFit.LineStyle(2),RooFit.LineColor(1)) ;
 
     else:
       #if fitJpsi:
@@ -359,8 +332,8 @@ if __name__ == "__main__":
 
     tree = ROOT.TChain('tree')
     tree.AddFile(args.inputfile)
-    fit(tree, args.outputfile, sigPDF=5, bkgPDF=2, fitJpsi=False, isMC=True)
-    #fit(tree, args.outputfile, sigPDF=5, bkgPDF=2, doPartial=True)
-    #fit(tree, args.outputfile, sigPDF=5, bkgPDF=2, doPartial=True, drawSNR=True, mvaCut=2.0)
+    fit(tree, args.outputfile, fitJpsi=False, isMC=True)
+    #fit(tree, args.outputfile, doPartial=True)
+    #fit(tree, args.outputfile, doPartial=True, drawSNR=True, mvaCut=2.0)
 
 

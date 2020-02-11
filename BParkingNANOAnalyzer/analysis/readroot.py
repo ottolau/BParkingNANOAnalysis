@@ -8,6 +8,8 @@ import uproot
 import time
 import xgboost as xgb
 import gc
+sys.path.append('../')
+from scripts.helper import *
 
 import argparse
 parser = argparse.ArgumentParser(description="A simple ttree plotter")
@@ -95,23 +97,6 @@ outputhist2d = {'BToKEE_fit_mass_vs_BToKEE_q2': {'nbinx': 50, 'xmin': 4.5, 'xmax
                 #'BToKEE_fit_mass_decorr_vs_BToKEE_mll_fullfit_decorr': {'nbinx': 50, 'xmin': -1.0, 'xmax': 1.0, 'nbiny': 50, 'ymin': -0.2, 'ymax': 0.2},
                }
 
-ELECTRON_MASS = 0.000511
-K_MASS = 0.493677
-JPSI_MC = 3.08844
-JPSI_SIGMA_MC = 0.04571
-JPSI_LOW = np.sqrt(6.0)
-JPSI_UP = JPSI_MC + 3.0*JPSI_SIGMA_MC
-JPSI_DECORR_MC = 2.5001e-03
-JPSI_DECORR_SIGMA_MC = 1.4728e-02
-JPSI_DECORR_LOW = JPSI_DECORR_MC - 3.0*JPSI_DECORR_SIGMA_MC
-JPSI_DECORR_UP = JPSI_DECORR_MC + 3.0*JPSI_DECORR_SIGMA_MC
-B_MC = 5.2694
-B_SIGMA_MC = 0.0591
-B_UP = B_MC + 3.0*B_SIGMA_MC
-B_MIN = 4.5
-B_MAX = 6.0
-D_MASS_CUT = 1.9
-
 def EleEtaCats(row):    
     etaCut = 1.44
     if (abs(row['BToKEE_fit_l1_eta']) < etaCut) and (abs(row['BToKEE_fit_l2_eta']) < etaCut):
@@ -128,7 +113,7 @@ if __name__ == "__main__":
   ele_type = {'all': False, 'pf': True, 'low': False, 'mix': False, 'low_pfveto': False, 'mix_net': False}
   ele_selection = {'all': 'all_selection', 'pf': 'pf_selection', 'low': 'low_selection', 'mix': 'mix_selection', 'low_pfveto': 'low_pfveto_selection', 'mix_net': 'mix_net_selection'}
 
-  isMVAEvaluate = True
+  isMVAEvaluate = False
   prepareMVA = False
   plot2D = True
   isGetDecorr = False
@@ -197,8 +182,8 @@ if __name__ == "__main__":
       branches['BToKEE_mll_fullfit_decorr'] = data_decorr[:,1]
       '''
 
-      jpsi_selection = (branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_UP)
-      #jpsi_selection = (branches['BToKEE_mll_fullfit'] > np.sqrt(1.1)) & (branches['BToKEE_mll_fullfit'] < np.sqrt(6.0)) #JPSI_UP)
+      #jpsi_selection = (branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_UP)
+      jpsi_selection = (branches['BToKEE_mll_fullfit'] > np.sqrt(1.1)) & (branches['BToKEE_mll_fullfit'] < np.sqrt(6.0)) #JPSI_UP)
       #jpsi_selection = (branches['BToKEE_mll_fullfit'] > np.sqrt(1.1)) & (branches['BToKEE_mll_fullfit'] < JPSI_UP)
       #jpsi_selection = (branches['BToKEE_mll_fullfit_decorr'] > JPSI_DECORR_LOW) & (branches['BToKEE_mll_fullfit_decorr'] < JPSI_DECORR_UP)
       #b_selection = jpsi_selection & (branches['BToKEE_fit_mass'] > B_LOWSB_UP) & (branches['BToKEE_fit_mass'] < B_UPSB_LOW)

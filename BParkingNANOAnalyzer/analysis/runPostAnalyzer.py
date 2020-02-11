@@ -12,9 +12,8 @@ parser.add_argument("-o", "--outputfile", dest="outputfile", default="plots.root
 parser.add_argument("-m", "--maxevents", dest="maxevents", type=int, default=ROOT.TTree.kMaxEntries, help="Maximum number events to loop over")
 parser.add_argument("-t", "--ttree", dest="ttree", default="Events", help="TTree Name")
 parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Store histograms or tree")
-parser.add_argument("-c", "--mc", dest="mc", action='store_true', help="MC or data")
+parser.add_argument("-v", "--mva", dest="mva", action='store_true', help="Evaluate MVA")
 parser.add_argument("-r", "--runparallel", dest="runparallel", action='store_true', help="Enable parallel run")
-parser.add_argument("--kstar", action='store_true', help="Enable parallel run")
 args = parser.parse_args()
 
 
@@ -31,26 +30,22 @@ def chunks(l, n):
     for i in xrange(0, len(l), n):
         yield l[i:i + n]
 
-def analyze(inputfile, outputfile, Analyzer, hist=False, mc=False):
-    #if args.kstar:
-      #analyzer = BToKstarLLAnalyzer(inputfile, outputfile, hist, mc)
-    #else:
-      #analyzer = BToKLLAnalyzer(inputfile, outputfile, hist, mc)
-    analyzer = Analyzer(inputfile, outputfile, hist, mc)
+def analyze(inputfile, outputfile, hist=False, mva=False):
+    analyzer = Analyzer(inputfile, outputfile, hist, mva)
     analyzer.run()
 
 def analyzeParallel(enumfChunk):
     ich, fChunk = enumfChunk
     print("Processing chunk number %i"%(ich))
     outputfile = outpath+'/'+args.outputfile.replace('.root','').replace('.h5','')+'_subset'+str(ich)+'.root'
-    analyze(fChunk, outputfile, Analyzer, args.hist, args.mc)
+    analyze(fChunk, outputfile, args.hist, args.mva)
 
 
 if __name__ == "__main__":
-    from scripts.BToKLLAnalyzer import BToKLLAnalyzer
-    from scripts.BToKstarLLAnalyzer import BToKstarLLAnalyzer
+    from scripts.BToKLLAnalyzer_postprocess import BToKLLAnalyzer_postprocess
+
     global Analyzer
-    Analyzer = BToKLLAnalyzer
+    Analyzer = BToKLLAnalyzer_postprocess
 
     if '.root' in args.inputfiles:
         fileList = [args.inputfiles,]
@@ -61,13 +56,10 @@ if __name__ == "__main__":
     if not args.runparallel:
         inputfile = fileList
         outputfile = args.outputfile.replace('.root','').replace('.h5','')+'.root'
-        analyze(inputfile, outputfile, Analyzer, args.hist, args.mc)
+        analyze(inputfile, outputfile, args.hist, args.mva)
 
     else:
         global outpath
-        #outputBase = "/eos/uscms/store/user/klau/BsPhiLL_output/LowPtElectronSculpting"
-        #outputFolder = "BsPhiEE_CutBasedEvaluation"
-        #outpath  = "%s/%s"%(outputBase,outputFolder)
         outpath = '.'
         if not os.path.exists(outpath):
             exec_me("mkdir -p %s"%(outpath), False)
