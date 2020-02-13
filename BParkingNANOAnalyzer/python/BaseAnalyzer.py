@@ -133,8 +133,11 @@ class BParkingNANOAnalyzer(object):
     elif Rphi_resonant_chain_selection: return 5
     else: return -1
 
-
-
+  def DeltaPhi(self, phi1, phi2):
+    dphi = phi1 - phi2
+    if dphi >= np.pi: dphi -= 2.0*np.pi
+    elif dphi < -1.0*np.pi: dphi += 2.0*np.pi
+    return dphi
 
 
 

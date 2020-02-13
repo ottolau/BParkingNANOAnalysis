@@ -117,11 +117,11 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
           wspace.factory('n2[1.0, 1.0, 10.0]')
         else:
           # PF
-          wspace.factory('width[0.0591, 0.0591, 0.0591]')
-          wspace.factory('alpha1[0.623, 0.623, 0.623]')
-          wspace.factory('n1[2.58, 2.58, 2.58]')
-          wspace.factory('alpha2[1.90, 1.90, 1.90]')
-          wspace.factory('n2[6.3, 6.3, 6.3]')
+          wspace.factory('width[0.06187, 0.06187, 0.06187]')
+          wspace.factory('alpha1[0.667, 0.667, 0.667]')
+          wspace.factory('n1[2.39, 2.39, 2.39]')
+          wspace.factory('alpha2[2.442, 2.442, 2.442]')
+          wspace.factory('n2[3.09, 3.09, 3.09]')
 
           # Mix
           #wspace.factory('width[0.0561, 0.0561, 0.0561]')
@@ -210,8 +210,15 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
 
     if not isMC:
       fracBkgRange = bkg.createIntegral(obs,obs,"window") ;
+      fracBkgRangeErr = fracBkgRange.getPropagatedError(results, obs)
       nbkgWindow = nbkg.getVal() * fracBkgRange.getVal()
-      print(nbkg.getVal(), fracBkgRange.getVal())
+      #print(nbkg.getVal(), fracBkgRange.getVal())
+      #print(fracBkgRange.getVal(), fracBkgRange.getPropagatedError(results, obs))
+      fb = fracBkgRange.getVal()
+      dfb = fracBkgRangeErr
+      nb = nbkg.getVal()
+      dnb = nbkg.getError()
+      #print(nb*fb*np.sqrt(pow(dfb/fb,2)+pow(dnb/nb,2)))
       print("Number of signals: %f, Number of background: %f, S/sqrt(S+B): %f"%(nsig.getVal(), nbkgWindow, nsig.getVal()/np.sqrt(nsig.getVal() + nbkgWindow)))
     else:
       fracSigRange = sig.createIntegral(obs,obs,"window") ;
@@ -226,7 +233,9 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
 
     #xframe = wspace.var('x').frame(RooFit.Title("PF electron"))
     xframe = theBMass.frame()
-    data.plotOn(xframe, RooFit.Binning(50), RooFit.Name("data"))
+    nbin_data = 30 if blinded else 50
+    data.plotOn(xframe, RooFit.Binning(nbin_data), RooFit.Name("data"))
+
     model.plotOn(xframe,RooFit.Name("global"),RooFit.Range("Full"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
     if not isMC:
       '''

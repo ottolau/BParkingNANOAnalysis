@@ -255,23 +255,27 @@ def train_cv(X_train_val, Y_train_val, X_test, Y_test, w_train_val, hyper_params
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description="A simple ttree plotter")
-    parser.add_argument("-s", "--signal", dest="signal", default="RootTree_2020Jan16_BuToKee_BToKEEAnalyzer_2020Jan28_Dveto_fullq2_EB_separatePFMVA_pf.root", help="Signal file")
-    parser.add_argument("-b", "--background", dest="background", default="RootTree_2020Jan16_Run2018A1A4B1B3C3D3partial_BToKEEAnalyzer_2020Jan28_partial_Dveto_fullq2_EB_separatePFMVA_upSB_pf.root", help="Background file")
+    parser.add_argument("-s", "--signal", dest="signal", default="RootTree_2020Jan16_BuToKee_BToKEEAnalyzer_2020Jan28_fullq2_EB_pf.root", help="Signal file")
+    parser.add_argument("-b", "--background", dest="background", default="RootTree_2020Jan16_Run2018ABCDpartial_BToKEEAnalyzer_2020Feb12_fullq2_EB_upSB_pf.root", help="Background file")
     parser.add_argument("-f", "--suffix", dest="suffix", default=None, help="Suffix of the output name")
     parser.add_argument("-o", "--optimization", dest="optimization", action='store_true', help="Perform Bayesian optimization")
     args = parser.parse_args()
 
     
-    features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_fit_l1_phi', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz',
-                'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_fit_l2_phi', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 
-                'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi', 'BToKEE_k_DCASig', 'BToKEE_k_dz',
-                'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig',
+    features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz',
+                'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 
+                'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_k_DCASig', 'BToKEE_k_dz',
+                'BToKEE_fit_normpt', 'BToKEE_fit_eta', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig',
                 ]
-
+    features += ['BToKEE_fit_l1_phi', 'BToKEE_fit_l2_phi', 'BToKEE_fit_k_phi', 'BToKEE_fit_phi']
+    #features += ['BToKEE_fit_l1_dphi', 'BToKEE_fit_l2_dphi', 'BToKEE_fit_k_dphi', 'BToKEE_fit_dphi']
     features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
-    #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+    features += ['BToKEE_l1_iso03_rel', 'BToKEE_l2_iso03_rel', 'BToKEE_k_iso03_rel', 'BToKEE_b_iso03_rel']
     features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
-    
+    features += ['BToKEE_ptImbalance']
+    #features += ['BToKEE_trg_eta']
+    #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+   
 
     features = sorted(features)
     branches = features + ['BToKEE_fit_massErr']
@@ -284,7 +288,7 @@ if __name__ == '__main__':
     ddf['bkg'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
 
     nSig = ddf['sig'].shape[0]
-    nBkg = 80000
+    nBkg = 200000
     #nSig = 1000
     #nBkg = 1000
     ddf['sig'] = ddf['sig'].sample(frac=1)[:nSig]
@@ -295,7 +299,8 @@ if __name__ == '__main__':
     ddf['bkg']['isSignal'] = 0
 
     df = pd.concat([ddf['sig'],ddf['bkg']]).sort_index(axis=1).sample(frac=1).reset_index(drop=True)
-    df['weights'] = np.where(df['isSignal'], 1.0/df['BToKEE_fit_massErr'].replace(np.nan, 1.0), 1.0)
+    #df['weights'] = np.where(df['isSignal'], 1.0/df['BToKEE_fit_massErr'].replace(np.nan, 1.0), 1.0)
+    df['weights'] = 1.0
 
     X = df[features]
     y = df['isSignal']

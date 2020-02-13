@@ -69,7 +69,7 @@ if __name__ == "__main__":
         fChunks= list(chunks(fileList,group))
         print ("writing %s jobs"%(len(fChunks)))
 
-        pool = mp.Pool(processes = 4)
+        pool = mp.Pool(processes = 8)
         input_parallel = list(enumerate(fChunks))
         pool.map(analyzeParallel, input_parallel)
         pool.close()

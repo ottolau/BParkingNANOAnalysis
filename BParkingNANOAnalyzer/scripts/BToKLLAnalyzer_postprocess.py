@@ -68,10 +68,16 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
                       'BToKEE_svprob': {'nbins': 100, 'xmin': 0.0, 'xmax': 1.0},
                       'BToKEE_fit_cos2D': {'nbins': 100, 'xmin': 0.999, 'xmax': 1.0},
                       'BToKEE_l_xy_sig': {'nbins': 100, 'xmin': 0.0, 'xmax': 50.0},
+                      'BToKEE_ptImbalance': {'nbins': 100, 'xmin': 0.0, 'xmax': 50.0},
                       'BToKEE_Dmass': {'nbins': 100, 'xmin': 0.0, 'xmax': 5.0},
-                      'BToKEE_pill_mass': {'nbins': 100, 'xmin': 0.0, 'xmax': 5.0},
+                      #'BToKEE_pill_mass': {'nbins': 100, 'xmin': 0.0, 'xmax': 5.0},
                       'BToKEE_maxDR': {'nbins': 100, 'xmin': 0.0, 'xmax': 4.0},
                       'BToKEE_minDR': {'nbins': 100, 'xmin': 0.0, 'xmax': 4.0},
+                      #'BToKEE_fit_l1_dphi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
+                      #'BToKEE_fit_l2_dphi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
+                      #'BToKEE_fit_k_dphi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
+                      #'BToKEE_fit_dphi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
+                      #'BToKEE_trg_eta': {'nbins': 100, 'xmin': -3.0, 'xmax': 3.0},
                       'BToKEE_eleEtaCats': {'nbins': 3, 'xmin': 0.0, 'xmax': 3.0},
                       'BToKEE_event': {'nbins': 10, 'xmin': 0.0, 'xmax': 10.0},
                       }
@@ -99,7 +105,7 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
       #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
       features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
       training_branches = sorted(features)
-      mvaCut = 0.0
+      mvaCut = 2.0
       ntree_limit = 800
       model = xgb.Booster({'nthread': 2})
       model.load_model('xgb_fulldata_05Feb2020_Dveto_fullq2_EB_pf_isoPFMVA.model')
@@ -138,14 +144,15 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         b_upsb_selection = (self._branches['BToKEE_fit_mass'] > B_UP)
         d_veto_selection = self._branches['BToKEE_Dmass'] > D_MASS_CUT
 
-        l1_selection = (self._branches['BToKEE_l1_mvaId'] > 4.24) 
-        l2_selection = (self._branches['BToKEE_l2_mvaId'] > 4.24)
+        l1_selection = (self._branches['BToKEE_l1_mvaId'] > 3.5) 
+        l2_selection = (self._branches['BToKEE_l2_mvaId'] > 3.5)
 
-        general_selection = d_veto_selection
-        general_selection &= (self._branches['BToKEE_eleEtaCats'] == 0)
+        #general_selection = d_veto_selection
+        general_selection = (self._branches['BToKEE_eleEtaCats'] == 0)
         general_selection &= l1_selection & l2_selection
         general_selection &= jpsi_selection
         general_selection &= pf_selection
+        general_selection &= b_upsb_selection
 
         self._branches = self._branches[general_selection]
 
