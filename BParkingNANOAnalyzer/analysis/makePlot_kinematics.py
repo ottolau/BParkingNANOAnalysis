@@ -72,7 +72,7 @@ def CMS_lumi():
 
 
 def draw_hist(histo, histo_name, x_label, y_label, same=False, err=False):
-    histo.SetTitle(histo_name)
+    #histo.SetTitle(histo_name)
     histo.GetYaxis().SetTitle(y_label)
     histo.GetXaxis().SetTitle(x_label)
     histo.SetTitleFont(42)
@@ -102,8 +102,8 @@ def draw_hist(histo, histo_name, x_label, y_label, same=False, err=False):
         histo.SetFillColorAlpha(40,1)
         histo.SetFillStyle(4050)
         if err:
-            histo.SetLineColor(4)
-            histo.SetMarkerStyle(22)
+            #histo.SetLineColor(4)
+            #histo.SetMarkerStyle(22)
             histo.Draw("E")
         else:
             histo.Draw("HIST")
@@ -143,7 +143,7 @@ def make_plots(filename, outputFolder='Figures'):
         draw_hist(histo, histo_name, unit, "Events", err=True)
 
         pad.cd()
-        CMS_lumi(pad)
+        CMS_lumi()
 
         c.cd()
         c.Update()
@@ -433,8 +433,8 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--backgroundfile", dest="backgroundfile", default="", help="ROOT file contains histograms")
     args = parser.parse_args()
 
-    #make_plots(args.inputfile)
-    make_comparisons(args.signalfile, args.backgroundfile)
+    make_plots(args.inputfile)
+    #make_comparisons(args.signalfile, args.backgroundfile)
     #make_2plots(args.inputfile, 'BToKEE_mass_pf', 'BToKEE_fit_mass_pf', 'BToKEE_mass_comp_MC.pdf')
     #make_eleStack(args.inputfile, 'test.pdf')
     #make_subtraction(args.inputfile, 'test.pdf')

@@ -31,11 +31,9 @@ plt.rcParams.update(params)
 import uproot
 import glob
 import pandas as pd
-from tqdm import tqdm
 import numpy as np
 from sklearn.model_selection import train_test_split, StratifiedKFold, KFold
 from sklearn.metrics import classification_report, roc_curve, auc, roc_auc_score
-import xgboost as xgb
 from sklearn import metrics
 import numpy as np
 from skopt import gp_minimize
@@ -47,6 +45,26 @@ import h5py
 import time
 import ROOT
 import sys
+from keras.models import Sequential, Model
+from keras.layers import Input, Dense, Activation, Dropout
+from keras.regularizers import l2
+from keras import initializers
+from keras.optimizers import SGD, Adam
+from keras.layers.normalization import BatchNormalization
+from keras.callbacks import EarlyStopping
+from keras.callbacks import ModelCheckpoint
+from sklearn.model_selection import train_test_split, StratifiedKFold, KFold
+from sklearn.utils import compute_class_weight
+
+from keras.backend.tensorflow_backend import set_session
+import tensorflow as tf
+tf.logging.set_verbosity(tf.logging.ERROR)
+
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True  # dynamically grow the memory used on the GPU
+sess = tf.Session(config=config)
+set_session(sess)  # set this TensorFlow session as the default session for Keras
+
 
 def get_df(root_file_name, branches):
     f = uproot.open(root_file_name)
@@ -73,101 +91,80 @@ def plot_roc_curve(df, score_column, tpr_threshold=0.0, ax=None, color=None, lin
     print("auc: {}, pauc: {}".format(roc_auc, roc_pauc))
     mask = tpr > tpr_threshold
     fpr, tpr = fpr[mask], tpr[mask]
-    #ax.semilogx(fpr, tpr, label=label, color=color, linestyle=linestyle)
     ax.plot(fpr, tpr, label=label, color=color, linestyle=linestyle)
 
-def get_signal_efficiency(df, score_column, working_point):
-    df_sig = df.query("matchedToGenEle == 1")
-    k = len(df_sig[df_sig[score_column] >= working_point])
-    n = len(df_sig)
-    return 1.*k/n if n != 0 else np.nan
-
-def get_background_efficiency(df, score_column, working_point):
-    df_bkg = df.query("matchedToGenEle == 0")
-    k = len(df_bkg[df_bkg[score_column] >= working_point])
-    n = len(df_bkg)
-    return 1.*k/n if n != 0 else np.nan
-
-def get_signal_efficiency_unc(df, score_column, working_point, bUpper):
-    df_sig = df.query("matchedToGenEle == 1")
-    k = len(df_sig[df_sig[score_column] >= working_point])
-    n = len(df_sig)
-    teff = ROOT.TEfficiency()
-    return teff.Bayesian(n, k, 0.683, 1.0, 1.0, bUpper, True) if n != 0 else np.nan
-
-def get_background_efficiency_unc(df, score_column, working_point, bUpper):
-    df_bkg = df.query("matchedToGenEle == 0")
-    k = len(df_bkg[df_bkg[score_column] >= working_point])
-    n = len(df_bkg)
-    teff = ROOT.TEfficiency()
-    return teff.Bayesian(n, k, 0.683, 1.0, 1.0, bUpper, True) if n != 0 else np.nan
-
-def fpreproc(dtrain, dtest, param):
-    label = dtrain.get_label()
-    ratio = float(np.sum(label == 0)) / np.sum(label == 1)
-    param['scale_pos_weight'] = ratio
-    return (dtrain, dtest, param)
+'''
+space  = [Integer(2, 4, name='hidden_layers'),
+          Integer(32, 256, name='initial_nodes'),
+          Real(10**-5, 10**-1, "log-uniform", name='l2_lambda'),
+          Real(0.15,0.5,name='dropout'),
+          Integer(256,4096,name='batch_size'),
+          Real(10**-5, 10**-1, "log-uniform", name='learning_rate'),
+          ]
+'''
+space  = [Real(10**-5, 10**-1, "log-uniform", name='l2_lambda'),
+          Real(0.05,0.5,name='dropout'),
+          Integer(128,2048,name='batch_size'),
+          Real(10**-5, 10**-1, "log-uniform", name='learning_rate'),
+          ]
 
 def pauc(predt, dtrain):
     y = dtrain.get_label()
     return 'pauc', roc_auc_score(y, predt, max_fpr=1.0e-2)
 
-space  = [Integer(5, 8, name='max_depth'),
-         Real(0.01, 0.2, name='eta'),
-         Real(0.0, 10.0, name='gamma'),
-         Integer(1.0, 10.0, name='min_child_weight'),
-         Real(0.5, 1.0, name='subsample'),
-         Real(0.1, 1.0, name='colsample_bytree'),
-         Real(0.0, 10.0, name='alpha'),
-         Real(0.0, 10.0, name='lambda'),
-         ]
+def build_custom_model(num_hiddens=3, initial_node=32, 
+                          dropout=0.20, l2_lambda=1.e-5):
+    inputs = Input(shape=(input_dim,), name = 'input')
+    for i in range(num_hiddens):
+        #hidden = Dense(units=int(round(initial_node/np.power(2,i))), kernel_initializer='glorot_normal', activation='relu', kernel_regularizer=l2(l2_lambda))(inputs if i==0 else hidden)
+        hidden = Dense(units=int(initial_node), kernel_initializer='glorot_normal', activation='relu', kernel_regularizer=l2(l2_lambda))(inputs if i==0 else hidden)
+        hidden = Dropout(np.float32(dropout))(hidden)
+    outputs = Dense(1, name = 'output', kernel_initializer='normal', activation='sigmoid')(hidden)
+    model = Model(inputs=inputs, outputs=outputs)
+    return model
+
+def train(X_train_val, Y_train_val, X_test, Y_test, model, classWeight, batch_size=64):
+    history = model.fit(X_train_val, Y_train_val, epochs=200, batch_size=batch_size, verbose=0, class_weight=classWeight, callbacks=[early_stopping, model_checkpoint], validation_split=0.25)
+    Y_predict = model.predict(X_test)
+    fpr, tpr, thresholds = roc_curve(Y_test, Y_predict)
+    roc_auc = roc_auc_score(Y_test, Y_predict, max_fpr=1.0e-2)
+    return model, fpr, tpr, thresholds, roc_auc, history
+
+def train_cv(X_train, y_train, model, batch_size=64):
+    fprs = []
+    tprs = []
+    aucs = []
+    cv = StratifiedKFold(n_splits=5, shuffle=True)
+    for train_idx, test_idx in cv.split(X_train, y_train):
+      X_train_val = X_train.iloc[train_idx]
+      X_test = X_train.iloc[test_idx]
+      Y_train_val = y_train.iloc[train_idx]
+      Y_test = y_train.iloc[test_idx]
+      classWeight = compute_class_weight('balanced', np.unique(Y_train_val), Y_train_val) 
+      classWeight = dict(enumerate(classWeight))
+      _, fpr, tpr, _, auc, _ = train(X_train_val, Y_train_val, X_test, Y_test, model, classWeight, batch_size=batch_size)
+      fprs.append(fpr)
+      tprs.append(tpr)
+      aucs.append(auc)
+    return fprs, tprs, aucs
 
 @use_named_args(space)
 def objective(**X):
     global best_auc, best_auc_std, best_params
     print("New configuration: {}".format(X))
-    params = X.copy()
-    params['objective'] = 'binary:logitraw'
-    #params['eval_metric'] = 'auc'
-    params['nthread'] = 6
-    params['silent'] = 1
-    cv_result = xgb.cv(params, dmatrix_train, num_boost_round=n_boost_rounds, nfold=5, shuffle=True, stratified=True, maximize=True, early_stopping_rounds=75, fpreproc=fpreproc, feval=pauc)
-    ave_auc = cv_result['test-pauc-mean'].iloc[-1]
-    ave_auc_std = cv_result['test-pauc-std'].iloc[-1]
-    print("Average pauc: {}+-{}".format(ave_auc, ave_auc_std))
+    #model = build_custom_model(num_hiddens=X['hidden_layers'], initial_node=X['initial_nodes'], dropout=X['dropout'], l2_lambda=X['l2_lambda'])
+    model = build_custom_model(num_hiddens=num_hiddens, initial_node=initial_node, dropout=X['dropout'], l2_lambda=X['l2_lambda'])
+    model.compile(optimizer=Adam(lr=X['learning_rate']), loss='binary_crossentropy', metrics=['accuracy'], weighted_metrics=['accuracy'])
+    model.summary()
+    _, _, aucs = train_cv(X_train, y_train, model, X['batch_size'])
+    ave_auc = sum(aucs)/float(len(aucs))
+    ave_auc_std = np.std(aucs)
     if ave_auc > best_auc:
       best_auc = ave_auc
       best_auc_std = ave_auc_std
       best_params = X.copy()
     print("Best pauc: {}+-{}, Best configuration: {}".format(best_auc, best_auc_std, best_params))
     return -ave_auc
-
-def train(xgtrain, xgtest, hyper_params=None):
-    watchlist = [(xgtrain, 'train'), (xgtest, 'eval')]
-    params = hyper_params.copy()
-    label = xgtrain.get_label()
-    ratio = float(np.sum(label == 0)) / np.sum(label == 1)
-    params['scale_pos_weight'] = ratio
-    params['objective'] = 'binary:logitraw'
-    #params['eval_metric'] = 'auc'
-    params['nthread'] = 10
-    params['silent'] = 1
-    results = {}
-    model = xgb.train(params, xgtrain, num_boost_round=n_boost_rounds, evals=watchlist, evals_result=results, maximize=True, early_stopping_rounds=75, verbose_eval=False, feval=pauc)
-    best_iteration = model.best_iteration + 1
-    if best_iteration < n_boost_rounds:
-        print("early stopping after {0} boosting rounds".format(best_iteration))
-    return model, results
-
-def train_cv(X_train_val, Y_train_val, X_test, Y_test, w_train_val, hyper_params=None):
-    xgtrain = xgb.DMatrix(X_train_val, label=Y_train_val, weight=w_train_val)
-    xgtest  = xgb.DMatrix(X_test , label=Y_test )
-    model, results = train(xgtrain, xgtest, hyper_params=hyper_params)
-    Y_predict = model.predict(xgtest, ntree_limit=model.best_ntree_limit)
-    fpr, tpr, thresholds = roc_curve(Y_test, Y_predict, drop_intermediate=True)
-    roc_auc = roc_auc_score(Y_test, Y_predict, max_fpr=1.0e-2)
-    print("Best pauc: {}".format(roc_auc))
-    return model, fpr, tpr, thresholds, roc_auc, results
 
 if __name__ == '__main__':
     import argparse
@@ -195,6 +192,7 @@ if __name__ == '__main__':
    
 
     features = sorted(features)
+    input_dim = len(features)
     branches = features + ['BToKEE_fit_massErr']
 
     ddf = {}
@@ -224,12 +222,20 @@ if __name__ == '__main__':
     W = df['weights']
 
     suffix = args.suffix
-    n_boost_rounds = 800
     n_calls = 120
-    n_random_starts = 70
+    n_random_starts = 60
+    num_hiddens = 4
+    initial_node = 128
     do_bo = args.optimization
     do_cv = True
-    best_params = {'colsample_bytree': 0.8380017432637168, 'subsample': 0.7771020436861611, 'eta': 0.043554653675279234, 'alpha': 0.13978587730419964, 'max_depth': 5, 'gamma': 0.5966218064835417, 'lambda': 1.380893119219306}
+    best_params = {'l2_lambda': 2.2415890894627853e-05, 'dropout': 0.3725777915006973, 'learning_rate': 0.028325266337641073, 'batch_size': 2048}
+
+    early_stopping = EarlyStopping(monitor='val_loss', patience=75)
+
+    model_checkpoint = ModelCheckpoint('dense_model_{}.h5'.format(suffix), monitor='val_loss', 
+                                       verbose=0, save_best_only=True, 
+                                       save_weights_only=False, mode='auto', 
+                                       period=1)
 
     # split X and y up in train and test samples
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.20)
@@ -246,9 +252,6 @@ if __name__ == '__main__':
 
     w_train = W.loc[idx_train]
 
-    dmatrix_train = xgb.DMatrix(X_train.copy(), label=np.copy(y_train), feature_names=[f.replace('_','-') for f in features], weight=np.copy(w_train))
-    dmatrix_test  = xgb.DMatrix(X_test.copy(), label=np.copy(y_test), feature_names=[f.replace('_','-') for f in features])
-
     # Bayesian optimization
     if do_bo:
         begt = time.time()
@@ -261,48 +264,21 @@ if __name__ == '__main__':
         plt.figure()
         plot_convergence(res_gp)
         plt.savefig('training_resultis_bo_convergencePlot_xgb_{}.pdf'.format(suffix))
-        #plt.figure()
-        #plot_evaluations(res_gp)
-        #plt.savefig('training_resultis_bo_evaluationsPlot_xgb_{}.pdf'.format(suffix))
-        #plt.figure()
-        #plot_objective(res_gp)
-        #plt.savefig('training_resultis_bo_objectivePlot_xgb_{}.pdf'.format(suffix))
 
     # Get the cv plots with the best hyper-parameters
     if do_bo or do_cv:
         print("Get the cv plots with the best hyper-parameters")
+        model = build_custom_model(num_hiddens=num_hiddens, initial_node=initial_node, dropout=best_params['dropout'], l2_lambda=best_params['l2_lambda'])
+        model.compile(optimizer=Adam(lr=best_params['learning_rate']), loss='binary_crossentropy', metrics=['accuracy'], weighted_metrics=['accuracy'])
+        model.summary()
+        fpr, tpr, aucs = train_cv(X_train, y_train, model, best_params['batch_size'])
         tprs = []
-        aucs = []
         figs, axs = plt.subplots()
-        #cv = KFold(n_splits=5, shuffle=True)
-        cv = StratifiedKFold(n_splits=5, shuffle=True)
         mean_fpr = np.logspace(-6, 0, 100)
-
-        iFold = 0
-        for train_idx, test_idx in cv.split(X_train, y_train):
-            X_train_cv = X_train.iloc[train_idx]
-            X_test_cv = X_train.iloc[test_idx]
-            Y_train_cv = y_train.iloc[train_idx]
-            Y_test_cv = y_train.iloc[test_idx]
-            w_train_cv = w_train.loc[X_train_cv.index]
-
-            model, fpr, tpr, thresholds, roc_auc, results = train_cv(X_train_cv, Y_train_cv, X_test_cv, Y_test_cv, w_train_cv, hyper_params=best_params)
-            epochs = len(results['train']['pauc'])
-            x_axis = range(0, epochs)
-            fig, ax = plt.subplots()
-            ax.plot(x_axis, results['train']['pauc'], label='Train')
-            ax.plot(x_axis, results['eval']['pauc'], label='Test')
-            ax.legend()
-            plt.ylabel('PAUC')
-            plt.xlabel('Epoch')
-            plt.title('Fold: {}'.format(iFold))
-            fig.savefig('training_results_learning_curve_cv_fold_{}_{}.pdf'.format(suffix,iFold), bbox_inches='tight')
-
-            tprs.append(interp(mean_fpr, fpr, tpr))
+        for iFold in range(5):
+            tprs.append(interp(mean_fpr, fpr[iFold], tpr[iFold]))
             tprs[-1][0] = 0.0
-            aucs.append(roc_auc)
-            axs.plot(fpr, tpr, lw=1, alpha=0.3, label='ROC fold %d (PAUC = %0.2f)' % (iFold, roc_auc))
-            iFold += 1
+            axs.plot(fpr[iFold], tpr[iFold], lw=1, alpha=0.3, label='ROC fold %d (PAUC = %0.2f)' % (iFold, aucs[iFold]))
 
         mean_tpr = np.mean(tprs, axis=0)
         mean_tpr[-1] = 1.0
@@ -324,56 +300,56 @@ if __name__ == '__main__':
         axs.legend(loc="lower right") 
         figs.savefig('training_results_roc_cv_{}.pdf'.format(suffix), bbox_inches='tight')
 
-
-    xgboost_params = best_params.copy()
+    keras_params = best_params.copy()
 
     # Re-train the whole dataset with the best hyper-parameters (without doing any cross validation)
     print('Training full model...')
-    model, results = train(dmatrix_train, dmatrix_test, hyper_params=xgboost_params)
+    model = build_custom_model(num_hiddens=num_hiddens, initial_node=initial_node, dropout=keras_params['dropout'], l2_lambda=keras_params['l2_lambda'])
+    model.compile(optimizer=Adam(lr=keras_params['learning_rate']), loss='binary_crossentropy', metrics=['accuracy'], weighted_metrics=['accuracy'])
+    model.summary()
+    classWeight = compute_class_weight('balanced', np.unique(y_train), y_train) 
+    classWeight = dict(enumerate(classWeight))
+
+    model, fpr, tpr, thresholds, roc_auc, history  = train(X_train, y_train, X_test, y_test, model, classWeight, batch_size=keras_params['batch_size'])
   
-    # We want to know if and when the training was early stopped.
-    # `best_iteration` counts the first iteration as zero, so we increase by one.
-    best_iteration = model.best_iteration + 1
-    if best_iteration < n_boost_rounds:
-        print("Final model: early stopping after {0} boosting rounds".format(best_iteration))
     print("")
     
-    model.save_model("xgb_fulldata_{}.model".format(suffix))
-
-    df.loc[idx_train, "score"] = model.predict(dmatrix_train, ntree_limit=model.best_ntree_limit)
-    df.loc[idx_test, "score"] = model.predict(dmatrix_test, ntree_limit=model.best_ntree_limit)
+    df.loc[idx_train, "score"] = model.predict(X_train)
+    df.loc[idx_test, "score"] = model.predict(X_test)
    
     df.loc[idx_train, "test"] = False
     df.loc[idx_test, "test"] = True
 
     print("")
-    print("Final model: Best hyper-parameters: {}, ntree_limit: {}".format(best_params, model.best_ntree_limit))
+    print("Final model: Best hyper-parameters: {}".format(best_params))
     print("")
 
-    #df_train = df.query("not test")
-    #df_test = df.query("test")
     df_train = df[np.logical_not(df['test'])]
     df_test = df[df['test']]
-    #df_test.to_csv('training_results_testdf_{}.csv'.format(suffix))
 
     fpr, tpr, thresholds = roc_curve(df_test["isSignal"], df_test["score"], drop_intermediate=True)
     roc_dict = {'fpr': fpr, 'tpr': tpr, 'thresholds': thresholds}
     roc_df = pd.DataFrame(data=roc_dict)
     roc_df.to_csv('training_results_roc_csv_{}.csv'.format(suffix))
 
-    epochs = len(results['train']['pauc'])
-    x_axis = range(0, epochs)
-    fig, ax = plt.subplots()
-    ax.plot(x_axis, results['train']['pauc'], label='Train')
-    ax.plot(x_axis, results['eval']['pauc'], label='Test')
-    ax.legend()
-    plt.ylabel('PAUC')
-    plt.xlabel('Epoch')
-    fig.savefig('training_results_learning_curve_{}.pdf'.format(suffix), bbox_inches='tight')
+    # plot loss vs epoch
+    fig, (ax1, ax2) = plt.subplots(2,1,sharex=True)
+    ax1.plot(history.history['loss'], label='loss')
+    ax1.plot(history.history['val_loss'], label='val loss')
+    ax1.legend(loc="upper right")
+    ax1.set_ylabel('Loss')
+
+    # plot accuracy vs epoch
+    ax2.plot(history.history['acc'], label='acc')
+    ax2.plot(history.history['val_acc'], label='val acc')
+    ax2.legend(loc="lower right")
+    ax2.set_xlabel('Epoch')
+    ax2.set_ylabel('Accuary')
+    fig.savefig('training_results_learning_curve_{}.pdf'.format(args.suffix), bbox_inches='tight')
 
 
     fig, ax = plt.subplots()
-    plot_roc_curve(df_test, "score", ax=ax, label="XGB")
+    plot_roc_curve(df_test, "score", ax=ax, label="Keras")
     ax.plot(np.logspace(-5, 0, 1000), np.logspace(-5, 0, 1000), linestyle='--', color='k')
     ax.set_xlim([1.0e-5, 1.0])
     ax.set_ylim([0.0, 1.0])
@@ -383,8 +359,4 @@ if __name__ == '__main__':
     ax.set_title('Receiver Operating Curve')
     ax.legend(loc='lower right')
     fig.savefig('training_results_roc_curve_{}.pdf'.format(suffix), bbox_inches='tight')
-
-    plt.figure()
-    xgb.plot_importance(model)
-    plt.savefig('training_results_feature_importance_{}.pdf'.format(suffix), bbox_inches='tight')
 

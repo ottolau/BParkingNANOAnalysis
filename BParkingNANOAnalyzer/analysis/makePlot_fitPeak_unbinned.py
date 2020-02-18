@@ -61,8 +61,8 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
         wspace.factory('mean[5.272e+00, 5.22e+00, 5.3e+00]')
       else:
         xmin, xmax = FIT_LOW, FIT_UP
-        wspace.factory('mean[5.2694, 5.2694, 5.2694]')
-        #wspace.factory('mean[5.2681, 5.2681, 5.2681]')
+        #wspace.factory('mean[5.2694, 5.2694, 5.2694]')
+        wspace.factory('mean[5.2681, 5.2681, 5.2681]')
       thevars.add(dieleMass)
 
     thevars.add(bMass)
@@ -83,11 +83,11 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
     getattr(wspace,'import')(data, RooFit.Rename("data"))
 
     if not blinded:
-      wspace.factory('nsig[100.0, 0.0, 1000000.0]')
+      wspace.factory('nsig[5000.0, 0.0, 1000000.0]')
     else:
       wspace.factory('nsig[{0}, {0}, {0}]'.format(expS))
-    wspace.factory('nbkg[500.0, 0.0, 1000000.0]')
-    wspace.factory('npartial[100.0, 0.0, 100000.0]')
+    wspace.factory('nbkg[10000.0, 0.0, 1000000.0]')
+    wspace.factory('npartial[1000.0, 0.0, 100000.0]')
 
     if sigPDF == 0:
         # Voigtian
@@ -117,18 +117,18 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
           wspace.factory('n2[1.0, 1.0, 10.0]')
         else:
           # PF
-          wspace.factory('width[0.06187, 0.06187, 0.06187]')
-          wspace.factory('alpha1[0.667, 0.667, 0.667]')
-          wspace.factory('n1[2.39, 2.39, 2.39]')
-          wspace.factory('alpha2[2.442, 2.442, 2.442]')
-          wspace.factory('n2[3.09, 3.09, 3.09]')
+          #wspace.factory('width[0.06187, 0.06187, 0.06187]')
+          #wspace.factory('alpha1[0.667, 0.667, 0.667]')
+          #wspace.factory('n1[2.39, 2.39, 2.39]')
+          #wspace.factory('alpha2[2.442, 2.442, 2.442]')
+          #wspace.factory('n2[3.09, 3.09, 3.09]')
 
           # Mix
-          #wspace.factory('width[0.0561, 0.0561, 0.0561]')
-          #wspace.factory('alpha1[0.642, 0.642, 0.642]')
-          #wspace.factory('n1[2.31, 2.31, 2.31]')
-          #wspace.factory('alpha2[1.700, 1.700, 1.700]')
-          #wspace.factory('n2[10.0, 10.0, 10.0]')
+          wspace.factory('width[0.0561, 0.0561, 0.0561]')
+          wspace.factory('alpha1[0.642, 0.642, 0.642]')
+          wspace.factory('n1[2.31, 2.31, 2.31]')
+          wspace.factory('alpha2[1.700, 1.700, 1.700]')
+          wspace.factory('n2[10.0, 10.0, 10.0]')
 
         wspace.factory('GenericPdf::sig("DoubleCBFast(x,mean,width,alpha1,n1,alpha2,n2)", {x,mean,width,alpha1,n1,alpha2,n2})')
 
@@ -158,7 +158,7 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
 
     if bkgPDF == 2:
         # Exponential
-        wspace.factory('exp_alpha[-1.0, -100.0, -1.0e-5]')
+        wspace.factory('exp_alpha[-3.0, -100.0, -1.0e-5]')
         alpha = wspace.var('alpha')
         wspace.factory('Exponential::bkg(x,exp_alpha)')
 

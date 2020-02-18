@@ -69,7 +69,7 @@ mypath6 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/Parkin
            '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH6/crab_data_Run2018B_part6/200116_173248/0000/',
            ]
 '''
-mypath1 = ['/eos/user/k/klau/BParkingNANO_forCondor/output/BParkingNANO_2020Jan16_Run2018ABCDpartial_BToKEEAnalyzer_2020Feb12/']
+mypath1 = ['/eos/user/k/klau/BParkingNANO_forCondor/output/BParkingNANO_2020Jan16_Run2018ABCDpartial_BToKEEAnalyzer_2020Feb15/']
 
 mypath = mypath1 #+ mypath2 + mypath3 + mypath4
 
@@ -93,7 +93,7 @@ filelist = ['{}{}'.format(redirector, f.replace('/eos/cms/','')) for f in fileli
 #outputFile = open('BParkingNANO_2020Jan16_BdToKstarJpsi_ToKPiee.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BdToKstaree.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_Run2018ABCDpartial.list', 'w+')
-outputFile = open('BParkingNANO_2020Jan16_Run2018ABCDpartial_BToKEEAnalyzer_2020Feb12.list', 'w+')
+outputFile = open('BParkingNANO_2020Jan16_Run2018ABCDpartial_BToKEEAnalyzer_2020Feb15.list', 'w+')
 
 for f in filelist:
     outputFile.write('%s\n'%(f))

@@ -268,10 +268,10 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
           if self._isMC:
             self._branches['BToKEE_k_isKaon'] = self._branches['BToKEE_k_genPdgId'].apply(lambda x: True if abs(x) == 321 else False)
             self._branches['BToKEE_decay'] = self._branches.apply(self.DecayCats, axis=1, prefix='BToKEE')
-            self._branches.query('BToKEE_decay == 0', inplace=True) # B->K ll
+            #self._branches.query('BToKEE_decay == 0', inplace=True) # B->K ll
             #self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
             #self._branches.query('BToKEE_decay == 2', inplace=True) # B->K*(K pi) ll
-            #self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
+            self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
 
           # mass hypothesis to veto fake event from semi-leptonic decay D
           l1_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l1_pt'], self._branches['BToKEE_fit_l1_eta'], self._branches['BToKEE_fit_l1_phi'], ELECTRON_MASS)
@@ -284,7 +284,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
           self._branches['BToKEE_Dmass_l2'] = (l2_pihypo_p4 + k_p4).mass
           self._branches['BToKEE_Dmass'] = np.where((self._branches['BToKEE_k_charge'] * self._branches['BToKEE_l1_charge']) < 0.0, self._branches['BToKEE_Dmass_l1'], self._branches['BToKEE_Dmass_l2'])
           self._branches['BToKEE_pill_mass'] = (l1_pihypo_p4 + l2_pihypo_p4 + k_pihypo_p4).mass
-          self._branches['BToKEE_ptImbalance'] = (l1_p4 + l2_p4).pt - self._branches['BToKEE_fit_k_pt']
+          self._branches['BToKEE_ptImbalance'] = ((l1_p4 + l2_p4).pt - self._branches['BToKEE_fit_k_pt']) / (l1_p4 + l2_p4).pt
 
           # fill output
           self.fill_output()
