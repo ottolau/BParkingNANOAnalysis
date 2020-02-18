@@ -52,7 +52,7 @@ def get_df(root_file_name, branches):
     f = uproot.open(root_file_name)
     if len(f.allkeys()) == 0:
         return pd.DataFrame()
-    df = pd.DataFrame(uproot.open(root_file_name)["tree"].arrays(branches))
+    df = pd.DataFrame(uproot.open(root_file_name)["tree"].arrays(branches, namedecode="utf-8"))
     return df
 
 def get_label(name):

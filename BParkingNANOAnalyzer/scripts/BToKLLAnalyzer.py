@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import uproot
 import uproot_methods
+import awkward
 import pandas as pd
 import numpy as np
 import time
@@ -47,6 +48,9 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'BToKEE_l2_iso04',
                             'BToKEE_b_iso03',
                             'BToKEE_b_iso04',
+                            'BToKEE_vtx_x',
+                            'BToKEE_vtx_y',
+                            'BToKEE_vtx_z',
                             'Electron_pt',
                             'Electron_charge',
                             'Electron_dz',
@@ -72,6 +76,9 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'TriggerMuon_pt',
                             'TriggerMuon_eta',
                             'TriggerMuon_phi',
+                            'PV_x',
+                            'PV_y',
+                            'PV_z',
                             'event'
                             ]
 
@@ -138,6 +145,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_l_xy_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
                              'BToKEE_ptImbalance': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
                              'BToKEE_Dmass': {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0},
+                             'BToKEE_Dmass_flip': {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0},
                              #'BToKEE_pill_mass': {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0},
                              'BToKEE_maxDR': {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0},
                              'BToKEE_minDR': {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0},
@@ -216,6 +224,10 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
             self._branches['BToKEE_trg_'+branch.replace('TriggerMuon_','')] = np.repeat(self._branches[branch][:,0], self._branches['nBToKEE'])
             del self._branches[branch]
 
+          if 'PV_' in branch:
+            self._branches['BToKEE_'+branch] = np.repeat(self._branches[branch], self._branches['nBToKEE'])
+            del self._branches[branch]
+
           if branch == 'event':
             self._branches['BToKEE_'+branch] = np.repeat(self._branches[branch], self._branches['nBToKEE'])
             del self._branches[branch]
@@ -278,13 +290,19 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
           l2_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l2_pt'], self._branches['BToKEE_fit_l2_eta'], self._branches['BToKEE_fit_l2_phi'], ELECTRON_MASS)
           l1_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l1_pt'], self._branches['BToKEE_fit_l1_eta'], self._branches['BToKEE_fit_l1_phi'], PI_MASS)
           l2_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l2_pt'], self._branches['BToKEE_fit_l2_eta'], self._branches['BToKEE_fit_l2_phi'], PI_MASS)
+          l1_khypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l1_pt'], self._branches['BToKEE_fit_l1_eta'], self._branches['BToKEE_fit_l1_phi'], K_MASS)
+          l2_khypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l2_pt'], self._branches['BToKEE_fit_l2_eta'], self._branches['BToKEE_fit_l2_phi'], K_MASS)
           k_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_k_pt'], self._branches['BToKEE_fit_k_eta'], self._branches['BToKEE_fit_k_phi'], K_MASS)
           k_pihypo_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_k_pt'], self._branches['BToKEE_fit_k_eta'], self._branches['BToKEE_fit_k_phi'], PI_MASS)
           self._branches['BToKEE_Dmass_l1'] = (l1_pihypo_p4 + k_p4).mass
           self._branches['BToKEE_Dmass_l2'] = (l2_pihypo_p4 + k_p4).mass
+          self._branches['BToKEE_Dmass_flip_l1'] = (l1_khypo_p4 + k_pihypo_p4).mass
+          self._branches['BToKEE_Dmass_flip_l2'] = (l2_khypo_p4 + k_pihypo_p4).mass
           self._branches['BToKEE_Dmass'] = np.where((self._branches['BToKEE_k_charge'] * self._branches['BToKEE_l1_charge']) < 0.0, self._branches['BToKEE_Dmass_l1'], self._branches['BToKEE_Dmass_l2'])
-          self._branches['BToKEE_pill_mass'] = (l1_pihypo_p4 + l2_pihypo_p4 + k_pihypo_p4).mass
-          self._branches['BToKEE_ptImbalance'] = ((l1_p4 + l2_p4).pt - self._branches['BToKEE_fit_k_pt']) / (l1_p4 + l2_p4).pt
+          self._branches['BToKEE_Dmass_flip'] = np.where((self._branches['BToKEE_k_charge'] * self._branches['BToKEE_l1_charge']) < 0.0, self._branches['BToKEE_Dmass_flip_l1'], self._branches['BToKEE_Dmass_flip_l2'])
+          diele_p3 = (l1_p4 + l2_p4).p3
+          pv2sv_p3 = uproot_methods.TVector3Array.from_cartesian(self._branches['BToKEE_PV_x'] - self._branches['BToKEE_vtx_x'], self._branches['BToKEE_PV_y'] - self._branches['BToKEE_vtx_y'], self._branches['BToKEE_PV_z'] - self._branches['BToKEE_vtx_z'])
+          self._branches['BToKEE_ptImbalance'] = np.array([p1.cross(p2).mag for p1, p2 in zip(diele_p3, pv2sv_p3)]) / np.array([p1.cross(p2).mag for p1, p2 in zip(k_p4.p3, pv2sv_p3)])
 
           # fill output
           self.fill_output()

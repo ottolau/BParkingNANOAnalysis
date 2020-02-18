@@ -7,7 +7,7 @@ from os.path import isfile, join
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/BdToKstaree_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BdToKstarEE/200116_220807/0000/']
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/BdToKstarJpsi_ToKPiee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BdToKstarJpsi_Toee/200116_220459/0000/']
 
-'''
+
 mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH1/crab_data_Run2018A_part1/200116_150535/0000/',
            '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH1/crab_data_Run2018A_part1/200116_150535/0001/',
            '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH1/crab_data_Run2018B_part1/200116_150810/0000/',
@@ -64,19 +64,33 @@ mypath4 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/Parkin
            '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH4/crab_data_Run2018D_part4/200116_173014/0005/',
            ]
 
+mypath5 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb05/ParkingBPH5/crab_data_Run2018A_part5/200205_165610/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb05/ParkingBPH5/crab_data_Run2018A_part5/200205_165610/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb05/ParkingBPH5/crab_data_Run2018B_part5/200205_165723/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb05/ParkingBPH5/crab_data_Run2018B_part5/200205_165723/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb05/ParkingBPH5/crab_data_Run2018C_part5/200205_170223/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb05/ParkingBPH5/crab_data_Run2018C_part5/200205_170223/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb07/ParkingBPH5/crab_data_Run2018D_part5/200207_191502/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb07/ParkingBPH5/crab_data_Run2018D_part5/200207_191502/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb07/ParkingBPH5/crab_data_Run2018D_part5/200207_191502/0002/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb07/ParkingBPH5/crab_data_Run2018D_part5/200207_191502/0003/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb07/ParkingBPH5/crab_data_Run2018D_part5/200207_191502/0004/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb07/ParkingBPH5/crab_data_Run2018D_part5/200207_191502/0005/',
+           ]
+
 mypath6 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH6/crab_data_Run2018A_part6/200116_173128/0000/',
            '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH6/crab_data_Run2018A_part6/200116_173128/0001/',
            '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH6/crab_data_Run2018B_part6/200116_173248/0000/',
            ]
-'''
-mypath1 = ['/eos/user/k/klau/BParkingNANO_forCondor/output/BParkingNANO_2020Jan16_Run2018ABCDpartial_BToKEEAnalyzer_2020Feb15/']
 
-mypath = mypath1 #+ mypath2 + mypath3 + mypath4
+#mypath1 = ['/eos/user/k/klau/BParkingNANO_forCondor/output/BParkingNANO_2020Jan16_Run2018ABCDpartial_BToKEEAnalyzer_2020Feb15/']
+
+mypath = mypath1 + mypath2 + mypath3 + mypath4 + mypath5 + mypath6
 
 #redirector = 'root://eoscms.cern.ch/'
 #redirector = '/eos/cms/'
-#redirector = 'root://cms-xrd-global.cern.ch//'
-redirector = ''
+redirector = 'root://cms-xrd-global.cern.ch//'
+#redirector = ''
 filelist = []
 for path in mypath:
     #filename = subprocess.check_output('xrdfs {} ls {}'.format(redirector, path), shell=True).split('\n')
@@ -92,8 +106,8 @@ filelist = ['{}{}'.format(redirector, f.replace('/eos/cms/','')) for f in fileli
 #outputFile = open('BParkingNANO_2020Jan16_BuToKee.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BdToKstarJpsi_ToKPiee.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BdToKstaree.list', 'w+')
-#outputFile = open('BParkingNANO_2020Jan16_Run2018ABCDpartial.list', 'w+')
-outputFile = open('BParkingNANO_2020Jan16_Run2018ABCDpartial_BToKEEAnalyzer_2020Feb15.list', 'w+')
+outputFile = open('BParkingNANO_2020Jan16_Run2018ABCD.list', 'w+')
+#outputFile = open('BParkingNANO_2020Jan16_Run2018ABCDpartial_BToKEEAnalyzer_2020Feb15.list', 'w+')
 
 for f in filelist:
     outputFile.write('%s\n'%(f))
