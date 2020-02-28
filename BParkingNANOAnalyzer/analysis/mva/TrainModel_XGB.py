@@ -205,7 +205,7 @@ if __name__ == '__main__':
     ddf['bkg'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
 
     nSig = ddf['sig'].shape[0]
-    nBkg = 100000
+    nBkg = 300000
     #nSig = 10000
     #nBkg = 10000
     ddf['sig'] = ddf['sig'].sample(frac=1)[:nSig]
@@ -216,8 +216,8 @@ if __name__ == '__main__':
     ddf['bkg']['isSignal'] = 0
 
     df = pd.concat([ddf['sig'],ddf['bkg']]).sort_index(axis=1).sample(frac=1).reset_index(drop=True)
-    #df['weights'] = np.where(df['isSignal'], 1.0/df['BToKEE_fit_massErr'].replace(np.nan, 1.0), 1.0)
-    df['weights'] = 1.0
+    df['weights'] = np.where(df['isSignal'], 1.0/df['BToKEE_fit_massErr'].replace(np.nan, 1.0), 1.0)
+    #df['weights'] = 1.0
 
     X = df[features]
     y = df['isSignal']

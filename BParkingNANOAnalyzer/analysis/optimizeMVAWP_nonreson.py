@@ -147,8 +147,8 @@ if __name__ == "__main__":
   inputfile = args.inputfile.replace('.root','').replace('.h5','')+'.root'
   outputfile = args.outputfile.replace('.root','').replace('.h5','')
 
-  partial_resonant = 'part_workspace_resonant_mix_net.root'
-  partial_nonresonant = 'part_workspace_nonresonant_mix_net.root' 
+  partial_resonant = 'part_workspace_resonant_low_pfveto.root'
+  partial_nonresonant = 'part_workspace_nonresonant_low_pfveto.root' 
   drawSNR = True
 
   events = uproot.open(inputfile)['tree']
@@ -167,14 +167,14 @@ if __name__ == "__main__":
   mvaCutList = np.linspace(5.0, 10.0, 20)
   for mvaCut in mvaCutList:
     # mva selection
-    mva_selection = (branches['BToKEE_xgb'] > mvaCut) & (branches['BToKEE_l1_mvaId'] > 4.24) & (branches['BToKEE_l2_mvaId'] > 4.24)#& (branches['BToKEE_Dmass'] > 1.9)
+    mva_selection = (branches['BToKEE_xgb'] > mvaCut) #& (branches['BToKEE_l1_mvaId'] > 4.24) & (branches['BToKEE_l2_mvaId'] > 4.24)#& (branches['BToKEE_Dmass'] > 1.9)
     resonant_selection = (branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_UP) #& ((branches['BToKEE_fit_mass'] < BLIND_LOW) | (branches['BToKEE_fit_mass'] > BLIND_UP))
     resonant_branches = np.array(branches[mva_selection & resonant_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
     resonant_tree = array2tree(resonant_branches)
     S_R, SErr_R, B_R = fit_unbinned.fit(resonant_tree, outputfile + '_resonant_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf', doPartial=True, partialinputfile=partial_resonant, drawSNR=drawSNR, mvaCut=mvaCut, blinded=False)
     expS = S_R * BR_BToKLL / (BR_BToKJpsi * BR_JpsiToLL) * (12091.0/44024)
 
-    nonresonant_selection = (branches['BToKEE_mll_fullfit'] > NR_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_LOW) & ((branches['BToKEE_fit_mass'] < BLIND_LOW) | (branches['BToKEE_fit_mass'] > BLIND_UP))
+    nonresonant_selection = (branches['BToKEE_mll_fullfit'] > NR_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_LOW) #& ((branches['BToKEE_fit_mass'] < BLIND_LOW) | (branches['BToKEE_fit_mass'] > BLIND_UP))
     #nonresonant_selection = (branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_UP) & ((branches['BToKEE_fit_mass'] < BLIND_LOW) | (branches['BToKEE_fit_mass'] > BLIND_UP))
 
     nonresonant_branches = np.array(branches[mva_selection & nonresonant_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
@@ -193,7 +193,7 @@ if __name__ == "__main__":
   BList_R = np.array(BList_R)
   SNR_R = SList_R / np.sqrt(SList_R + BList_R)
 
-  df_roc = pd.read_csv('training_results_roc_csv_15Feb2020_fullq2_EB_isoMVADphi_pauc02_mix_net.csv')
+  df_roc = pd.read_csv('training_results_roc_csv_24Feb2020_fullq2_EB_isoMVADphiptImb_pauc02_low_pfveto.csv')
   fpr = df_roc['fpr'].values
   tpr = df_roc['tpr'].values
   thresholds = df_roc['thresholds'].values

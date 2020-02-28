@@ -203,7 +203,7 @@ if __name__ == '__main__':
     ddf['bkg'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
 
     nSig = ddf['sig'].shape[0]
-    nBkg = 100000
+    nBkg = 300000
     #nSig = 10000
     #nBkg = 10000
     ddf['sig'] = ddf['sig'].sample(frac=1)[:nSig]

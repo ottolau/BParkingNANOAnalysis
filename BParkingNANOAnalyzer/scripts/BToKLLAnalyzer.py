@@ -280,10 +280,10 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
           if self._isMC:
             self._branches['BToKEE_k_isKaon'] = self._branches['BToKEE_k_genPdgId'].apply(lambda x: True if abs(x) == 321 else False)
             self._branches['BToKEE_decay'] = self._branches.apply(self.DecayCats, axis=1, prefix='BToKEE')
-            #self._branches.query('BToKEE_decay == 0', inplace=True) # B->K ll
+            self._branches.query('BToKEE_decay == 0', inplace=True) # B->K ll
             #self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
             #self._branches.query('BToKEE_decay == 2', inplace=True) # B->K*(K pi) ll
-            self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
+            #self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
 
           # mass hypothesis to veto fake event from semi-leptonic decay D
           l1_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l1_pt'], self._branches['BToKEE_fit_l1_eta'], self._branches['BToKEE_fit_l1_phi'], ELECTRON_MASS)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os,sys
+import os
 from time import sleep
 import math
 import ROOT
@@ -7,9 +7,11 @@ from ROOT import RooFit
 import numpy as np
 ROOT.gROOT.ProcessLine(open('models.cc').read())
 from ROOT import DoubleCBFast
-from helper import *
-#ROOT.gErrorIgnoreLevel=ROOT.kError
-#ROOT.RooMsgService.instance().setGlobalKillBelow(RooFit.FATAL)
+import sys
+sys.path.append('../')
+from scripts.helper import *
+ROOT.gErrorIgnoreLevel=ROOT.kError
+ROOT.RooMsgService.instance().setGlobalKillBelow(RooFit.FATAL)
 
 def CMS_lumi(isMC):
     mark = ROOT.TLatex()
@@ -44,8 +46,6 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
     ROOT.gStyle.SetOptStat(000000);
     ROOT.gStyle.SetOptTitle(0)
 
-    #tree = ROOT.TChain('tree')
-    #tree.AddFile(inputfile)
     thevars = ROOT.RooArgSet()
 
     if fitJpsi:
@@ -57,7 +57,7 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
       bMass = ROOT.RooRealVar("BToKEE_fit_mass", "m(K^{+}e^{+}e^{-})", 4.0, 6.0, "GeV")
       dieleMass = ROOT.RooRealVar("BToKEE_mll_fullfit", "m(e^{+}e^{-})", 2.0, 4.0, "GeV")
       if isMC:
-        xmin, xmax = 4.5, 6.0
+        xmin, xmax = FIT_LOW, FIT_UP
         wspace.factory('mean[5.272e+00, 5.22e+00, 5.3e+00]')
       else:
         xmin, xmax = FIT_LOW, FIT_UP
@@ -73,10 +73,7 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
     theBMass.setRange(xmin,xmax);
     thevars.add(theBMass)
 
-    if fitJpsi:
-      cut = ''
-    else:
-      cut = ''
+    cut = ''
 
     #print cut    
     data = fulldata.reduce(thevars, cut)
@@ -167,16 +164,10 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
         wpf = ROOT.TFile(partialinputfile,"READ")
         wp = wpf.Get("myPartialWorkSpace")
         partial = wp.pdf("partial")
-
         getattr(wspace, "import")(partial, RooFit.Rename("partial"))
-      
         wspace.factory('SUM::model1(f1[0.5,0.0,1.0]*partial,bkg)')
         print('Finished loading KDE!')
         wspace.factory('SUM::model(nsig*sig,nbkg*model1)')
-        #if not blinded:
-          #wspace.factory('SUM::model(nsig*sig,nbkg*model1)')
-        #else:
-          #wspace.factory('ExtendPdf::model(model1,nbkg)')
 
       else:
         wspace.factory('SUM::model(nsig*sig,nbkg*bkg)')
@@ -197,7 +188,7 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
 
     theBMass.setRange("window",B_LOW,B_UP) 
     theBMass.setRange("SB1",FIT_LOW,BLIND_LOW) 
-    theBMass.setRange("SB2",BLIND_UP,B_MAX) 
+    theBMass.setRange("SB2",BLIND_UP,FIT_UP) 
 
     ## fit the model to the data.
     print('Fitting data...')
@@ -234,30 +225,27 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
     #xframe = wspace.var('x').frame(RooFit.Title("PF electron"))
     xframe = theBMass.frame()
     nbin_data = 30 if blinded else 50
-    data.plotOn(xframe, RooFit.Binning(nbin_data), RooFit.Name("data"))
 
-    model.plotOn(xframe,RooFit.Name("global"),RooFit.Range("Full"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
-    if not isMC:
-      '''
-      model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.LineStyle(ROOT.kDashed),RooFit.LineColor(ROOT.kMagenta),RooFit.MoveToBack()) ;
-      if doPartial:
-        model.plotOn(xframe,RooFit.Name("partial"),RooFit.Components("partial"),RooFit.LineStyle(ROOT.kDashed),RooFit.LineColor(8),RooFit.MoveToBack()) ;
-        #partial.plotOn(xframe,RooFit.Name("partial"),RooFit.LineStyle(ROOT.kDashed),RooFit.LineColor(ROOT.kGreen),RooFit.MoveToBack()) ;
-      model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.DrawOption("FL"),RooFit.FillColor(9),RooFit.FillStyle(3004),RooFit.LineStyle(6),RooFit.LineColor(9)) ;
-      #model.plotOn(xframe,RooFit.VisualizeError(results), RooFit.FillColor(ROOT.kOrange), RooFit.MoveToBack()) # this will show fit overlay on canvas
-      '''
-      model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.Range("Full"),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(42),RooFit.LineColor(42),RooFit.LineWidth(1),RooFit.MoveToBack())
-      if doPartial:
-        model.plotOn(xframe,RooFit.Name("partial"),RooFit.Components("bkg,partial"),RooFit.Range("Full"),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(40),RooFit.LineColor(40),RooFit.LineWidth(1),RooFit.MoveToBack()) ;
-      model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.Range("Full"),RooFit.DrawOption("L"),RooFit.LineStyle(2),RooFit.LineColor(1)) ;
+    if isMC:
+      data.plotOn(xframe, RooFit.Binning(nbin_data), RooFit.Name("data"))
+      model.plotOn(xframe,RooFit.Name("global"),RooFit.Range("Full"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
+      #model.paramOn(xframe,RooFit.Layout(0.15,0.45,0.85))
+      model.paramOn(xframe,RooFit.Layout(0.60,0.92,0.73))
+      xframe.getAttText().SetTextSize(0.03)
 
     else:
-      #if fitJpsi:
-        #model.paramOn(xframe,RooFit.Layout(0.15,0.45,0.85))
-      #else:
-        #model.paramOn(xframe,RooFit.Layout(0.65,0.92,0.70))
-      model.paramOn(xframe,RooFit.Layout(0.15,0.45,0.85))
-      xframe.getAttText().SetTextSize(0.03)
+      if blinded:
+        nd = data.reduce('((BToKEE_fit_mass > {}) & (BToKEE_fit_mass < {})) | ((BToKEE_fit_mass > {}) & (BToKEE_fit_mass < {}))'.format(FIT_LOW, BLIND_LOW, BLIND_UP, FIT_UP)).sumEntries() / data.reduce('(BToKEE_fit_mass > {}) & (BToKEE_fit_mass < {})'.format(FIT_LOW, FIT_UP)).sumEntries()
+        data.plotOn(xframe, RooFit.Binning(nbin_data), RooFit.CutRange("SB1,SB2"), RooFit.Name("data"))
+      else:
+        nd = 1.0
+        data.plotOn(xframe, RooFit.Binning(nbin_data), RooFit.Name("data"))
+      model.plotOn(xframe,RooFit.Name("global"),RooFit.Range("Full"),RooFit.Normalization(nd, ROOT.RooAbsReal.Relative),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
+      model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.Range("Full"),RooFit.Normalization(nd, ROOT.RooAbsReal.Relative),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(42),RooFit.LineColor(42),RooFit.LineWidth(1),RooFit.MoveToBack())
+      if doPartial:
+        model.plotOn(xframe,RooFit.Name("partial"),RooFit.Components("bkg,partial"),RooFit.Range("Full"),RooFit.Normalization(nd, ROOT.RooAbsReal.Relative),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(40),RooFit.LineColor(40),RooFit.LineWidth(1),RooFit.MoveToBack()) ;
+      model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.Range("Full"),RooFit.Normalization(nd, ROOT.RooAbsReal.Relative),RooFit.DrawOption("L"),RooFit.LineStyle(2),RooFit.LineColor(1)) ;
+
 
     xframe.GetYaxis().SetTitleOffset(0.9)
     xframe.GetYaxis().SetTitleFont(42)
@@ -271,10 +259,7 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
     xframe.GetXaxis().SetLabelFont(42)
 
     xframe.GetYaxis().SetTitle("Events")
-    if fitJpsi:
-      xframe.GetXaxis().SetTitle("m(e^{+}e^{-}) [GeV]")
-    else:
-      xframe.GetXaxis().SetTitle("m(K^{+}e^{+}e^{-}) [GeV]")
+    xframe.GetXaxis().SetTitle("m(e^{+}e^{-}) [GeV]" if fitJpsi else "m(K^{+}e^{+}e^{-}) [GeV]")
     xframe.SetStats(0)
     xframe.SetMinimum(0)
     xframe.Draw()
@@ -283,44 +268,35 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
 
     if isMC:
       legend = ROOT.TLegend(0.65,0.75,0.92,0.85);
-      if drawSNR:
-        pt = ROOT.TPaveText(0.72,0.38,0.92,0.50,"brNDC")
-        pt.SetFillColor(0)
-        pt.SetBorderSize(1)
-        pt.SetTextFont(42);
-        pt.SetTextSize(0.04);
-        pt.SetTextAlign(12)
-        pt.AddText("MVA cut: {0:.2f}".format(mvaCut))
-        pt.AddText("S: {0:.0f}#pm{1:.0f}".format(nsig.getVal(),nsig.getError()))
-        pt.Draw()
+      legend.AddEntry(xframe.findObject("global"),"Total Fit","l");
+      pt = ROOT.TPaveText(0.72,0.38,0.92,0.50,"brNDC")
 
     else:
       legend = ROOT.TLegend(0.60,0.65,0.92,0.85);
-      if drawSNR:
-        pt = ROOT.TPaveText(0.72,0.38,0.92,0.63,"brNDC")
-        pt.SetFillColor(0)
-        pt.SetBorderSize(1)
-        pt.SetTextFont(42);
-        pt.SetTextSize(0.04);
-        pt.SetTextAlign(12)
-        pt.AddText("MVA cut: {0:.2f}".format(mvaCut))
-        pt.AddText("S: {0:.0f}#pm{1:.0f}".format(nsig.getVal(),nsig.getError()))
-        pt.AddText("B: {0:.0f}".format(nbkgWindow))
-        pt.AddText("S/#sqrt{{S+B}}: {0:.1f}".format(nsig.getVal()/np.sqrt(nsig.getVal() + nbkgWindow)))
-        pt.Draw()
-
-    #legend = ROOT.TLegend(0.65,0.15,0.92,0.35);
-    legend.SetTextFont(42);
-    legend.SetTextSize(0.04);
-    legend.AddEntry(xframe.findObject("data"),"Data","lpe");
-    if isMC:
-      legend.AddEntry(xframe.findObject("global"),"Total Fit","l");
-    if not isMC:
       legend.AddEntry(xframe.findObject("bkg"),"Combinatorial","f");
+      pt = ROOT.TPaveText(0.72,0.38,0.92,0.63,"brNDC")
       if doPartial:
         legend.AddEntry(xframe.findObject("partial"),"Partially Reco.","f");
       legend.AddEntry(xframe.findObject("sig"),"B^{+}#rightarrow K^{+} J/#psi(#rightarrow e^{+}e^{-})","l");
+
+    legend.SetTextFont(42);
+    legend.SetTextSize(0.04);
+    legend.AddEntry(xframe.findObject("data"),"Data","lpe");
     legend.Draw();
+
+    if drawSNR:
+      pt.SetFillColor(0)
+      pt.SetBorderSize(1)
+      pt.SetTextFont(42);
+      pt.SetTextSize(0.04);
+      pt.SetTextAlign(12)
+      pt.AddText("MVA cut: {0:.2f}".format(mvaCut))
+      pt.AddText("S: {0:.0f}#pm{1:.0f}".format(nsig.getVal(),nsig.getError()))
+      if not isMC:
+        pt.AddText("B: {0:.0f}".format(nbkgWindow))
+        pt.AddText("S/#sqrt{{S+B}}: {0:.1f}".format(nsig.getVal()/np.sqrt(nsig.getVal() + nbkgWindow)))
+      pt.Draw()
+
 
     c2.cd()
     c2.Update()
@@ -332,17 +308,110 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
     else:
       return 0.0, 0.0, 0.0
 
+def fit_kde(tree, outputfile, isMC=True):
+    #msgservice = ROOT.RooMsgService.instance()
+    #msgservice.setGlobalKillBelow(RooFit.FATAL)
+    wspace = ROOT.RooWorkspace('myPartialWorkSpace')
+    ROOT.gStyle.SetOptFit(0000);
+    #ROOT.gStyle.SetOptFit(1);
+    ROOT.gROOT.SetBatch(True);
+    ROOT.gROOT.SetStyle("Plain");
+    ROOT.gStyle.SetGridStyle(3);
+    ROOT.gStyle.SetOptStat(000000);
+    ROOT.gStyle.SetOptTitle(0)
+
+    xmin, xmax = 4.5, 6.0
+    bMass = ROOT.RooRealVar("BToKEE_fit_mass", "m(K^{+}e^{+}e^{-})", 4.0, 6.0, "GeV")
+
+    thevars = ROOT.RooArgSet()
+    thevars.add(bMass)
+
+    fulldata = ROOT.RooDataSet('fulldata', 'fulldata', tree, ROOT.RooArgSet(thevars))
+    theBMassfunc = ROOT.RooFormulaVar("x", "x", "@0", ROOT.RooArgList(bMass) )
+    theBMass     = fulldata.addColumn(theBMassfunc) ;
+    theBMass.setRange(xmin,xmax);
+    thevars.add(theBMass)
+
+    cut = ''
+    print cut    
+    data = fulldata.reduce(thevars, cut)
+    getattr(wspace,'import')(data, RooFit.Rename("data"))
+
+
+    # define the set obs = (x)
+    wspace.defineSet('obs', 'x')
+
+    # make the set obs known to Python
+    obs  = wspace.set('obs')
+    #wspace.factory('KeysPdf::partial(x,data,MirrorBoth,2.0)')
+    wspace.factory('KeysPdf::partial(x,data,MirrorLeft,2.0)')
+    model = wspace.pdf('partial')
+
+    # Plot results of fit on a different frame
+    c2 = ROOT.TCanvas('fig_binnedFit', 'fit', 800, 600)
+    c2.SetGrid()
+    c2.cd()
+    ROOT.gPad.SetLeftMargin(0.10)
+    ROOT.gPad.SetRightMargin(0.05)
+
+    #xframe = wspace.var('x').frame(RooFit.Title("PF electron"))
+    xframe = theBMass.frame()
+    data.plotOn(xframe, RooFit.Binning(50), RooFit.Name("data"))
+    model.plotOn(xframe,RooFit.Name("global"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
+
+    xframe.GetYaxis().SetTitleOffset(0.9)
+    xframe.GetYaxis().SetTitleFont(42)
+    xframe.GetYaxis().SetTitleSize(0.05)
+    xframe.GetYaxis().SetLabelSize(0.04)
+    xframe.GetYaxis().SetLabelFont(42)
+    xframe.GetXaxis().SetTitleOffset(0.9)
+    xframe.GetXaxis().SetTitleFont(42)
+    xframe.GetXaxis().SetTitleSize(0.05)
+    xframe.GetXaxis().SetLabelSize(0.04)
+    xframe.GetXaxis().SetLabelFont(42)
+
+    xframe.GetYaxis().SetTitle("Events")
+    xframe.GetXaxis().SetTitle("m(K^{+}e^{+}e^{-}) [GeV]")
+    xframe.SetStats(0)
+    xframe.SetMinimum(0)
+    xframe.Draw()
+
+    CMS_lumi(isMC)
+
+    legend = ROOT.TLegend(0.65,0.75,0.92,0.85);
+    #legend = ROOT.TLegend(0.65,0.15,0.92,0.35);
+    legend.SetTextFont(72);
+    legend.SetTextSize(0.04);
+    legend.AddEntry(xframe.findObject("data"),"Data","lpe");
+    legend.AddEntry(xframe.findObject("global"),"Global Fit","l");
+    legend.Draw();
+
+    c2.cd()
+    c2.Update()
+
+    c2.SaveAs(outputfile.replace('.root','')+'.pdf')
+    #wf = ROOT.TFile("part_workspace.root", "RECREATE")
+    wf = ROOT.TFile(outputfile.replace('.root','')+'.root', "RECREATE")
+    wspace.Write()
+    wf.Close()
+
+    print("="*80)
+
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description='Produce histograms')
-    parser.add_argument("-i", "--inputfile", dest="inputfile", default="", help="ROOT file contains histograms")
-    parser.add_argument("-o", "--outputfile", dest="outputfile", default="", help="ROOT file contains histograms")
+    parser = argparse.ArgumentParser(description='Unbinned likelihood fit')
+    parser.add_argument("-i", "--inputfile", dest="inputfile", default="", help="Input file")
+    parser.add_argument("-o", "--outputfile", dest="outputfile", default="", help="Output file")
+    parser.add_argument("-p", "--partial", dest="partial", action="store_true", help="Fit partially reconstructed background")
     args = parser.parse_args()
 
     tree = ROOT.TChain('tree')
     tree.AddFile(args.inputfile)
-    fit(tree, args.outputfile, fitJpsi=False, isMC=True)
-    #fit(tree, args.outputfile, doPartial=True)
-    #fit(tree, args.outputfile, doPartial=True, drawSNR=True, mvaCut=2.0)
-
+    if not args.partial:
+      fit(tree, args.outputfile, fitJpsi=False, isMC=True)
+      #fit(tree, args.outputfile, doPartial=True)
+      #fit(tree, args.outputfile, doPartial=True, drawSNR=True, mvaCut=2.0)
+    else:
+      fit_kde(tree, args.outputfile)
+    
 
