@@ -102,19 +102,20 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
                   'BToKEE_fit_normpt', 'BToKEE_fit_eta', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig',
                   ]
       #features += ['BToKEE_fit_l1_phi', 'BToKEE_fit_l2_phi', 'BToKEE_fit_k_phi', 'BToKEE_fit_phi']
-      features += ['BToKEE_fit_l1_dphi', 'BToKEE_fit_l2_dphi', 'BToKEE_fit_k_dphi', 'BToKEE_fit_dphi']
+      #features += ['BToKEE_fit_l1_dphi', 'BToKEE_fit_l2_dphi', 'BToKEE_fit_k_dphi', 'BToKEE_fit_dphi']
+      features += ['BToKEE_minDR', 'BToKEE_maxDR']
       features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
       #features += ['BToKEE_l1_iso03_rel', 'BToKEE_l2_iso03_rel', 'BToKEE_k_iso03_rel', 'BToKEE_b_iso03_rel']
-      #features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
+      features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
       features += ['BToKEE_ptImbalance']
       #features += ['BToKEE_trg_eta']
-      features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+      #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
 
       training_branches = sorted(features)
-      mvaCut = 2.0
-      ntree_limit = 797
+      mvaCut = 5.0
+      ntree_limit = 765
       model = xgb.Booster({'nthread': 6})
-      model.load_model('xgb_fulldata_24Feb2020_fullq2_EB_isoMVADphiptImb_pauc02_low_pfveto.model')
+      model.load_model('xgb_fulldata_01Mar2020_fullq2_isoPFMVACutDRptImb_weighted_pauc02_pf.model')
 
     for (self._ifile, filename) in enumerate(self._file_in_name):
       print('[BToKLLAnalyzer_postprocess::run] INFO: FILE: {}/{}. Loading file...'.format(self._ifile+1, self._num_files))
@@ -158,12 +159,13 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         #general_selection = d_veto_selection
         #general_selection &= (self._branches['BToKEE_eleEtaCats'] == 0)
         general_selection &= jpsi_selection
-        #general_selection &= pf_selection
-        general_selection &= mix_net_selection
+        general_selection &= pf_selection
+        #general_selection &= mix_net_selection
         #general_selection &= low_pfveto_selection
         #general_selection &= b_upsb_selection
         #general_selection &= b_bothsb_selection
         #general_selection &= (self._branches['BToKEE_xgb'] > 7.0)
+        general_selection &= (self._branches['BToKEE_l1_pfmvaId'] > -2.0) & (self._branches['BToKEE_l2_pfmvaId'] > -2.0)
 
         self._branches = self._branches[general_selection]
 

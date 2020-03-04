@@ -1,5 +1,5 @@
 import matplotlib as mpl
-mpl.use('pdf')
+mpl.use('agg')
 from matplotlib import pyplot as plt
 from matplotlib import rc
 #.Allow for using TeX mode in matplotlib Figures
@@ -39,6 +39,7 @@ import sys
 np.set_printoptions(threshold=sys.maxsize)
 from matplotlib.backends.backend_pdf import PdfPages
 from collections import OrderedDict
+import seaborn as sns
 
 unneccesary_columns = []
 
@@ -46,7 +47,9 @@ def get_df(root_file_name):
     f = uproot.open(root_file_name)
     if len(f.allkeys()) == 0:
         return pd.DataFrame()
-    df = uproot.open(root_file_name)["tree"].pandas.df()
+    #df = uproot.open(root_file_name)["tree"].pandas.df()
+    #df = pd.DataFrame(uproot.open(root_file_name)["tree"].arrays(namedecode="utf-8"))
+    df = pd.DataFrame(uproot.open(root_file_name)["tree"].arrays())
     return df.drop(unneccesary_columns, axis=1)
 
 def get_label(name):
@@ -74,6 +77,31 @@ def plot_hist(df, column, bins=None, logscale=False, ax=None, title=None):
     if logscale:
         ax.set_yscale("log", nonposy='clip')
 
+def plot_corr(df, outputfile):
+    print("Plotting correlation...")
+    corr = df.corr()
+    mask = np.triu(np.ones_like(corr, dtype=np.bool))
+    fig, ax = plt.subplots(figsize=(110, 90))
+    cmap = sns.diverging_palette(220, 10, as_cmap=True)
+    sns.heatmap(corr, mask=mask, cmap=cmap, vmin=-1.0, vmax=1.0, center=0, square=True, linewidths=.5, annot=True, cbar_kws={"shrink": .5})
+    fig.savefig(outputfile, bbox_inches='tight')
+
+def hide_current_axis(*args, **kwds):
+    plt.gca().set_visible(False)
+
+def plot_pairgrid(df, outputfile):
+    print("Plotting pair grid...")
+    '''
+    g = sns.PairGrid(df, hue="Category")
+    g = g.map_diag(plt.hist, histtype="step", linewidth=3)
+    g = g.map_upper(hide_current_axis)
+    g = g.map_lower(plt.scatter)
+    g = g.add_legend() 
+    g.savefig(outputfile)
+    '''
+    g = sns.pairplot(df, hue='Category', corner=True)
+    g.savefig(outputfile)
+    
 
 if __name__ == '__main__':
     import argparse
@@ -88,6 +116,7 @@ if __name__ == '__main__':
     features = OrderedDict([('BToKEE_mll_raw', np.linspace(0.0, 5.0, 100)),
                             ('BToKEE_mll_fullfit', np.linspace(0.0, 5.0, 100)),
                             ('BToKEE_mll_llfit', np.linspace(0.0, 5.0, 100)),
+                            ('BToKEE_q2', np.linspace(1.0, 25.0, 100)),
                             ('BToKEE_fit_mass', np.linspace(4.5, 6.0, 100)),
                             ('BToKEE_fit_massErr', np.linspace(0.0, 0.5, 100)),
                             ('BToKEE_fit_pt', np.linspace(0.0, 70.0, 100)),
@@ -142,15 +171,16 @@ if __name__ == '__main__':
     #df = pd.concat((get_df(f) for f in  tqdm(root_files)), ignore_index=True)
     df1 = get_df(args.signal)
     df2 = get_df(args.background)
-    #df2 = df2.sample(frac=1)[:50000]
+    #df2 = df2.sample(frac=1)[:300000]
     print('variables in ntuples: {}'.format(df1.columns))
     df1['Category'] = 0
     df2['Category'] = 1
     
-    df = pd.concat((df1, df2), ignore_index=True)
+    df = pd.concat((df1, df2), ignore_index=True).replace([np.inf, -np.inf], 0.0)
     #df = df1.copy()
 
-    with PdfPages(args.outputfile) as pdf:
+    '''
+    with PdfPages(args.outputfile.replace('.pdf','')+'.pdf') as pdf:
       for var, bins in features.items():
         #if var != "ele_pt": continue
         print("plotting {}...".format(var))
@@ -162,6 +192,30 @@ if __name__ == '__main__':
         pdf.savefig(fig, bbox_inches='tight')
         plt.close()
         print("finished plotting {}...".format(var))
+
+    '''
+    training_features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz',
+              'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 
+              'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_k_DCASig', 'BToKEE_k_dz',
+              'BToKEE_fit_normpt', 'BToKEE_fit_eta', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig',
+              ]
+    #training_features += ['BToKEE_fit_l1_phi', 'BToKEE_fit_l2_phi', 'BToKEE_fit_k_phi', 'BToKEE_fit_phi']
+    #training_features += ['BToKEE_fit_l1_dphi', 'BToKEE_fit_l2_dphi', 'BToKEE_fit_k_dphi', 'BToKEE_fit_dphi']
+    training_features += ['BToKEE_minDR', 'BToKEE_maxDR']
+    training_features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
+    #training_features += ['BToKEE_l1_iso03_rel', 'BToKEE_l2_iso03_rel', 'BToKEE_k_iso03_rel', 'BToKEE_b_iso03_rel']
+    training_features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
+    training_features += ['BToKEE_ptImbalance']
+    #training_features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+
+    #df_sig = df1[training_features]
+    #df_bkg = df2[training_features]
+
+    plot_corr(df.query('Category == 0')[training_features], args.outputfile.replace('.pdf','') + '_corr_sig.pdf')
+    plot_corr(df.query('Category == 1')[training_features], args.outputfile.replace('.pdf','') + '_corr_bkg.pdf')
+    
+    plot_pairgrid(df[training_features+['Category']].sample(n=1000), args.outputfile.replace('.pdf','') + '_pairgrid.pdf')
+
 
 
 

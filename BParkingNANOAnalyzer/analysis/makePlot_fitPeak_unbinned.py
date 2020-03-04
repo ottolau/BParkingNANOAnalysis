@@ -61,8 +61,8 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
         wspace.factory('mean[5.272e+00, 5.22e+00, 5.3e+00]')
       else:
         xmin, xmax = FIT_LOW, FIT_UP
-        #wspace.factory('mean[5.2694, 5.2694, 5.2694]')
-        wspace.factory('mean[5.2681, 5.2681, 5.2681]')
+        wspace.factory('mean[5.2676, 5.2676, 5.2676]')
+        #wspace.factory('mean[5.2681, 5.2681, 5.2681]')
       thevars.add(dieleMass)
 
     thevars.add(bMass)
@@ -114,18 +114,18 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
           wspace.factory('n2[1.0, 1.0, 10.0]')
         else:
           # PF
-          #wspace.factory('width[0.06187, 0.06187, 0.06187]')
-          #wspace.factory('alpha1[0.667, 0.667, 0.667]')
-          #wspace.factory('n1[2.39, 2.39, 2.39]')
-          #wspace.factory('alpha2[2.442, 2.442, 2.442]')
-          #wspace.factory('n2[3.09, 3.09, 3.09]')
+          wspace.factory('width[0.06070, 0.06070, 0.06070]')
+          wspace.factory('alpha1[0.677, 0.677, 0.677]')
+          wspace.factory('n1[1.56, 1.56, 1.56]')
+          wspace.factory('alpha2[1.440, 1.440, 1.440]')
+          wspace.factory('n2[8.9, 8.9, 8.9]')
 
           # Mix
-          wspace.factory('width[0.0561, 0.0561, 0.0561]')
-          wspace.factory('alpha1[0.642, 0.642, 0.642]')
-          wspace.factory('n1[2.31, 2.31, 2.31]')
-          wspace.factory('alpha2[1.700, 1.700, 1.700]')
-          wspace.factory('n2[10.0, 10.0, 10.0]')
+          #wspace.factory('width[0.0561, 0.0561, 0.0561]')
+          #wspace.factory('alpha1[0.642, 0.642, 0.642]')
+          #wspace.factory('n1[2.31, 2.31, 2.31]')
+          #wspace.factory('alpha2[1.700, 1.700, 1.700]')
+          #wspace.factory('n2[10.0, 10.0, 10.0]')
 
         wspace.factory('GenericPdf::sig("DoubleCBFast(x,mean,width,alpha1,n1,alpha2,n2)", {x,mean,width,alpha1,n1,alpha2,n2})')
 
@@ -210,7 +210,7 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
       nb = nbkg.getVal()
       dnb = nbkg.getError()
       #print(nb*fb*np.sqrt(pow(dfb/fb,2)+pow(dnb/nb,2)))
-      print("Number of signals: %f, Number of background: %f, S/sqrt(S+B): %f"%(nsig.getVal(), nbkgWindow, nsig.getVal()/np.sqrt(nsig.getVal() + nbkgWindow)))
+      print("Number of signals: %f, Number of background: %f, S/sqrt(S+B): %f, Punzi: %f"%(nsig.getVal(), nbkgWindow, nsig.getVal()/np.sqrt(nsig.getVal() + nbkgWindow), Punzi(nbkgWindow, 2.0, 5.0)))
     else:
       fracSigRange = sig.createIntegral(obs,obs,"window") ;
       print(data.sumEntries(),fracSigRange.getVal())
@@ -274,7 +274,8 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
     else:
       legend = ROOT.TLegend(0.60,0.65,0.92,0.85);
       legend.AddEntry(xframe.findObject("bkg"),"Combinatorial","f");
-      pt = ROOT.TPaveText(0.72,0.38,0.92,0.63,"brNDC")
+      pt = ROOT.TPaveText(0.72,0.37,0.92,0.63,"brNDC")
+      #pt = ROOT.TPaveText(0.72,0.30,0.92,0.63,"brNDC")
       if doPartial:
         legend.AddEntry(xframe.findObject("partial"),"Partially Reco.","f");
       legend.AddEntry(xframe.findObject("sig"),"B^{+}#rightarrow K^{+} J/#psi(#rightarrow e^{+}e^{-})","l");
@@ -295,6 +296,7 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
       if not isMC:
         pt.AddText("B: {0:.0f}".format(nbkgWindow))
         pt.AddText("S/#sqrt{{S+B}}: {0:.1f}".format(nsig.getVal()/np.sqrt(nsig.getVal() + nbkgWindow)))
+        #pt.AddText("Punzi: {0:.1f}".format(Punzi(nbkgWindow, 2.0, 5.0)))
       pt.Draw()
 
 
@@ -410,7 +412,7 @@ if __name__ == "__main__":
     if not args.partial:
       fit(tree, args.outputfile, fitJpsi=False, isMC=True)
       #fit(tree, args.outputfile, doPartial=True)
-      #fit(tree, args.outputfile, doPartial=True, drawSNR=True, mvaCut=2.0)
+      fit(tree, args.outputfile, doPartial=True, partialinputfile='part_workspace_resonant_pf.root', drawSNR=True, mvaCut=7.0)
     else:
       fit_kde(tree, args.outputfile)
     

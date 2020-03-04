@@ -179,18 +179,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     
-    features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz',
-                'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 
-                'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_k_DCASig', 'BToKEE_k_dz',
-                'BToKEE_fit_normpt', 'BToKEE_fit_eta', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig',
+    features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_l1_dxy_sig',
+                'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_l2_dxy_sig',
+                'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_k_DCASig',
+                'BToKEE_fit_normpt', 'BToKEE_fit_eta', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig', 'BToKEE_dz',
                 ]
-    #features += ['BToKEE_fit_l1_phi', 'BToKEE_fit_l2_phi', 'BToKEE_fit_k_phi', 'BToKEE_fit_phi']
-    features += ['BToKEE_fit_l1_dphi', 'BToKEE_fit_l2_dphi', 'BToKEE_fit_k_dphi', 'BToKEE_fit_dphi']
+    features += ['BToKEE_minDR', 'BToKEE_maxDR']
     features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
-    #features += ['BToKEE_l1_iso03_rel', 'BToKEE_l2_iso03_rel', 'BToKEE_k_iso03_rel', 'BToKEE_b_iso03_rel']
     features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
-    #features += ['BToKEE_ptImbalance']
-    #features += ['BToKEE_trg_eta']
+    features += ['BToKEE_ptImbalance']
     #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
    
 
@@ -201,8 +198,8 @@ if __name__ == '__main__':
     ddf['sig'] = get_df(args.signal, branches)
     ddf['bkg'] = get_df(args.background, branches)
 
-    ddf['sig'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
-    ddf['bkg'].replace([np.inf, -np.inf], 10.0**+10, inplace=True)
+    ddf['sig'].replace([np.inf, -np.inf], 0.0, inplace=True)
+    ddf['bkg'].replace([np.inf, -np.inf], 0.0, inplace=True)
 
     nSig = ddf['sig'].shape[0]
     nBkg = 300000
@@ -225,8 +222,8 @@ if __name__ == '__main__':
 
     suffix = args.suffix
     n_boost_rounds = 800
-    n_calls = 120
-    n_random_starts = 70
+    n_calls = 80
+    n_random_starts = 40
     do_bo = args.optimization
     do_cv = True
     best_params = {'colsample_bytree': 0.8380017432637168, 'subsample': 0.7771020436861611, 'eta': 0.043554653675279234, 'alpha': 0.13978587730419964, 'max_depth': 5, 'gamma': 0.5966218064835417, 'lambda': 1.380893119219306}

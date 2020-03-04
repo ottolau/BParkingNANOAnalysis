@@ -86,7 +86,7 @@ if __name__ == "__main__":
           exec_me("mv {} {}".format(outputfile+'_subset*.root', path))
 
           redirector = ''
-          filelist = [path + f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+          filelist = [path + '/' + f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
 
           outputFile = open(outpath+'/'+outputfile+'.list', 'w+')
 

@@ -9,8 +9,8 @@ JPSI_SIGMA_MC = 0.04205
 JPSI_LOW = np.sqrt(6.0)
 #JPSI_UP = JPSI_MC + 3.0*JPSI_SIGMA_MC
 JPSI_UP = 3.25
-B_MC = 5.2694
-B_SIGMA_MC = 0.06187
+B_MC = 5.2676
+B_SIGMA_MC = 0.06070
 #B_LOW = B_MC - 3.0*B_SIGMA_MC
 #B_UP = B_MC + 3.0*B_SIGMA_MC
 B_LOW = 5.05
@@ -28,3 +28,5 @@ BR_BToKJpsi = 1.01e-3
 BR_JpsiToLL = 0.0597
 BR_BToKLL = 4.51e-7
 
+def Punzi(B, a, b):
+  return (b*b)/2.0 + a*np.sqrt(B) + (b/2.0)*np.sqrt(b*b + 4.0*a*np.sqrt(B) + 4.0*B)

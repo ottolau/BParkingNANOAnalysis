@@ -17,7 +17,8 @@ ROOT.gErrorIgnoreLevel=ROOT.kError
 ROOT.RooMsgService.instance().setGlobalKillBelow(RooFit.FATAL)
 
 import matplotlib as mpl
-mpl.use('pdf')
+mpl.use('agg')
+import matplotlib.font_manager
 from matplotlib import pyplot as plt
 from matplotlib import rc
 #.Allow for using TeX mode in matplotlib Figures
@@ -147,8 +148,8 @@ if __name__ == "__main__":
   inputfile = args.inputfile.replace('.root','').replace('.h5','')+'.root'
   outputfile = args.outputfile.replace('.root','').replace('.h5','')
 
-  partial_resonant = 'part_workspace_resonant_low_pfveto.root'
-  partial_nonresonant = 'part_workspace_nonresonant_low_pfveto.root' 
+  partial_resonant = 'part_workspace_resonant_pf.root'
+  partial_nonresonant = 'part_workspace_nonresonant_pf.root' 
   drawSNR = True
 
   events = uproot.open(inputfile)['tree']
@@ -164,7 +165,7 @@ if __name__ == "__main__":
   SErrList_NR = []
   BList_NR = []
 
-  mvaCutList = np.linspace(5.0, 10.0, 20)
+  mvaCutList = np.linspace(9.0, 14.0, 20)
   for mvaCut in mvaCutList:
     # mva selection
     mva_selection = (branches['BToKEE_xgb'] > mvaCut) #& (branches['BToKEE_l1_mvaId'] > 4.24) & (branches['BToKEE_l2_mvaId'] > 4.24)#& (branches['BToKEE_Dmass'] > 1.9)
@@ -193,7 +194,7 @@ if __name__ == "__main__":
   BList_R = np.array(BList_R)
   SNR_R = SList_R / np.sqrt(SList_R + BList_R)
 
-  df_roc = pd.read_csv('training_results_roc_csv_24Feb2020_fullq2_EB_isoMVADphiptImb_pauc02_low_pfveto.csv')
+  df_roc = pd.read_csv('training_results_roc_csv_01Mar2020_fullq2_isoPFMVACutDRptImb_weighted_pauc02_pf.csv')
   fpr = df_roc['fpr'].values
   tpr = df_roc['tpr'].values
   thresholds = df_roc['thresholds'].values
