@@ -113,9 +113,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
 
-    features = OrderedDict([('BToKEE_mll_raw', np.linspace(0.0, 5.0, 100)),
+    features = OrderedDict([#('BToKEE_mll_raw', np.linspace(0.0, 5.0, 100)),
                             ('BToKEE_mll_fullfit', np.linspace(0.0, 5.0, 100)),
-                            ('BToKEE_mll_llfit', np.linspace(0.0, 5.0, 100)),
+                            #('BToKEE_mll_llfit', np.linspace(0.0, 5.0, 100)),
                             ('BToKEE_q2', np.linspace(1.0, 25.0, 100)),
                             ('BToKEE_fit_mass', np.linspace(4.5, 6.0, 100)),
                             ('BToKEE_fit_massErr', np.linspace(0.0, 0.5, 100)),
@@ -123,6 +123,7 @@ if __name__ == '__main__':
                             ('BToKEE_fit_normpt', np.linspace(0.0, 30.0, 100)),
                             ('BToKEE_fit_eta', np.linspace(-3.0, 3.0, 100)),
                             ('BToKEE_fit_phi', np.linspace(-np.pi, np.pi, 100)),
+                            ('BToKEE_dz', np.linspace(-1.0, 1.0, 100)),
                             ('BToKEE_b_iso03_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_b_iso04_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_fit_l1_pt', np.linspace(0.0, 40.0, 100)),
@@ -135,16 +136,16 @@ if __name__ == '__main__':
                             ('BToKEE_fit_l2_phi', np.linspace(-np.pi, np.pi, 100)),
                             ('BToKEE_l1_dxy_sig', np.linspace(-30.0, 30.0, 100)),
                             ('BToKEE_l2_dxy_sig', np.linspace(-30.0, 30.0, 100)),
-                            ('BToKEE_l1_dz', np.linspace(-0.5, 0.5, 100)),
-                            ('BToKEE_l2_dz', np.linspace(-0.5, 0.5, 100)),
-                            #('BToKEE_l1_mvaId', np.linspace(-2.0, 10.0, 100)),
-                            #('BToKEE_l2_mvaId', np.linspace(-2.0, 10.0, 100)),
-                            ('BToKEE_l1_pfmvaId', np.linspace(-10.0, 10.0, 100)),
-                            ('BToKEE_l2_pfmvaId', np.linspace(-10.0, 10.0, 100)),
-                            ('BToKEE_l1_pfmvaId_lowPt', np.linspace(-10.0, 10.0, 100)),
-                            ('BToKEE_l2_pfmvaId_lowPt', np.linspace(-10.0, 10.0, 100)),
-                            ('BToKEE_l1_pfmvaId_highPt', np.linspace(-10.0, 10.0, 100)),
-                            ('BToKEE_l2_pfmvaId_highPt', np.linspace(-10.0, 10.0, 100)),
+                            #('BToKEE_l1_dz', np.linspace(-0.5, 0.5, 100)),
+                            #('BToKEE_l2_dz', np.linspace(-0.5, 0.5, 100)),
+                            ('BToKEE_l1_mvaId', np.linspace(-2.0, 10.0, 100)),
+                            ('BToKEE_l2_mvaId', np.linspace(-2.0, 10.0, 100)),
+                            #('BToKEE_l1_pfmvaId', np.linspace(-10.0, 10.0, 100)),
+                            #('BToKEE_l2_pfmvaId', np.linspace(-10.0, 10.0, 100)),
+                            #('BToKEE_l1_pfmvaId_lowPt', np.linspace(-10.0, 10.0, 100)),
+                            #('BToKEE_l2_pfmvaId_lowPt', np.linspace(-10.0, 10.0, 100)),
+                            #('BToKEE_l1_pfmvaId_highPt', np.linspace(-10.0, 10.0, 100)),
+                            #('BToKEE_l2_pfmvaId_highPt', np.linspace(-10.0, 10.0, 100)),
                             ('BToKEE_l1_iso03_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_l2_iso03_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_l1_iso04_rel', np.linspace(0.0, 10.0, 100)),
@@ -154,7 +155,7 @@ if __name__ == '__main__':
                             ('BToKEE_fit_k_eta', np.linspace(-3.0, 3.0, 100)),
                             ('BToKEE_fit_k_phi', np.linspace(-np.pi, np.pi, 100)),
                             ('BToKEE_k_DCASig', np.linspace(0.0, 30.0, 100)),
-                            ('BToKEE_k_dz', np.linspace(-0.5, 0.5, 100)),
+                            #('BToKEE_k_dz', np.linspace(-0.5, 0.5, 100)),
                             ('BToKEE_k_nValidHits', np.linspace(0.0, 40.0, 40)),
                             ('BToKEE_k_iso03_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_k_iso04_rel', np.linspace(0.0, 10.0, 100)),
@@ -170,14 +171,16 @@ if __name__ == '__main__':
     #root_files = glob.glob("/eos/user/r/rembserj/ntuples/electron_mva_run3/*.root")[:n_files]
     #df = pd.concat((get_df(f) for f in  tqdm(root_files)), ignore_index=True)
     df1 = get_df(args.signal)
-    df2 = get_df(args.background)
+    #df2 = get_df(args.background)
     #df2 = df2.sample(frac=1)[:300000]
     print('variables in ntuples: {}'.format(df1.columns))
     df1['Category'] = 0
-    df2['Category'] = 1
+    #df2['Category'] = 1
     
-    df = pd.concat((df1, df2), ignore_index=True).replace([np.inf, -np.inf], 0.0)
-    #df = df1.copy()
+    #df = pd.concat((df1, df2), ignore_index=True).replace([np.inf, -np.inf], 0.0)
+    df = df1.copy()
+
+    
 
     '''
     with PdfPages(args.outputfile.replace('.pdf','')+'.pdf') as pdf:
@@ -193,29 +196,23 @@ if __name__ == '__main__':
         plt.close()
         print("finished plotting {}...".format(var))
 
-    '''
-    training_features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_l1_dxy_sig', 'BToKEE_l1_dz',
-              'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_l2_dxy_sig', 'BToKEE_l2_dz', 
-              'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_k_DCASig', 'BToKEE_k_dz',
-              'BToKEE_fit_normpt', 'BToKEE_fit_eta', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig',
+        
+    training_features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_l1_dxy_sig',
+              'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_l2_dxy_sig',
+              'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_k_DCASig',
+              'BToKEE_fit_normpt', 'BToKEE_fit_eta', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig', 'BToKEE_dz',
               ]
-    #training_features += ['BToKEE_fit_l1_phi', 'BToKEE_fit_l2_phi', 'BToKEE_fit_k_phi', 'BToKEE_fit_phi']
-    #training_features += ['BToKEE_fit_l1_dphi', 'BToKEE_fit_l2_dphi', 'BToKEE_fit_k_dphi', 'BToKEE_fit_dphi']
     training_features += ['BToKEE_minDR', 'BToKEE_maxDR']
     training_features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
-    #training_features += ['BToKEE_l1_iso03_rel', 'BToKEE_l2_iso03_rel', 'BToKEE_k_iso03_rel', 'BToKEE_b_iso03_rel']
     training_features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
     training_features += ['BToKEE_ptImbalance']
     #training_features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
-
-    #df_sig = df1[training_features]
-    #df_bkg = df2[training_features]
 
     plot_corr(df.query('Category == 0')[training_features], args.outputfile.replace('.pdf','') + '_corr_sig.pdf')
     plot_corr(df.query('Category == 1')[training_features], args.outputfile.replace('.pdf','') + '_corr_bkg.pdf')
     
     plot_pairgrid(df[training_features+['Category']].sample(n=1000), args.outputfile.replace('.pdf','') + '_pairgrid.pdf')
-
+    '''
 
 
 

@@ -62,7 +62,7 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
       else:
         xmin, xmax = FIT_LOW, FIT_UP
         wspace.factory('mean[5.2676, 5.2676, 5.2676]')
-        #wspace.factory('mean[5.2681, 5.2681, 5.2681]')
+        #wspace.factory('mean[5.2675, 5.2675, 5.2675]')
       thevars.add(dieleMass)
 
     thevars.add(bMass)
@@ -121,10 +121,10 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
           wspace.factory('n2[8.9, 8.9, 8.9]')
 
           # Mix
-          #wspace.factory('width[0.0561, 0.0561, 0.0561]')
-          #wspace.factory('alpha1[0.642, 0.642, 0.642]')
-          #wspace.factory('n1[2.31, 2.31, 2.31]')
-          #wspace.factory('alpha2[1.700, 1.700, 1.700]')
+          #wspace.factory('width[0.0612, 0.0612, 0.0612]')
+          #wspace.factory('alpha1[0.612, 0.612, 0.612]')
+          #wspace.factory('n1[1.81, 1.81, 1.81]')
+          #wspace.factory('alpha2[1.44, 1.44, 1.44]')
           #wspace.factory('n2[10.0, 10.0, 10.0]')
 
         wspace.factory('GenericPdf::sig("DoubleCBFast(x,mean,width,alpha1,n1,alpha2,n2)", {x,mean,width,alpha1,n1,alpha2,n2})')
@@ -258,7 +258,7 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
     xframe.GetXaxis().SetLabelSize(0.04)
     xframe.GetXaxis().SetLabelFont(42)
 
-    xframe.GetYaxis().SetTitle("Events")
+    xframe.GetYaxis().SetTitle("Events / {0:.2f} GeV".format((FIT_UP - FIT_LOW)/nbin_data))
     xframe.GetXaxis().SetTitle("m(e^{+}e^{-}) [GeV]" if fitJpsi else "m(K^{+}e^{+}e^{-}) [GeV]")
     xframe.SetStats(0)
     xframe.SetMinimum(0)
@@ -278,7 +278,7 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
       #pt = ROOT.TPaveText(0.72,0.30,0.92,0.63,"brNDC")
       if doPartial:
         legend.AddEntry(xframe.findObject("partial"),"Partially Reco.","f");
-      legend.AddEntry(xframe.findObject("sig"),"B^{+}#rightarrow K^{+} J/#psi(#rightarrow e^{+}e^{-})","l");
+      legend.AddEntry(xframe.findObject("sig"),"B^{+}#rightarrow K^{+} e^{+}e^{-}" if blinded else "B^{+}#rightarrow K^{+} J/#psi(#rightarrow e^{+}e^{-})","l");
 
     legend.SetTextFont(42);
     legend.SetTextSize(0.04);

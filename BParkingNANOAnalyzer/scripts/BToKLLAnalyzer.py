@@ -241,14 +241,26 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
         #self._branches = awkward.topandas(self._branches, flatten=True)
 
         # general selection
+        l1_pf_selection = (self._branches['BToKEE_l1_isPF'])
+        l2_pf_selection = (self._branches['BToKEE_l2_isPF'])
+        l1_low_selection = (self._branches['BToKEE_l1_isLowPt']) 
+        l2_low_selection = (self._branches['BToKEE_l2_isLowPt']) 
+
+        pf_selection = l1_pf_selection & l2_pf_selection 
+        low_selection = l1_low_selection & l2_low_selection
+        overlap_veto_selection = np.logical_not(self._branches['BToKEE_l1_isPFoverlap']) & np.logical_not(self._branches['BToKEE_l2_isPFoverlap'])
+        mix_selection = ((l1_pf_selection & l2_low_selection) | (l2_pf_selection & l1_low_selection))
+        low_pfveto_selection = low_selection & overlap_veto_selection
+        mix_net_selection = overlap_veto_selection & np.logical_not(pf_selection | low_selection)
+        all_selection = pf_selection | low_pfveto_selection | mix_net_selection 
         
         #sv_selection = (self._branches['BToKEE_fit_pt'] > 3.0)
-        l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_l1_mvaId'] > 3.5)
-        l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_l2_mvaId'] > 3.5)
+        l1_selection = (self._branches['BToKEE_l1_convVeto']) #& (self._branches['BToKEE_l1_mvaId'] > 3.0)
+        l2_selection = (self._branches['BToKEE_l2_convVeto']) #& (self._branches['BToKEE_l2_mvaId'] > 0.0)
         #k_selection = (self._branches['BToKEE_fit_k_pt'] > 0.7)
         additional_selection = (self._branches['BToKEE_fit_mass'] > B_MIN) & (self._branches['BToKEE_fit_mass'] < B_MAX)
 
-        selection = l1_selection & l2_selection & additional_selection
+        selection = l1_selection & l2_selection & additional_selection #& mix_net_selection
 
         self._branches = self._branches[selection]
 
@@ -284,9 +296,9 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
             self._branches['BToKEE_k_isKaon'] = self._branches['BToKEE_k_genPdgId'].apply(lambda x: True if abs(x) == 321 else False)
             self._branches['BToKEE_decay'] = self._branches.apply(self.DecayCats, axis=1, prefix='BToKEE')
             #self._branches.query('BToKEE_decay == 0', inplace=True) # B->K ll
-            #self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
+            self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
             #self._branches.query('BToKEE_decay == 2', inplace=True) # B->K*(K pi) ll
-            self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
+            #self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
 
           # mass hypothesis to veto fake event from semi-leptonic decay D
           l1_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToKEE_fit_l1_pt'], self._branches['BToKEE_fit_l1_eta'], self._branches['BToKEE_fit_l1_phi'], ELECTRON_MASS)

@@ -12,9 +12,9 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
   def __init__(self, inputfiles, outputfile, hist=False, evalMVA=False):
     self._evalMVA = evalMVA
     inputbranches= ['*',]
-    outputbranches = {'BToKEE_mll_raw': {'nbins': 100, 'xmin': 0.0, 'xmax': 4.5},
+    outputbranches = {#'BToKEE_mll_raw': {'nbins': 100, 'xmin': 0.0, 'xmax': 4.5},
                       'BToKEE_mll_fullfit': {'nbins': 50, 'xmin': 2.6, 'xmax': 3.3},
-                      'BToKEE_mll_llfit': {'nbins': 100, 'xmin': 0.0, 'xmax': 4.5},
+                      #'BToKEE_mll_llfit': {'nbins': 100, 'xmin': 0.0, 'xmax': 4.5},
                       'BToKEE_q2': {'nbins': 100, 'xmin': 0.0, 'xmax': 25.0},
                       'BToKEE_fit_mass': {'nbins': 100, 'xmin': 4.5, 'xmax': 6.0},
                       'BToKEE_fit_massErr': {'nbins': 100, 'xmin': 0.0, 'xmax': 0.5},
@@ -34,8 +34,8 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
                       'BToKEE_fit_l2_phi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
                       'BToKEE_l1_dxy_sig': {'nbins': 100, 'xmin': -30.0, 'xmax': 30.0},
                       'BToKEE_l2_dxy_sig': {'nbins': 100, 'xmin': -30.0, 'xmax': 30.0},
-                      'BToKEE_l1_dz': {'nbins': 100, 'xmin': -1.0, 'xmax': 1.0},
-                      'BToKEE_l2_dz': {'nbins': 100, 'xmin': -1.0, 'xmax': 1.0},
+                      #'BToKEE_l1_dz': {'nbins': 100, 'xmin': -1.0, 'xmax': 1.0},
+                      #'BToKEE_l2_dz': {'nbins': 100, 'xmin': -1.0, 'xmax': 1.0},
                       'BToKEE_l1_mvaId': {'nbins': 100, 'xmin': -2.0, 'xmax': 10.0},
                       'BToKEE_l2_mvaId': {'nbins': 100, 'xmin': -2.0, 'xmax': 10.0},
                       'BToKEE_l1_pfmvaId': {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0},
@@ -61,7 +61,7 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
                       'BToKEE_fit_k_eta': {'nbins': 100, 'xmin': -3.0, 'xmax': 3.0},
                       'BToKEE_fit_k_phi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
                       'BToKEE_k_DCASig': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
-                      'BToKEE_k_dz': {'nbins': 100, 'xmin': -1.0, 'xmax': 1.0},
+                      #'BToKEE_k_dz': {'nbins': 100, 'xmin': -1.0, 'xmax': 1.0},
                       'BToKEE_k_nValidHits': {'nbins': 100, 'xmin': 0.0, 'xmax': 100.0},
                       'BToKEE_k_iso03_rel': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
                       'BToKEE_k_iso04_rel': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
@@ -74,11 +74,12 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
                       #'BToKEE_pill_mass': {'nbins': 100, 'xmin': 0.0, 'xmax': 5.0},
                       'BToKEE_maxDR': {'nbins': 100, 'xmin': 0.0, 'xmax': 4.0},
                       'BToKEE_minDR': {'nbins': 100, 'xmin': 0.0, 'xmax': 4.0},
-                      'BToKEE_fit_l1_dphi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
-                      'BToKEE_fit_l2_dphi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
-                      'BToKEE_fit_k_dphi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
-                      'BToKEE_fit_dphi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
-                      'BToKEE_trg_eta': {'nbins': 100, 'xmin': -3.0, 'xmax': 3.0},
+                      #'BToKEE_fit_l1_dphi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
+                      #'BToKEE_fit_l2_dphi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
+                      #'BToKEE_fit_k_dphi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
+                      #'BToKEE_fit_dphi': {'nbins': 100, 'xmin': -4.0, 'xmax': 4.0},
+                      #'BToKEE_trg_eta': {'nbins': 100, 'xmin': -3.0, 'xmax': 3.0},
+                      #'BToKEE_dz': {'nbins': 100, 'xmin': -1.0, 'xmax': 1.0},
                       'BToKEE_eleEtaCats': {'nbins': 3, 'xmin': 0.0, 'xmax': 3.0},
                       'BToKEE_event': {'nbins': 10, 'xmin': 0.0, 'xmax': 10.0},
                       }
@@ -113,9 +114,9 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
 
       training_branches = sorted(features)
       mvaCut = 5.0
-      ntree_limit = 765
+      ntree_limit = 800
       model = xgb.Booster({'nthread': 6})
-      model.load_model('xgb_fulldata_01Mar2020_fullq2_isoPFMVACutDRptImb_weighted_pauc02_pf.model')
+      model.load_model('xgb_fulldata_01Mar2020_fullq2_isoPFMVADRptImb_weighted_pauc02_pf.model')
 
     for (self._ifile, filename) in enumerate(self._file_in_name):
       print('[BToKLLAnalyzer_postprocess::run] INFO: FILE: {}/{}. Loading file...'.format(self._ifile+1, self._num_files))
@@ -152,25 +153,26 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         b_bothsb_selection = ((self._branches['BToKEE_fit_mass'] > B_SB_LOW) & (self._branches['BToKEE_fit_mass'] < B_LOW)) | ((self._branches['BToKEE_fit_mass'] > B_UP) & (self._branches['BToKEE_fit_mass'] < B_SB_UP))
         d_veto_selection = self._branches['BToKEE_Dmass'] > D_MASS_CUT
 
-        l1_selection = (self._branches['BToKEE_l1_mvaId'] > 3.5) 
-        l2_selection = (self._branches['BToKEE_l2_mvaId'] > 3.5)
+        l1_selection = (self._branches['BToKEE_l1_mvaId'] > 3.0) 
+        l2_selection = (self._branches['BToKEE_l2_mvaId'] > 0.0)
 
         general_selection = l1_selection & l2_selection
         #general_selection = d_veto_selection
         #general_selection &= (self._branches['BToKEE_eleEtaCats'] == 0)
-        general_selection &= jpsi_selection
+        #general_selection &= jpsi_selection
         general_selection &= pf_selection
         #general_selection &= mix_net_selection
         #general_selection &= low_pfveto_selection
         #general_selection &= b_upsb_selection
         #general_selection &= b_bothsb_selection
         #general_selection &= (self._branches['BToKEE_xgb'] > 7.0)
-        general_selection &= (self._branches['BToKEE_l1_pfmvaId'] > -2.0) & (self._branches['BToKEE_l2_pfmvaId'] > -2.0)
+        #general_selection &= (self._branches['BToKEE_l1_pfmvaId'] > -2.0) & (self._branches['BToKEE_l2_pfmvaId'] > -2.0)
 
         self._branches = self._branches[general_selection]
 
         if self._evalMVA:
-          self._branches['BToKEE_xgb'] = model.predict(xgb.DMatrix(self._branches[training_branches].sort_index(axis=1).values), ntree_limit=ntree_limit)
+          #self._branches['BToKEE_xgb'] = model.predict(xgb.DMatrix(self._branches[training_branches].sort_index(axis=1).values), ntree_limit=ntree_limit)
+          self._branches['BToKEE_xgb'] = model.predict(xgb.DMatrix(self._branches[training_branches].replace([np.inf, -np.inf], 0.0).sort_index(axis=1)), ntree_limit=ntree_limit)
           self._branches = self._branches[(self._branches['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')
 
         self.fill_output()
