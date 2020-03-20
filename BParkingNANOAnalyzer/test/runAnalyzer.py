@@ -14,6 +14,8 @@ parser.add_argument("-t", "--ttree", dest="ttree", default="Events", help="TTree
 parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Store histograms or tree")
 parser.add_argument("-c", "--mc", dest="mc", action='store_true', help="MC or data")
 parser.add_argument("-r", "--runparallel", dest="runparallel", action='store_true', help="Enable parallel run")
+parser.add_argument("-v", "--mva", dest="mva", action='store_true', help="Evaluate MVA")
+parser.add_argument("--model", dest="model", default='../models/xgb.model', help="Name of the classifier file")
 parser.add_argument("--kstar", action='store_true', help="Enable parallel run")
 args = parser.parse_args()
 
@@ -31,19 +33,19 @@ def chunks(l, n):
     for i in xrange(0, len(l), n):
         yield l[i:i + n]
 
-def analyze(inputfile, outputfile, Analyzer, hist=False, mc=False):
+def analyze(inputfile, outputfile, Analyzer, hist, mc, mva, model):
     #if args.kstar:
       #analyzer = BToKstarLLAnalyzer(inputfile, outputfile, hist, mc)
     #else:
       #analyzer = BToKLLAnalyzer(inputfile, outputfile, hist, mc)
-    analyzer = Analyzer(inputfile, outputfile, hist, mc)
+    analyzer = Analyzer(inputfile, outputfile, hist, mc, mva, model)
     analyzer.run()
 
 def analyzeParallel(enumfChunk):
     ich, fChunk = enumfChunk
     print("Processing chunk number %i"%(ich))
     outputfile = outpath+'/'+args.outputfile.replace('.root','').replace('.h5','')+'_subset'+str(ich)+'.root'
-    analyze(fChunk, outputfile, Analyzer, args.hist, args.mc)
+    analyze(fChunk, outputfile, Analyzer, args.hist, args.mc, args.mva, args.model)
 
 
 if __name__ == "__main__":
@@ -61,7 +63,7 @@ if __name__ == "__main__":
     if not args.runparallel:
         inputfile = fileList
         outputfile = args.outputfile.replace('.root','').replace('.h5','')+'.root'
-        analyze(inputfile, outputfile, Analyzer, args.hist, args.mc)
+        analyze(inputfile, outputfile, Analyzer, args.hist, args.mc, args.mva, args.model)
 
     else:
         global outpath

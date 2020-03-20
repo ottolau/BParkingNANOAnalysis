@@ -40,23 +40,26 @@ np.set_printoptions(threshold=sys.maxsize)
 from matplotlib.backends.backend_pdf import PdfPages
 from collections import OrderedDict
 import seaborn as sns
+from scipy.interpolate import interp1d
 
 unneccesary_columns = []
 
 def get_df(root_file_name):
+    print('Opening file {}...'.format(root_file_name))
     f = uproot.open(root_file_name)
     if len(f.allkeys()) == 0:
         return pd.DataFrame()
     #df = uproot.open(root_file_name)["tree"].pandas.df()
     #df = pd.DataFrame(uproot.open(root_file_name)["tree"].arrays(namedecode="utf-8"))
     df = pd.DataFrame(uproot.open(root_file_name)["tree"].arrays())
+    print('Finished opening file {}...'.format(root_file_name))
     return df.drop(unneccesary_columns, axis=1)
 
 def get_label(name):
     if name == -1:
-        return "background"
+        return "Data bkg"
     if name == 0:
-      return "MC: B+ to K+ ee"
+      return "MC bkg: B+ to K+ ee"
         #return "EB" #"B+ to K+ ee"
     if name == 1:
       return "data" #"B0 to K* ee"
@@ -69,9 +72,25 @@ def plot_hist(df, column, bins=None, logscale=False, ax=None, title=None):
     #ax.hist(np.clip(df[column], bins[0], bins[-1]), bins=bins, histtype='step', normed=True)
     for name, group in df.groupby("Category"):
         #ax.hist(np.clip(group[column], bins[0], bins[-1]), bins=bins, histtype='step', label=get_label(name), normed=True)
-        ax.hist(group[column], bins=bins, histtype='step', label=get_label(name), normed=True)
+        ax.hist(group[column], bins=bins, histtype='step', label='{0}, Mean: {1:.2f}'.format(get_label(name), np.mean(group[column])), normed=True)
     ax.set_ylabel("density")
     ax.set_xlabel(column)
+    ax.legend()
+    ax.set_title(title)
+    if logscale:
+        ax.set_yscale("log", nonposy='clip')
+
+def plot_duplicates(df, column, bins=None, logscale=False, ax=None, title=None):
+    if ax is None:
+        ax = plt.gca()
+    #x = df.groupby('BToKEE_event').count()[column]
+    #ax.hist(np.clip(x, bins[0], bins[-1]), bins=bins, histtype='step', label='Mean: {}'.format(np.mean(x)), normed=True)
+    for name, group in df.groupby("Category"):
+        x = group.groupby('BToKEE_event').count()[column]
+        #ax.hist(np.clip(x, bins[0], bins[-1]), bins=bins, histtype='step', label='{}, Mean: {}'.format(get_label(name), np.mean(x)), normed=True)
+        ax.hist(x, bins=bins, histtype='step', label='{0}, Mean: {1:.2f}'.format(get_label(name), np.mean(x)), normed=True)
+    ax.set_ylabel("density")
+    ax.set_xlabel("Duplicates")
     ax.legend()
     ax.set_title(title)
     if logscale:
@@ -171,32 +190,112 @@ if __name__ == '__main__':
     #root_files = glob.glob("/eos/user/r/rembserj/ntuples/electron_mva_run3/*.root")[:n_files]
     #df = pd.concat((get_df(f) for f in  tqdm(root_files)), ignore_index=True)
     df1 = get_df(args.signal)
-    #df2 = get_df(args.background)
+    df2 = get_df(args.background)
     #df2 = df2.sample(frac=1)[:300000]
     print('variables in ntuples: {}'.format(df1.columns))
     df1['Category'] = 0
-    #df2['Category'] = 1
+    df2['Category'] = -1
     
-    #df = pd.concat((df1, df2), ignore_index=True).replace([np.inf, -np.inf], 0.0)
-    df = df1.copy()
+    #df1.drop(columns=['BToKEE_decay'])
+    df1 = df1[np.logical_not(df1['BToKEE_l1_isGen'] | df1['BToKEE_l2_isGen'] | df1['BToKEE_k_isGen'])]
+    drop_columns = ['BToKEE_decay', 'BToKEE_l1_isGen', 'BToKEE_l2_isGen', 'BToKEE_k_isGen', 'BToKEE_l1_genPdgId', 'BToKEE_l2_genPdgId', 'BToKEE_k_genPdgId']
+    df1 = df1[(df1['BToKEE_decay'] != 0)].drop(columns=drop_columns)
+    #df2 = df2.drop(columns=['BToKEE_decay'])
+    #df1.drop(columns=['BToKEE_decay'])
+    df = pd.concat((df1, df2), ignore_index=True).replace([np.inf, -np.inf], 0.0)
+    #df = df1.copy()
 
     
+    l1_pf_selection = (df['BToKEE_l1_isPF'])
+    l2_pf_selection = (df['BToKEE_l2_isPF'])
+    l1_low_selection = (df['BToKEE_l1_isLowPt']) 
+    l2_low_selection = (df['BToKEE_l2_isLowPt']) 
 
+    pf_selection = l1_pf_selection & l2_pf_selection # & (df['BToKEE_k_pt'] > 1.5) & (df['BToKEE_pt'] > 10.0)
+    low_selection = l1_low_selection & l2_low_selection
+    #overlap_veto_selection = np.logical_not(df['BToKEE_l1_isPFoverlap']) & np.logical_not(df['BToKEE_l2_isPFoverlap'])
+    #mix_selection = ((l1_pf_selection & l2_low_selection) | (l2_pf_selection & l1_low_selection))
+    #low_pfveto_selection = low_selection & overlap_veto_selection
+    #mix_net_selection = overlap_veto_selection & np.logical_not(pf_selection | low_selection)
+    #all_selection = pf_selection | low_pfveto_selection | mix_net_selection 
+    
+    #trigger_selection = (df['BToKMuMu_l1_isTriggering'] == 1) | (df['BToKMuMu_l2_isTriggering'] == 1)
+    
+    #pu_selection = (df['BToKEE_PV_npvsGood'] < 15)
+
+    #print(df[trigger_selection].groupby('BToKMuMu_event').count()['BToKMuMu_fit_mass'])
+    #print(df[trigger_selection])
+    bins = np.linspace(0.0, 50.0, 50)
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    #fig, axes = plt.subplots()
+    #plot_duplicates(df[trigger_selection], 'BToKMuMu_fit_mass', bins=bins, ax=axes[0], title='Tag side')
+    #plot_duplicates(df[np.logical_not(trigger_selection)], 'BToKMuMu_fit_mass', bins=bins, ax=axes[1], title='Probe side')
+    #plot_duplicates(df[(df['BToKMuMu_nTriggerMuon'] - df['BToKMuMu_l1_isTriggering'] - df['BToKMuMu_l2_isTriggering']) > 0.0], 'BToKMuMu_fit_mass', bins=bins, ax=axes[1], title='Probe side')
+    
+    
+    plot_duplicates(df, 'BToKEE_q2', bins=bins, ax=axes[0], title='All')
+    print('plotting PF')
+    plot_duplicates(df[pf_selection], 'BToKEE_q2', bins=bins, ax=axes[1], title='PF-PF')
+    print('plotting lowPt')
+    plot_duplicates(df[low_selection], 'BToKEE_q2', bins=bins, ax=axes[2], title='LowPt-LowPt')
+    #plot_duplicates(df, 'BToKEE_fit_mass', bins=bins, ax=axes, title='LowPt-LowPt', logscale=False)
+    #plot_duplicates(df[mix_net_selection], 'BToKEE_fit_mass', bins=bins, ax=axes[1], title='PF-LowPt')
+    #plot_duplicates(df[low_pfveto_selection], 'BToKEE_fit_mass', bins=bins, ax=axes[2], title='LowPt-LowPt')
+    fig.savefig('test.pdf', bbox_inches='tight')
+    
+
+    '''
+    fig, axes = plt.subplots()
+    df_pu = df.drop_duplicates(['BToKEE_event'], keep='first')
+    plot_hist(df_pu, 'BToKEE_PV_npvsGood', bins=bins, ax=axes, title='')
+    fig.savefig('test.pdf', bbox_inches='tight')
+    '''
+
+    '''
+    bins_interp = np.linspace(0, 51, 51)
+    weights = np.histogram(df_pu[(df_pu['Category'] == -1)], bins=bins_interp, density=True)[0] / np.histogram(df_pu[(df_pu['Category'] == 0)], bins=bins_interp, density=True)[0]
+    print(weights, len(weights))
+    f_weights = interp1d(bins, weights, fill_value="extrapolate")
+    df_pu['weights'] = np.where((df_pu['Category'] == 0), f_weights(df_pu['BToKEE_PV_npvsGood']), 1.0)
+
+    print(df_pu['weights'])
+    fig, ax = plt.subplots()
+    ax.hist(df_pu[(df_pu['Category'] == -1)]['BToKEE_PV_npvsGood'], bins=bins, histtype='step', label='{0}, Mean: {1:.2f}'.format('Data bkg', np.mean(df_pu[(df_pu['Category'] == -1)]['BToKEE_PV_npvsGood'])), normed=True)
+    ax.hist(df_pu[(df_pu['Category'] == 0)]['BToKEE_PV_npvsGood'], bins=bins, histtype='step', label='{0}, Mean: {1:.2f}'.format('MC bkg: B+ to K+ ee', np.average(df_pu[(df_pu['Category'] == 0)]['BToKEE_PV_npvsGood'], weights=df_pu[(df_pu['Category'] == 0)]['weights'])), normed=True, weights=df_pu[(df_pu['Category'] == 0)]['weights'])
+    ax.set_ylabel("density")
+    ax.set_xlabel('BToKEE_PV_npvsGood')
+    ax.legend()
+    fig.savefig('test_2.pdf', bbox_inches='tight')
+    '''
+
+
+    '''
+    with PdfPages(args.outputfile.replace('.pdf','')+'.pdf') as pdf:
+      mvaCutList = np.linspace(9.0, 14.0, 20)
+      for mvaCut in mvaCutList:
+        print("plotting {}...".format(mvaCut))
+        fig, axes = plt.subplots(1, 2, figsize=(15, 5))
+        plot_duplicates(df[(df['Category'] == 0) & (df['BToKEE_xgb'] > mvaCut)], 'BToKEE_fit_mass', bins=np.linspace(0.0, 5.0, 5), ax=axes[0], title='MVA: {0:.2f}, PF-PF'.format(mvaCut))
+        plot_duplicates(df[(df['Category'] == 1) & (df['BToKEE_xgb'] > mvaCut)], 'BToKEE_fit_mass', bins=np.linspace(0.0, 5.0, 5), ax=axes[1], title='MVA: {0:.2f}, PF-LowPt'.format(mvaCut))
+        pdf.savefig(fig, bbox_inches='tight')
+        plt.close()
+    
+    '''
     '''
     with PdfPages(args.outputfile.replace('.pdf','')+'.pdf') as pdf:
       for var, bins in features.items():
         #if var != "ele_pt": continue
         print("plotting {}...".format(var))
         fig, axes = plt.subplots()
-        plot_hist(df, var, bins=bins, ax=axes, title='')
+        plot_hist(df[low_selection], var, bins=bins, ax=axes, title='')
         #fig, axes = plt.subplots(1, 2, figsize=(15, 5))
         #plot_hist(df.query("abs(BToKEE_fit_eta) <= 1.57"), var, bins=bins, ax=axes[0], title="Barrel")
         #plot_hist(df, var, bins=bins, ax=axes[1], title="All")
         pdf.savefig(fig, bbox_inches='tight')
         plt.close()
         print("finished plotting {}...".format(var))
-
-        
+    '''
+    '''    
     training_features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_l1_dxy_sig',
               'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_l2_dxy_sig',
               'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_k_DCASig',

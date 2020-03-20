@@ -194,7 +194,7 @@ if __name__ == "__main__":
   BList_R = np.array(BList_R)
   SNR_R = SList_R / np.sqrt(SList_R + BList_R)
 
-  df_roc = pd.read_csv('training_results_roc_csv_01Mar2020_fullq2_isoPFMVADRptImb_weighted_pauc02_pf.csv')
+  df_roc = pd.read_csv('training_results_roc_csv_10Mar2020_fullq2_isoPFMVADRptImb_weighted_pauc02_pf.csv')
   fpr = df_roc['fpr'].values
   tpr = df_roc['tpr'].values
   thresholds = df_roc['thresholds'].values

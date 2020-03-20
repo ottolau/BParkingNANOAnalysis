@@ -74,8 +74,8 @@ if __name__ == "__main__":
         pool = mp.Pool(processes = 8)
         input_parallel = list(enumerate(fChunks))
         pool.map(analyzeParallel, input_parallel)
-        pool.close()
-        pool.join()
+        #pool.close()
+        #pool.join()
 
         outputfile = args.outputfile.replace('.root','').replace('.h5','')
         exec_me("hadd -k -f %s/%s %s/%s"%(outpath,outputfile+'.root',outpath,outputfile+'_subset*.root'))

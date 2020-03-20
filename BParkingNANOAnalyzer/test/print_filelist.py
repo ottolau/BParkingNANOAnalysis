@@ -1,6 +1,7 @@
 import subprocess
 from os import listdir
 from os.path import isfile, join
+import random
 
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/BuToKJpsi_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKJpsi_Toee/200116_215618/0000/']
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/BuToKee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKee/200116_215859/0000/']
@@ -99,6 +100,7 @@ for path in mypath:
     #path = '/eos/cms/' + path
     filelist = filelist + [path + f for f in listdir(path) if isfile(join(path, f))]
 
+filelist = random.sample(filelist, k=30)
 filelist = ['{}{}'.format(redirector, f.replace('/eos/cms/','')) for f in filelist if ".root" in f]
 
 #outputFile = open('BParkingNANO_2019Sep12_Run2018D_part2.list', 'w+')
@@ -107,7 +109,7 @@ filelist = ['{}{}'.format(redirector, f.replace('/eos/cms/','')) for f in fileli
 #outputFile = open('BParkingNANO_2020Jan16_BuToKee.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BdToKstarJpsi_ToKPiee.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BdToKstaree.list', 'w+')
-outputFile = open('BParkingNANO_2020Jan16_Run2018ABCD.list', 'w+')
+outputFile = open('BParkingNANO_2020Jan16_Run2018ABCD_random30.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BuToKee_all.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BuToKJpsi_Toee_svprob0.list', 'w+')
 
