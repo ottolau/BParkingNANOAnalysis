@@ -148,8 +148,8 @@ if __name__ == "__main__":
   inputfile = args.inputfile.replace('.root','').replace('.h5','')+'.root'
   outputfile = args.outputfile.replace('.root','').replace('.h5','')
 
-  partial_resonant = 'part_workspace_resonant_pf.root'
-  partial_nonresonant = 'part_workspace_nonresonant_pf.root' 
+  partial_resonant = 'part_workspace_resonant_low.root'
+  partial_nonresonant = 'part_workspace_nonresonant_low.root' 
   drawSNR = True
 
   events = uproot.open(inputfile)['tree']
@@ -165,7 +165,7 @@ if __name__ == "__main__":
   SErrList_NR = []
   BList_NR = []
 
-  mvaCutList = np.linspace(9.0, 14.0, 20)
+  mvaCutList = np.linspace(12.0, 17.0, 20)
   for mvaCut in mvaCutList:
     # mva selection
     mva_selection = (branches['BToKEE_xgb'] > mvaCut) #& (branches['BToKEE_l1_mvaId'] > 4.24) & (branches['BToKEE_l2_mvaId'] > 4.24)#& (branches['BToKEE_Dmass'] > 1.9)
@@ -194,7 +194,7 @@ if __name__ == "__main__":
   BList_R = np.array(BList_R)
   SNR_R = SList_R / np.sqrt(SList_R + BList_R)
 
-  df_roc = pd.read_csv('training_results_roc_csv_10Mar2020_fullq2_isoPFMVADRptImb_weighted_pauc02_pf.csv')
+  df_roc = pd.read_csv('training_results_roc_csv_18Mar2020_fullq2_isoMVADRptImb_weighted_pauc02_low.csv')
   fpr = df_roc['fpr'].values
   tpr = df_roc['tpr'].values
   thresholds = df_roc['thresholds'].values

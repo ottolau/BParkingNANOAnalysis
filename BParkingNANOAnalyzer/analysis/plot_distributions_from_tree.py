@@ -72,7 +72,8 @@ def plot_hist(df, column, bins=None, logscale=False, ax=None, title=None):
     #ax.hist(np.clip(df[column], bins[0], bins[-1]), bins=bins, histtype='step', normed=True)
     for name, group in df.groupby("Category"):
         #ax.hist(np.clip(group[column], bins[0], bins[-1]), bins=bins, histtype='step', label=get_label(name), normed=True)
-        ax.hist(group[column], bins=bins, histtype='step', label='{0}, Mean: {1:.2f}'.format(get_label(name), np.mean(group[column])), normed=True)
+        ax.hist(group[column], bins=bins, histtype='step', label=get_label(name), normed=True)
+        #ax.hist(group[column], bins=bins, histtype='step', label='{0}, Mean: {1:.2f}'.format(get_label(name), np.mean(group[column])), normed=True)
     ax.set_ylabel("density")
     ax.set_xlabel(column)
     ax.legend()
@@ -138,17 +139,17 @@ if __name__ == '__main__':
                             ('BToKEE_q2', np.linspace(1.0, 25.0, 100)),
                             ('BToKEE_fit_mass', np.linspace(4.5, 6.0, 100)),
                             ('BToKEE_fit_massErr', np.linspace(0.0, 0.5, 100)),
-                            ('BToKEE_fit_pt', np.linspace(0.0, 70.0, 100)),
-                            ('BToKEE_fit_normpt', np.linspace(0.0, 30.0, 100)),
+                            ('BToKEE_fit_pt', np.linspace(0.0, 50.0, 100)),
+                            ('BToKEE_fit_normpt', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_fit_eta', np.linspace(-3.0, 3.0, 100)),
                             ('BToKEE_fit_phi', np.linspace(-np.pi, np.pi, 100)),
                             ('BToKEE_dz', np.linspace(-1.0, 1.0, 100)),
-                            ('BToKEE_b_iso03_rel', np.linspace(0.0, 10.0, 100)),
+                            #('BToKEE_b_iso03_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_b_iso04_rel', np.linspace(0.0, 10.0, 100)),
-                            ('BToKEE_fit_l1_pt', np.linspace(0.0, 40.0, 100)),
-                            ('BToKEE_fit_l2_pt', np.linspace(0.0, 30.0, 100)),
-                            ('BToKEE_fit_l1_normpt', np.linspace(0.0, 30.0, 100)),
-                            ('BToKEE_fit_l2_normpt', np.linspace(0.0, 30.0, 100)),
+                            ('BToKEE_fit_l1_pt', np.linspace(0.0, 20.0, 100)),
+                            ('BToKEE_fit_l2_pt', np.linspace(0.0, 10.0, 100)),
+                            ('BToKEE_fit_l1_normpt', np.linspace(0.0, 10.0, 100)),
+                            ('BToKEE_fit_l2_normpt', np.linspace(0.0, 5.0, 100)),
                             ('BToKEE_fit_l1_eta', np.linspace(-3.0, 3.0, 100)),
                             ('BToKEE_fit_l2_eta', np.linspace(-3.0, 3.0, 100)),
                             ('BToKEE_fit_l1_phi', np.linspace(-np.pi, np.pi, 100)),
@@ -157,32 +158,32 @@ if __name__ == '__main__':
                             ('BToKEE_l2_dxy_sig', np.linspace(-30.0, 30.0, 100)),
                             #('BToKEE_l1_dz', np.linspace(-0.5, 0.5, 100)),
                             #('BToKEE_l2_dz', np.linspace(-0.5, 0.5, 100)),
-                            ('BToKEE_l1_mvaId', np.linspace(-2.0, 10.0, 100)),
-                            ('BToKEE_l2_mvaId', np.linspace(-2.0, 10.0, 100)),
-                            #('BToKEE_l1_pfmvaId', np.linspace(-10.0, 10.0, 100)),
-                            #('BToKEE_l2_pfmvaId', np.linspace(-10.0, 10.0, 100)),
+                            ('BToKEE_l1_mvaId', np.linspace(-10.0, 20.0, 100)),
+                            ('BToKEE_l2_mvaId', np.linspace(-10.0, 20.0, 100)),
+                            ('BToKEE_l1_pfmvaId', np.linspace(-10.0, 20.0, 100)),
+                            ('BToKEE_l2_pfmvaId', np.linspace(-10.0, 20.0, 100)),
                             #('BToKEE_l1_pfmvaId_lowPt', np.linspace(-10.0, 10.0, 100)),
                             #('BToKEE_l2_pfmvaId_lowPt', np.linspace(-10.0, 10.0, 100)),
                             #('BToKEE_l1_pfmvaId_highPt', np.linspace(-10.0, 10.0, 100)),
                             #('BToKEE_l2_pfmvaId_highPt', np.linspace(-10.0, 10.0, 100)),
-                            ('BToKEE_l1_iso03_rel', np.linspace(0.0, 10.0, 100)),
-                            ('BToKEE_l2_iso03_rel', np.linspace(0.0, 10.0, 100)),
+                            #('BToKEE_l1_iso03_rel', np.linspace(0.0, 10.0, 100)),
+                            #('BToKEE_l2_iso03_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_l1_iso04_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_l2_iso04_rel', np.linspace(0.0, 10.0, 100)),
-                            ('BToKEE_fit_k_pt', np.linspace(0.0, 25.0, 100)),
-                            ('BToKEE_fit_k_normpt', np.linspace(0.0, 10.0, 100)),
+                            ('BToKEE_fit_k_pt', np.linspace(0.0, 10.0, 100)),
+                            ('BToKEE_fit_k_normpt', np.linspace(0.0, 2.0, 100)),
                             ('BToKEE_fit_k_eta', np.linspace(-3.0, 3.0, 100)),
                             ('BToKEE_fit_k_phi', np.linspace(-np.pi, np.pi, 100)),
-                            ('BToKEE_k_DCASig', np.linspace(0.0, 30.0, 100)),
+                            ('BToKEE_k_DCASig', np.linspace(0.0, 10.0, 100)),
                             #('BToKEE_k_dz', np.linspace(-0.5, 0.5, 100)),
                             ('BToKEE_k_nValidHits', np.linspace(0.0, 40.0, 40)),
-                            ('BToKEE_k_iso03_rel', np.linspace(0.0, 10.0, 100)),
+                            #('BToKEE_k_iso03_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_k_iso04_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_svprob', np.linspace(0.0, 1.0, 100)),
                             ('BToKEE_fit_cos2D', np.linspace(0.999, 1.0, 100)),
-                            ('BToKEE_l_xy_sig', np.linspace(0.0, 100.0, 100)),
+                            ('BToKEE_l_xy_sig', np.linspace(0.0, 40.0, 100)),
                             ('BToKEE_Dmass', np.linspace(0.5, 5.0, 100)),
-                            ('BToKEE_maxDR', np.linspace(0.0, 3.0, 100)),
+                            ('BToKEE_maxDR', np.linspace(0.0, 5.0, 100)),
                             ('BToKEE_minDR', np.linspace(0.0, 3.0, 100)),
                             ])
     
@@ -202,6 +203,8 @@ if __name__ == '__main__':
     df1 = df1[(df1['BToKEE_decay'] != 0)].drop(columns=drop_columns)
     #df2 = df2.drop(columns=['BToKEE_decay'])
     #df1.drop(columns=['BToKEE_decay'])
+    df1 = df1[:5000000]
+    df2 = df2[:5000000]
     df = pd.concat((df1, df2), ignore_index=True).replace([np.inf, -np.inf], 0.0)
     #df = df1.copy()
 
@@ -281,20 +284,23 @@ if __name__ == '__main__':
         plt.close()
     
     '''
-    '''
+    
     with PdfPages(args.outputfile.replace('.pdf','')+'.pdf') as pdf:
       for var, bins in features.items():
         #if var != "ele_pt": continue
         print("plotting {}...".format(var))
-        fig, axes = plt.subplots()
-        plot_hist(df[low_selection], var, bins=bins, ax=axes, title='')
+        #fig, axes = plt.subplots()
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+        plot_hist(df.sample(n=1000000), var, bins=bins, ax=axes[0], title='All')
+        plot_hist(df[pf_selection], var, bins=bins, ax=axes[1], title='PF-PF')
+        plot_hist(df[low_selection].sample(n=1000000), var, bins=bins, ax=axes[2], title='LowPt-LowPt')
         #fig, axes = plt.subplots(1, 2, figsize=(15, 5))
         #plot_hist(df.query("abs(BToKEE_fit_eta) <= 1.57"), var, bins=bins, ax=axes[0], title="Barrel")
         #plot_hist(df, var, bins=bins, ax=axes[1], title="All")
         pdf.savefig(fig, bbox_inches='tight')
         plt.close()
         print("finished plotting {}...".format(var))
-    '''
+    
     '''    
     training_features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_l1_dxy_sig',
               'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_l2_dxy_sig',

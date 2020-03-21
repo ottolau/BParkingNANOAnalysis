@@ -61,8 +61,8 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
         wspace.factory('mean[5.272e+00, 5.22e+00, 5.3e+00]')
       else:
         xmin, xmax = FIT_LOW, FIT_UP
-        wspace.factory('mean[5.2676, 5.2676, 5.2676]')
-        #wspace.factory('mean[5.2675, 5.2675, 5.2675]')
+        #wspace.factory('mean[5.2676, 5.2676, 5.2676]')
+        wspace.factory('mean[5.2654, 5.2654, 5.2654]')
       thevars.add(dieleMass)
 
     thevars.add(bMass)
@@ -114,18 +114,18 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
           wspace.factory('n2[1.0, 1.0, 10.0]')
         else:
           # PF
-          wspace.factory('width[0.06070, 0.06070, 0.06070]')
-          wspace.factory('alpha1[0.677, 0.677, 0.677]')
-          wspace.factory('n1[1.56, 1.56, 1.56]')
-          wspace.factory('alpha2[1.440, 1.440, 1.440]')
-          wspace.factory('n2[8.9, 8.9, 8.9]')
+          #wspace.factory('width[0.06070, 0.06070, 0.06070]')
+          #wspace.factory('alpha1[0.677, 0.677, 0.677]')
+          #wspace.factory('n1[1.56, 1.56, 1.56]')
+          #wspace.factory('alpha2[1.440, 1.440, 1.440]')
+          #wspace.factory('n2[8.9, 8.9, 8.9]')
 
-          # Mix
-          #wspace.factory('width[0.0612, 0.0612, 0.0612]')
-          #wspace.factory('alpha1[0.612, 0.612, 0.612]')
-          #wspace.factory('n1[1.81, 1.81, 1.81]')
-          #wspace.factory('alpha2[1.44, 1.44, 1.44]')
-          #wspace.factory('n2[10.0, 10.0, 10.0]')
+          # Low
+          wspace.factory('width[0.0638, 0.0638, 0.0638]')
+          wspace.factory('alpha1[0.655, 0.655, 0.655]')
+          wspace.factory('n1[1.75, 1.75, 1.75]')
+          wspace.factory('alpha2[1.509, 1.509, 1.509]')
+          wspace.factory('n2[9.85, 9.85, 9.85]')
 
         wspace.factory('GenericPdf::sig("DoubleCBFast(x,mean,width,alpha1,n1,alpha2,n2)", {x,mean,width,alpha1,n1,alpha2,n2})')
 
@@ -224,7 +224,7 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
 
     #xframe = wspace.var('x').frame(RooFit.Title("PF electron"))
     xframe = theBMass.frame()
-    nbin_data = 30 if blinded else 50
+    nbin_data = 50 if blinded else 50
 
     if isMC:
       data.plotOn(xframe, RooFit.Binning(nbin_data), RooFit.Name("data"))
@@ -412,7 +412,7 @@ if __name__ == "__main__":
     if not args.partial:
       fit(tree, args.outputfile, fitJpsi=False, isMC=True)
       #fit(tree, args.outputfile, doPartial=True)
-      fit(tree, args.outputfile, doPartial=True, partialinputfile='part_workspace_resonant_pf.root', drawSNR=True, mvaCut=7.0)
+      #fit(tree, args.outputfile, doPartial=True, partialinputfile='part_workspace_resonant_pf.root', drawSNR=True, mvaCut=7.0)
     else:
       fit_kde(tree, args.outputfile)
     

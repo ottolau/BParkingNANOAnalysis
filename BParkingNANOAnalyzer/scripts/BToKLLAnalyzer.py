@@ -39,13 +39,9 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                             'BToKEE_fit_cos2D',
                             'BToKEE_maxDR',
                             'BToKEE_minDR',
-                            'BToKEE_k_iso03',
                             'BToKEE_k_iso04',
-                            'BToKEE_l1_iso03',
                             'BToKEE_l1_iso04',
-                            'BToKEE_l2_iso03',
                             'BToKEE_l2_iso04',
-                            'BToKEE_b_iso03',
                             'BToKEE_b_iso04',
                             'BToKEE_vtx_x',
                             'BToKEE_vtx_y',
@@ -127,13 +123,9 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                              'BToKEE_Dmass_flip': {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0},
                              'BToKEE_maxDR': {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0},
                              'BToKEE_minDR': {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0},
-                             'BToKEE_k_iso03_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
                              'BToKEE_k_iso04_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
-                             'BToKEE_l1_iso03_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
                              'BToKEE_l1_iso04_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
-                             'BToKEE_l2_iso03_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
                              'BToKEE_l2_iso04_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
-                             'BToKEE_b_iso03_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
                              'BToKEE_b_iso04_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
                              'BToKEE_eleEtaCats': {'nbins': 3, 'xmin': 0.0, 'xmax': 3.0},
                              'BToKEE_event': {'nbins': 10, 'xmin': 0, 'xmax': 10},
@@ -172,13 +164,13 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                   ]
       features += ['BToKEE_minDR', 'BToKEE_maxDR']
       features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
-      features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
+      #features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
       features += ['BToKEE_ptImbalance']
-      #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+      features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
 
       training_branches = sorted(features)
-      mvaCut = -20.0
-      ntree_limit = 800
+      mvaCut = 10.0
+      ntree_limit = 797
       model = xgb.Booster({'nthread': 6})
       model.load_model(self._modelfile)
 
@@ -188,7 +180,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       print('[BToKLLAnalyzer::run] INFO: FILE: {}/{}. Analyzing...'.format(self._ifile+1, self._num_files))
 
       startTime = time.time()
-      for i, params in enumerate(events.iterate(branches=self._inputbranches, entrysteps=20000)):
+      for i, params in enumerate(events.iterate(branches=self._inputbranches, entrysteps=100000)):
         #self._branches = {key: awkward.fromiter(branch) for key, branch in params.items()} # need this line for the old version of awkward/uproot (for condor job)
         self._branches = params.copy()
         print('Reading chunk {}... Finished opening file in {} s'.format(i, time.time() - startTime))
@@ -273,15 +265,16 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
         b_upsb_selection = (self._branches['BToKEE_fit_mass'] > B_UP)
 
         #sv_selection = (self._branches['BToKEE_fit_pt'] > 3.0)
-        l1_selection = (self._branches['BToKEE_l1_convVeto']) #& (self._branches['BToKEE_l1_mvaId'] > 3.0)
-        l2_selection = (self._branches['BToKEE_l2_convVeto']) #& (self._branches['BToKEE_l2_mvaId'] > 0.0)
+        l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_l1_mvaId'] > 3.0)
+        l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_l2_mvaId'] > 0.0)
         #k_selection = (self._branches['BToKEE_fit_k_pt'] > 0.7)
         additional_selection = (self._branches['BToKEE_fit_mass'] > B_MIN) & (self._branches['BToKEE_fit_mass'] < B_MAX)
 
         selection = l1_selection & l2_selection
         selection &= jpsi_selection
         selection &= additional_selection
-        selection &= pf_selection
+        #selection &= pf_selection
+        selection &= low_selection
 
         self._branches = self._branches[selection]
 
@@ -295,13 +288,9 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
           self._branches['BToKEE_fit_k_normpt'] = self._branches['BToKEE_fit_k_pt'] / self._branches['BToKEE_fit_mass']
           self._branches['BToKEE_fit_normpt'] = self._branches['BToKEE_fit_pt'] / self._branches['BToKEE_fit_mass']
           self._branches['BToKEE_q2'] = pow(self._branches['BToKEE_mll_fullfit'], 2)
-          self._branches['BToKEE_b_iso03_rel'] = self._branches['BToKEE_b_iso03'] / self._branches['BToKEE_fit_pt']
           self._branches['BToKEE_b_iso04_rel'] = self._branches['BToKEE_b_iso04'] / self._branches['BToKEE_fit_pt']
-          self._branches['BToKEE_l1_iso03_rel'] = self._branches['BToKEE_l1_iso03'] / self._branches['BToKEE_fit_l1_pt']
           self._branches['BToKEE_l1_iso04_rel'] = self._branches['BToKEE_l1_iso04'] / self._branches['BToKEE_fit_l1_pt']
-          self._branches['BToKEE_l2_iso03_rel'] = self._branches['BToKEE_l2_iso03'] / self._branches['BToKEE_fit_l2_pt']
           self._branches['BToKEE_l2_iso04_rel'] = self._branches['BToKEE_l2_iso04'] / self._branches['BToKEE_fit_l2_pt']
-          self._branches['BToKEE_k_iso03_rel'] = self._branches['BToKEE_k_iso03'] / self._branches['BToKEE_fit_k_pt']
           self._branches['BToKEE_k_iso04_rel'] = self._branches['BToKEE_k_iso04'] / self._branches['BToKEE_fit_k_pt']
           self._branches['BToKEE_k_isKaon'] = True
           self._branches['BToKEE_eleEtaCats'] = self._branches.apply(self.EleEtaCats, axis=1, prefix='BToKEE')
@@ -351,7 +340,8 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
 
           if self._evalMVA:
             self._branches['BToKEE_xgb'] = model.predict(xgb.DMatrix(self._branches[training_branches].replace([np.inf, -np.inf], 0.0).sort_index(axis=1)), ntree_limit=ntree_limit)
-            self._branches = self._branches[(self._branches['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')
+            #self._branches = self._branches[(self._branches['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')
+            self._branches = self._branches[(self._branches['BToKEE_xgb'] > mvaCut)]
 
           # fill output
           self.fill_output()

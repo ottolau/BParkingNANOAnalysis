@@ -150,7 +150,7 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         #general_selection &= low_pfveto_selection
         #general_selection &= b_upsb_selection
         #general_selection &= b_bothsb_selection
-        #general_selection &= (self._branches['BToKEE_xgb'] > 7.0)
+        general_selection &= (self._branches['BToKEE_xgb'] > 10.0)
         #general_selection &= (self._branches['BToKEE_l1_pfmvaId'] > -2.0) & (self._branches['BToKEE_l2_pfmvaId'] > -2.0)
 
         self._branches = self._branches[general_selection]

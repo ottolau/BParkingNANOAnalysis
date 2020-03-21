@@ -10,6 +10,7 @@ parser.add_argument("-f", "--suffix", dest="suffix", default=None, help="Suffix 
 parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Store histograms or tree")
 parser.add_argument("-c", "--mc", dest="mc", action='store_true', help="MC or data")
 parser.add_argument("-m", "--maxevents", dest="maxevents", type=int, default=ROOT.TTree.kMaxEntries, help="Maximum number events to loop over")
+parser.add_argument("-v", "--mva", dest="mva", action='store_true', help="Evaluate MVA")
 parser.add_argument("--kstar", action='store_true', help="MC or data")
 args = parser.parse_args()
 
@@ -132,6 +133,8 @@ if __name__ == '__main__':
     exec_me("tar -zcvf BParkingNANOAnalysis.tgz -C {} {}".format(zipPath, "BParkingNANOAnalysis"), False)
 
     files = ['../../scripts/BToKLLAnalyzer.py', '../../scripts/BToKstarLLAnalyzer.py', '../runAnalyzer.py', 'BParkingNANOAnalysis.tgz']
+    if args.mva:
+        files += ['../../models/xgb.model']
     files_condor = [f.split('/')[-1] for f in files]
 
     fileList = []
@@ -161,10 +164,18 @@ if __name__ == '__main__':
         args_list = []
         if args.hist: args_list.append('-s')
         if args.mc: args_list.append('-c')
+        if args.mva: args_list.append('-v')
         if args.kstar: args_list.append('--kstar')
         args_str = " ".join(args_list)
 
-        cmd = "cp ${{MAINDIR}}/inputfile_{0}.list .; cp ${{MAINDIR}}/BToKLLAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/; cp ${{MAINDIR}}/BToKstarLLAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/;cp ${{MAINDIR}}/runAnalyzer.py ${{MAINDIR}}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/test/; python runAnalyzer.py -i inputfile_{0}.list -o {1}_subset{0}.root -r {2}".format(i,outputName,args_str if len(args_list) > 0 else "")
+        cmd = ""
+        cmd += "cp ${{MAINDIR}}/inputfile_{0}.list .;".format(i)
+        cmd += "cp ${MAINDIR}/BToKLLAnalyzer.py ${MAINDIR}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/;"
+        cmd += "cp ${MAINDIR}/BToKstarLLAnalyzer.py ${MAINDIR}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/;"
+        if args.mva:
+            cmd += "cp ${MAINDIR}/xgb.model ${MAINDIR}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/models/;"
+        cmd += "cp ${MAINDIR}/runAnalyzer.py ${MAINDIR}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/test/;"
+        cmd += "python runAnalyzer.py -i inputfile_{0}.list -o {1}_subset{0}.root -r {2}".format(i,outputName,args_str if len(args_list) > 0 else "")
 
         inputargs =  []
         f_sh = "runjob_%s.sh"%i
