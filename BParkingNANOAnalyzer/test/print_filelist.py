@@ -9,8 +9,9 @@ import random
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/BdToKstarJpsi_ToKPiee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BdToKstarJpsi_Toee/200116_220459/0000/']
 #mypath2 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb26/BuToKee_MufilterPt6_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKee_ext/200226_210729/0000/']
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb26/BuToKJpsi_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKJpsi_Toee/200226_153915/0000/']
+mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Mar22/BuToKPsi2S_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKPsi2S_Toee/200322_185610/0000/']
 
-
+'''
 mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH1/crab_data_Run2018A_part1/200116_150535/0000/',
            '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH1/crab_data_Run2018A_part1/200116_150535/0001/',
            '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH1/crab_data_Run2018B_part1/200116_150810/0000/',
@@ -85,9 +86,9 @@ mypath6 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/Parkin
            '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH6/crab_data_Run2018A_part6/200116_173128/0001/',
            '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH6/crab_data_Run2018B_part6/200116_173248/0000/',
            ]
+'''
 
-
-mypath = mypath1 + mypath2 + mypath3 + mypath4 + mypath5 + mypath6
+mypath = mypath1 #+ mypath2 + mypath3 + mypath4 + mypath5 + mypath6
 
 #redirector = 'root://eoscms.cern.ch/'
 #redirector = '/eos/cms/'
@@ -100,7 +101,7 @@ for path in mypath:
     #path = '/eos/cms/' + path
     filelist = filelist + [path + f for f in listdir(path) if isfile(join(path, f))]
 
-filelist = random.sample(filelist, k=30)
+#filelist = random.sample(filelist, k=30)
 filelist = ['{}{}'.format(redirector, f.replace('/eos/cms/','')) for f in filelist if ".root" in f]
 
 #outputFile = open('BParkingNANO_2019Sep12_Run2018D_part2.list', 'w+')
@@ -109,9 +110,10 @@ filelist = ['{}{}'.format(redirector, f.replace('/eos/cms/','')) for f in fileli
 #outputFile = open('BParkingNANO_2020Jan16_BuToKee.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BdToKstarJpsi_ToKPiee.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BdToKstaree.list', 'w+')
-outputFile = open('BParkingNANO_2020Jan16_Run2018ABCD_random30.list', 'w+')
+#outputFile = open('BParkingNANO_2020Jan16_Run2018ABCD_random30.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BuToKee_all.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BuToKJpsi_Toee_svprob0.list', 'w+')
+outputFile = open('BParkingNANO_2020Jan16_BuToKPsi2S_Toee.list', 'w+')
 
 for f in filelist:
     outputFile.write('%s\n'%(f))

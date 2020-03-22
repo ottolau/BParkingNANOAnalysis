@@ -50,12 +50,13 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
 
     if fitJpsi:
       xmin, xmax = 2.5, 3.5
-      bMass = ROOT.RooRealVar("BToKEE_mll_fullfit", "m(e^{+}e^{-})", 2.0, 4.0, "GeV")
-      wspace.factory('mean[3.096916, 2.9, 3.3]')
+      #xmin, xmax = 3.0, 4.0
+      bMass = ROOT.RooRealVar("BToKEE_mll_fullfit", "m(e^{+}e^{-})", 2.0, 5.0, "GeV")
+      wspace.factory('mean[3.096916, 2.9, 3.8]')
 
     else:
       bMass = ROOT.RooRealVar("BToKEE_fit_mass", "m(K^{+}e^{+}e^{-})", 4.0, 6.0, "GeV")
-      dieleMass = ROOT.RooRealVar("BToKEE_mll_fullfit", "m(e^{+}e^{-})", 2.0, 4.0, "GeV")
+      dieleMass = ROOT.RooRealVar("BToKEE_mll_fullfit", "m(e^{+}e^{-})", 2.0, 5.0, "GeV")
       if isMC:
         xmin, xmax = FIT_LOW, FIT_UP
         wspace.factory('mean[5.272e+00, 5.22e+00, 5.3e+00]')
@@ -229,8 +230,10 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
     if isMC:
       data.plotOn(xframe, RooFit.Binning(nbin_data), RooFit.Name("data"))
       model.plotOn(xframe,RooFit.Name("global"),RooFit.Range("Full"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
-      #model.paramOn(xframe,RooFit.Layout(0.15,0.45,0.85))
-      model.paramOn(xframe,RooFit.Layout(0.60,0.92,0.73))
+      if fitJpsi:
+        model.paramOn(xframe,RooFit.Layout(0.15,0.45,0.73))
+      else:
+        model.paramOn(xframe,RooFit.Layout(0.60,0.92,0.73))
       xframe.getAttText().SetTextSize(0.03)
 
     else:
@@ -267,9 +270,13 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
     CMS_lumi(isMC)
 
     if isMC:
-      legend = ROOT.TLegend(0.65,0.75,0.92,0.85);
+      if fitJpsi:
+        legend = ROOT.TLegend(0.15,0.75,0.42,0.85);
+        pt = ROOT.TPaveText(0.15,0.38,0.45,0.50,"brNDC")
+      else:
+        legend = ROOT.TLegend(0.65,0.75,0.92,0.85);
+        pt = ROOT.TPaveText(0.72,0.38,0.92,0.50,"brNDC")
       legend.AddEntry(xframe.findObject("global"),"Total Fit","l");
-      pt = ROOT.TPaveText(0.72,0.38,0.92,0.50,"brNDC")
 
     else:
       legend = ROOT.TLegend(0.60,0.65,0.92,0.85);
@@ -303,7 +310,7 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
     c2.cd()
     c2.Update()
 
-    c2.SaveAs(outputfile)
+    c2.SaveAs(outputfile.replace('.pdf','')+'.pdf')
     print("="*80)
     if not isMC:
       return nsig.getVal(), nsig.getError(), nbkgWindow 
