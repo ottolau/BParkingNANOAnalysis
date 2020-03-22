@@ -52,7 +52,8 @@ def get_df(root_file_name, branches):
     f = uproot.open(root_file_name)
     if len(f.allkeys()) == 0:
         return pd.DataFrame()
-    df = pd.DataFrame(uproot.open(root_file_name)["tree"].arrays(branches, namedecode="utf-8"))
+    df = pd.DataFrame(uproot.open(root_file_name)["tree"].arrays(branches))
+    #df = pd.DataFrame(uproot.open(root_file_name)["tree"].arrays(branches, namedecode="utf-8"))
     return df
 
 def get_label(name):
@@ -76,31 +77,54 @@ def plot_roc_curve(df, score_column, tpr_threshold=0.0, ax=None, color=None, lin
     #ax.semilogx(fpr, tpr, label=label, color=color, linestyle=linestyle)
     ax.plot(fpr, tpr, label=label, color=color, linestyle=linestyle)
 
-def get_signal_efficiency(df, score_column, working_point):
-    df_sig = df.query("matchedToGenEle == 1")
-    k = len(df_sig[df_sig[score_column] >= working_point])
-    n = len(df_sig)
+def get_working_points(df, score_column):
+    
+    working_points = {}
+
+    df_test = df[df['test']]
+    signal_mask = df_test["isSignal"] == 1
+    df_sig = df_test[signal_mask]
+    df_bkg = df_test[~signal_mask]
+
+    wp80, wp90 = np.percentile(df_sig[score_column], [20., 10.])
+
+    wp80_bkg_eff = 1.*len(df_bkg[df_bkg[score_column] >= wp80])/len(df_bkg)
+    wp90_bkg_eff = 1.*len(df_bkg[df_bkg[score_column] >= wp90])/len(df_bkg)
+    
+    working_points["wp80"] = wp80
+    working_points["wp90"] = wp90
+    
+    print("sig. efficiency at 80 % false alarm rate: {0:.2f} %. WP: {1}".format(wp80_bkg_eff * 100, wp80))
+    print("sig. efficiency at 90 % false alarm rate: {0:.2f} %. WP: {1}".format(wp90_bkg_eff * 100, wp90))
+      
+    return working_points
+
+def get_efficiency(df, score_column, working_point, isSignal):
+    df = df.query("isSignal == 1") if isSignal else df.query("isSignal == 0")
+    k = len(df[df[score_column] >= working_point])
+    n = len(df)
     return 1.*k/n if n != 0 else np.nan
 
-def get_background_efficiency(df, score_column, working_point):
-    df_bkg = df.query("matchedToGenEle == 0")
-    k = len(df_bkg[df_bkg[score_column] >= working_point])
-    n = len(df_bkg)
-    return 1.*k/n if n != 0 else np.nan
-
-def get_signal_efficiency_unc(df, score_column, working_point, bUpper):
-    df_sig = df.query("matchedToGenEle == 1")
-    k = len(df_sig[df_sig[score_column] >= working_point])
-    n = len(df_sig)
+def get_efficiency_unc(df, score_column, working_point, isSignal, bUpper):
+    df = df.query("isSignal == 1") if isSignal else df.query("isSignal == 0")
+    k = len(df[df[score_column] >= working_point])
+    n = len(df)
     teff = ROOT.TEfficiency()
     return teff.Bayesian(n, k, 0.683, 1.0, 1.0, bUpper, True) if n != 0 else np.nan
 
-def get_background_efficiency_unc(df, score_column, working_point, bUpper):
-    df_bkg = df.query("matchedToGenEle == 0")
-    k = len(df_bkg[df_bkg[score_column] >= working_point])
-    n = len(df_bkg)
-    teff = ROOT.TEfficiency()
-    return teff.Bayesian(n, k, 0.683, 1.0, 1.0, bUpper, True) if n != 0 else np.nan
+def plot_turnon_curve(df_group, group, wp80, wp90, isSignal=True, ax=None):
+    if ax is None:
+        ax = plt.gca()
+    wp80_eff = df_group.groupby(group).apply(lambda df : get_efficiency(df, "score", wp80, isSignal))
+    wp90_eff = df_group.groupby(group).apply(lambda df : get_efficiency(df, "score", wp90, isSignal))
+    wp80_eff_unc_upper = df_group.groupby(group).apply(lambda df : get_efficiency_unc(df, "score", wp80, isSignal=isSignal, bUpper=True))
+    wp80_eff_unc_lower = df_group.groupby(group).apply(lambda df : get_efficiency_unc(df, "score", wp80, isSignal=isSignal, bUpper=False))
+    wp90_eff_unc_upper = df_group.groupby(group).apply(lambda df : get_efficiency_unc(df, "score", wp90, isSignal=isSignal, bUpper=True))
+    wp90_eff_unc_lower = df_group.groupby(group).apply(lambda df : get_efficiency_unc(df, "score", wp90, isSignal=isSignal, bUpper=False))
+    wp80_eff.plot(label="WP80", ax=ax, marker='.', color='b')
+    wp90_eff.plot(label="WP90", ax=ax, marker='.', color='g')
+    ax.fill_between(wp80_eff_unc_upper.index.values, wp80_eff_unc_lower.values, wp80_eff_unc_upper.values, alpha=0.3, color='b')
+    ax.fill_between(wp90_eff_unc_upper.index.values, wp90_eff_unc_lower.values, wp90_eff_unc_upper.values, alpha=0.3, color='g')
 
 def fpreproc(dtrain, dtest, param):
     label = dtrain.get_label()
@@ -186,13 +210,13 @@ if __name__ == '__main__':
                 ]
     features += ['BToKEE_minDR', 'BToKEE_maxDR']
     features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
-    features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
+    #features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
     features += ['BToKEE_ptImbalance']
-    #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+    features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
    
 
     features = sorted(features)
-    branches = features + ['BToKEE_fit_massErr']
+    branches = features + ['BToKEE_fit_massErr', 'BToKEE_fit_pt', 'BToKEE_fit_eta', 'BToKEE_q2']
 
     ddf = {}
     ddf['sig'] = get_df(args.signal, branches)
@@ -201,10 +225,10 @@ if __name__ == '__main__':
     ddf['sig'].replace([np.inf, -np.inf], 0.0, inplace=True)
     ddf['bkg'].replace([np.inf, -np.inf], 0.0, inplace=True)
 
-    nSig = ddf['sig'].shape[0]
+    #nSig = ddf['sig'].shape[0]
+    #nBkg = 300000
+    nSig = 300000
     nBkg = 300000
-    #nSig = 10000
-    #nBkg = 10000
     ddf['sig'] = ddf['sig'].sample(frac=1)[:nSig]
     ddf['bkg'] = ddf['bkg'].sample(frac=1)[:nBkg]
 
@@ -384,4 +408,118 @@ if __name__ == '__main__':
     plt.figure()
     xgb.plot_importance(model)
     plt.savefig('training_results_feature_importance_{}.pdf'.format(suffix), bbox_inches='tight')
+
+
+
+    print("Finding working points for new training:")
+    working_points = get_working_points(df, "score")
+    print("")
+
+    n_pt_bins = 100
+    pt_bins = np.linspace(3, 100, n_pt_bins)
+    #pt_bins = np.concatenate((np.linspace(2, 5, n_pt_bins/2, endpoint=False), np.linspace(5, 20, n_pt_bins/2)))
+
+    pt_bin_centers = (pt_bins[:-1] + pt_bins[1:])/2.
+
+    bin_indices = np.digitize(df["BToKEE_fit_pt"], pt_bins) - 1
+    bin_indices[bin_indices == (n_pt_bins-1)] = n_pt_bins - 2
+    df["pt_binned"] = pt_bin_centers[bin_indices]
+
+    n_eta_bins = 100
+    eta_bins = np.linspace(-2.5, 2.5, n_eta_bins)
+    eta_bin_centers = (eta_bins[:-1] + eta_bins[1:])/2.
+
+    bin_indices = np.digitize(df["BToKEE_fit_eta"], eta_bins) - 1
+    bin_indices[bin_indices == (n_eta_bins-1)] = n_eta_bins - 2
+    df["eta_binned"] = eta_bin_centers[bin_indices]
+
+    n_q2_bins = 100
+    q2_bins = np.linspace(1.1, 14.0, n_eta_bins)
+    q2_bin_centers = (q2_bins[:-1] + q2_bins[1:])/2.
+
+    bin_indices = np.digitize(df["BToKEE_q2"], q2_bins) - 1
+    bin_indices[bin_indices == (n_q2_bins-1)] = n_q2_bins - 2
+    df["q2_binned"] = q2_bin_centers[bin_indices]
+
+
+    fig_pt, axes_pt = plt.subplots(2, 1)
+    fig_eta, axes_eta = plt.subplots(2, 1)
+    fig_q2, axes_q2 = plt.subplots(2, 1)
+
+    wp80 = working_points["wp80"]
+    wp90 = working_points["wp90"]
+
+    ax = axes_pt[0]
+    plot_turnon_curve(df, 'pt_binned', wp80, wp90, isSignal=True, ax=ax)
+    ax.set_ylabel("Efficiency", fontsize=12)
+    ax.set_xlabel("")
+    ax.yaxis.set_tick_params(labelsize=12)
+    ax.xaxis.set_tick_params(bottom=False, labelbottom=False)
+    ax.grid(True)
+    #ax.set_title('')
+    ax.legend(loc='lower right')
+
+    ax = axes_pt[1]
+    plot_turnon_curve(df, 'pt_binned', wp80, wp90, isSignal=False, ax=ax)
+    ax.set_yscale('log')
+    ax.set_ylabel("False Alarm Rate", fontsize=12)
+    ax.set_xlabel(r"$p_T(B)$ [GeV]")
+    ax.set_ylim(ymax=0.9)
+    ax.yaxis.set_tick_params(labelsize=12)
+    ax.grid(True)
+    
+
+    ax = axes_eta[0]
+    plot_turnon_curve(df, 'eta_binned', wp80, wp90, isSignal=True, ax=ax)
+    ax.set_ylabel("Efficiency", fontsize=12)
+    ax.set_xlabel("")
+    ax.yaxis.set_tick_params(labelsize=12)
+    ax.xaxis.set_tick_params(bottom=False, labelbottom=False)
+    ax.grid(True)
+    #ax.set_title()
+    ax.legend(loc='lower right')
+
+    ax = axes_eta[1]
+    plot_turnon_curve(df, 'eta_binned', wp80, wp90, isSignal=False, ax=ax)
+    ax.set_yscale('log')
+    ax.set_ylabel("False Alarm Rate", fontsize=12)
+    ax.set_xlabel(r"$\eta(B)$")
+    ax.set_ylim(ymax=0.9)
+    ax.yaxis.set_tick_params(labelsize=12)
+    ax.grid(True)
+
+    ax = axes_q2[0]
+    plot_turnon_curve(df, 'q2_binned', wp80, wp90, isSignal=True, ax=ax)
+    ax.set_ylabel("Efficiency", fontsize=12)
+    ax.set_xlabel("")
+    ax.yaxis.set_tick_params(labelsize=12)
+    ax.xaxis.set_tick_params(bottom=False, labelbottom=False)
+    ax.grid(True)
+    #ax.set_title()
+    ax.legend(loc='lower right')
+
+    ax = axes_q2[1]
+    plot_turnon_curve(df, 'q2_binned', wp80, wp90, isSignal=False, ax=ax)
+    ax.set_yscale('log')
+    ax.set_ylabel("False Alarm Rate", fontsize=12)
+    ax.set_xlabel(r"$q^{2} [GeV^{2}]$")
+    ax.set_ylim(ymax=0.9)
+    ax.yaxis.set_tick_params(labelsize=12)
+    ax.grid(True)
+
+
+    fig_pt.subplots_adjust(hspace=0.05)      
+    fig_eta.subplots_adjust(hspace=0.05)      
+    fig_q2.subplots_adjust(hspace=0.05)      
+
+    fig_pt.savefig('training_results_eff_trunon_pt_{}.pdf'.format(suffix), bbox_inches='tight')
+    fig_eta.savefig('training_results_eff_trunon_eta_{}.pdf'.format(suffix), bbox_inches='tight')
+    fig_q2.savefig('training_results_eff_trunon_q2_{}.pdf'.format(suffix), bbox_inches='tight')
+
+    df = df.drop("pt_binned", axis=1)
+    df = df.drop("eta_binned", axis=1)
+    df = df.drop("q2_binned", axis=1)
+
+
+
 
