@@ -266,17 +266,17 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
         b_upsb_selection = (self._branches['BToKEE_fit_mass'] > B_UP)
 
         #sv_selection = (self._branches['BToKEE_fit_pt'] > 3.0)
-        l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_l1_mvaId'] > 3.0)
-        l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_l2_mvaId'] > 0.0)
+        l1_selection = (self._branches['BToKEE_l1_convVeto']) #& (self._branches['BToKEE_l1_mvaId'] > 3.0)
+        l2_selection = (self._branches['BToKEE_l2_convVeto']) #& (self._branches['BToKEE_l2_mvaId'] > 0.0)
         #k_selection = (self._branches['BToKEE_fit_k_pt'] > 0.7)
         additional_selection = (self._branches['BToKEE_fit_mass'] > B_MIN) & (self._branches['BToKEE_fit_mass'] < B_MAX)
 
         selection = l1_selection & l2_selection
-        selection &= mll_selection
+        #selection &= mll_selection
         selection &= additional_selection
         #selection &= pf_selection
-        selection &= low_selection
-        selection &= b_upsb_selection
+        #selection &= low_selection
+        #selection &= b_upsb_selection
 
         self._branches = self._branches[selection]
 
@@ -309,9 +309,9 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
             self._branches['BToKEE_k_isKaon'] = self._branches['BToKEE_k_genPdgId'].apply(lambda x: True if abs(x) == 321 else False)
             self._branches['BToKEE_decay'] = self._branches.apply(self.DecayCats, axis=1, prefix='BToKEE')
             #self._branches.query('BToKEE_decay == 0', inplace=True) # B->K ll
-            self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
+            #self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
             #self._branches.query('BToKEE_decay == 2', inplace=True) # B->K*(K pi) ll
-            #self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
+            self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
             self._branches['BToKEE_l1_isGen'] = np.where((self._branches['BToKEE_l1_genPartIdx'] > -0.5) & (abs(self._branches['BToKEE_l1_genMotherPdgId']) == 521), True, False)
             self._branches['BToKEE_l2_isGen'] = np.where((self._branches['BToKEE_l2_genPartIdx'] > -0.5) & (abs(self._branches['BToKEE_l2_genMotherPdgId']) == 521), True, False)
             self._branches['BToKEE_k_isGen'] = np.where((self._branches['BToKEE_k_genPartIdx'] > -0.5) & (abs(self._branches['BToKEE_k_genMotherPdgId']) == 521), True, False)

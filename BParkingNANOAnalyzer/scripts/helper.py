@@ -30,5 +30,9 @@ BR_BToKJpsi = 1.01e-3
 BR_JpsiToLL = 0.0597
 BR_BToKLL = 4.51e-7
 
+params_jpsi_pf = {'mean': 5.2676, 'width': 0.06070, 'alpha1': 0.677, 'n1': 1.56, 'alpha2': 1.440, 'n2': 8.9}
+params_jpsi_low = {'mean': 5.2654, 'width': 0.0638, 'alpha1': 0.655, 'n1': 1.75, 'alpha2': 1.509, 'n2': 9.85}
+params_psi2s_low = {'mean': 5.25464, 'width': 0.0822, 'alpha1': 0.642, 'n1': 9.76, 'alpha2': 6.0, 'n2': 2.94}
+
 def Punzi(B, a, b):
   return (b*b)/2.0 + a*np.sqrt(B) + (b/2.0)*np.sqrt(b*b + 4.0*a*np.sqrt(B) + 4.0*B)

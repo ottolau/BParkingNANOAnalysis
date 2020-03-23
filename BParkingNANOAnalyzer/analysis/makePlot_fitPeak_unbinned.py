@@ -35,7 +35,21 @@ def CMS_lumi(isMC):
     mark.DrawLatex(1 - ROOT.gPad.GetRightMargin(), 1 - (ROOT.gPad.GetTopMargin() - 0.017), lumistamp)
 
 
-def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doPartial=False, partialinputfile='part_workspace.root', drawSNR=False, mvaCut=0.0, blinded=False, expS=100):
+def fit(tree, outputfile, **kwargs):
+    sigPDF = kwargs.get('sigPDF', 3)
+    bkgPDF = kwargs.get('bkgPDF', 2)
+    fitJpsi = kwargs.get('fitJpsi', False)
+    isMC = kwargs.get('isMC', False)
+    doPartial = kwargs.get('doPartial', False)
+    partialinputfile = kwargs.get('partialinputfile', 'part_workspace.root')
+    doPsi2S = kwargs.get('doPsi2S', False)
+    psi2sinputfile = kwargs.get('psi2sinputfile', 'psi2s_workspace.root')
+    drawSNR = kwargs.get('drawSNR', False)
+    mvaCut = kwargs.get('mvaCut', 0.0)
+    blinded = kwargs.get('blinded', False)
+    expS = kwargs.get('expS', 0)
+    params = kwargs.get('params', {})
+
     msgservice = ROOT.RooMsgService.instance()
     msgservice.setGlobalKillBelow(RooFit.FATAL)
     wspace = ROOT.RooWorkspace('myWorkSpace')
@@ -57,13 +71,9 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
     else:
       bMass = ROOT.RooRealVar("BToKEE_fit_mass", "m(K^{+}e^{+}e^{-})", 4.0, 6.0, "GeV")
       dieleMass = ROOT.RooRealVar("BToKEE_mll_fullfit", "m(e^{+}e^{-})", 2.0, 5.0, "GeV")
-      if isMC:
-        xmin, xmax = FIT_LOW, FIT_UP
-        wspace.factory('mean[5.272e+00, 5.22e+00, 5.3e+00]')
-      else:
-        xmin, xmax = FIT_LOW, FIT_UP
-        #wspace.factory('mean[5.2676, 5.2676, 5.2676]')
-        wspace.factory('mean[5.2654, 5.2654, 5.2654]')
+      xmin, xmax = FIT_LOW, FIT_UP
+      #xmin, xmax = 4.5, FIT_UP
+      wspace.factory('mean[5.272e+00, 5.22e+00, 5.3e+00]')
       thevars.add(dieleMass)
 
     thevars.add(bMass)
@@ -107,27 +117,12 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
 
     if sigPDF == 3:
         # Double-sided Crystal-ball
-        if isMC:
-          wspace.factory('width[4.1858e-02, 1.0e-6, 5.0e-1]')
-          wspace.factory('alpha1[1.0, 0.0, 10.0]')
-          wspace.factory('n1[1.0, 1.0, 10.0]')
-          wspace.factory('alpha2[1.0, 0.0, 10.0]')
-          wspace.factory('n2[1.0, 1.0, 10.0]')
-        else:
-          # PF
-          #wspace.factory('width[0.06070, 0.06070, 0.06070]')
-          #wspace.factory('alpha1[0.677, 0.677, 0.677]')
-          #wspace.factory('n1[1.56, 1.56, 1.56]')
-          #wspace.factory('alpha2[1.440, 1.440, 1.440]')
-          #wspace.factory('n2[8.9, 8.9, 8.9]')
-
-          # Low
-          wspace.factory('width[0.0638, 0.0638, 0.0638]')
-          wspace.factory('alpha1[0.655, 0.655, 0.655]')
-          wspace.factory('n1[1.75, 1.75, 1.75]')
-          wspace.factory('alpha2[1.509, 1.509, 1.509]')
-          wspace.factory('n2[9.85, 9.85, 9.85]')
-
+        #if isMC:
+        wspace.factory('width[4.1858e-02, 1.0e-6, 5.0e-1]')
+        wspace.factory('alpha1[1.0, 0.0, 10.0]')
+        wspace.factory('n1[1.0, 1.0, 10.0]')
+        wspace.factory('alpha2[1.0, 0.0, 10.0]')
+        wspace.factory('n2[1.0, 1.0, 10.0]')
         wspace.factory('GenericPdf::sig("DoubleCBFast(x,mean,width,alpha1,n1,alpha2,n2)", {x,mean,width,alpha1,n1,alpha2,n2})')
 
     if sigPDF == 4:
@@ -166,12 +161,41 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
         wp = wpf.Get("myPartialWorkSpace")
         partial = wp.pdf("partial")
         getattr(wspace, "import")(partial, RooFit.Rename("partial"))
-        wspace.factory('SUM::model1(f1[0.5,0.0,1.0]*partial,bkg)')
+        if doPsi2S:
+          wpf2 = ROOT.TFile(psi2sinputfile,"READ")
+          wp2 = wpf2.Get("myPartialWorkSpace")
+          psi2s = wp2.pdf("psi2s")
+          getattr(wspace, "import")(psi2s, RooFit.Rename("psi2s"))
+          wspace.factory('SUM::model2(f1[0.8,0.0,1.0]*partial,psi2s)')
+          print('Finished loading KDE!')
+          wspace.factory('SUM::model1(f2[0.5,0.0,1.0]*model2,bkg)')
+        else:
+          wspace.factory('SUM::model1(f1[0.5,0.0,1.0]*partial,bkg)')
         print('Finished loading KDE!')
         wspace.factory('SUM::model(nsig*sig,nbkg*model1)')
 
       else:
         wspace.factory('SUM::model(nsig*sig,nbkg*bkg)')
+
+      mean = wspace.var('mean')
+      width = wspace.var('width')
+      alpha1 = wspace.var('alpha1')
+      n1 = wspace.var('n1')
+      alpha2 = wspace.var('alpha2')
+      n2 = wspace.var('n2')
+      mean.setVal(params['mean'])
+      width.setVal(params['width'])
+      alpha1.setVal(params['alpha1'])
+      n1.setVal(params['n1'])
+      alpha2.setVal(params['alpha2'])
+      n2.setVal(params['n2'])
+      mean.setConstant(True)
+      width.setConstant(True)
+      alpha1.setConstant(True)
+      n1.setConstant(True)
+      alpha2.setConstant(True)
+      n2.setConstant(True)
+
     else:
       wspace.factory('ExtendPdf::model(sig,nsig)')
             
@@ -247,6 +271,8 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
       model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.Range("Full"),RooFit.Normalization(nd, ROOT.RooAbsReal.Relative),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(42),RooFit.LineColor(42),RooFit.LineWidth(1),RooFit.MoveToBack())
       if doPartial:
         model.plotOn(xframe,RooFit.Name("partial"),RooFit.Components("bkg,partial"),RooFit.Range("Full"),RooFit.Normalization(nd, ROOT.RooAbsReal.Relative),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(40),RooFit.LineColor(40),RooFit.LineWidth(1),RooFit.MoveToBack()) ;
+      if doPsi2S:
+        model.plotOn(xframe,RooFit.Name("psi2s"),RooFit.Components("bkg,partial,psi2s"),RooFit.Range("Full"),RooFit.Normalization(nd, ROOT.RooAbsReal.Relative),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(46),RooFit.LineColor(46),RooFit.LineWidth(1),RooFit.MoveToBack()) ;
       model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.Range("Full"),RooFit.Normalization(nd, ROOT.RooAbsReal.Relative),RooFit.DrawOption("L"),RooFit.LineStyle(2),RooFit.LineColor(1)) ;
 
 
@@ -285,6 +311,8 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
       #pt = ROOT.TPaveText(0.72,0.30,0.92,0.63,"brNDC")
       if doPartial:
         legend.AddEntry(xframe.findObject("partial"),"Partially Reco.","f");
+      if doPsi2S:
+        legend.AddEntry(xframe.findObject("psi2s"),"B^{+}#rightarrow K^{+} #psi (2S)(#rightarrow e^{+}e^{-})","f");
       legend.AddEntry(xframe.findObject("sig"),"B^{+}#rightarrow K^{+} e^{+}e^{-}" if blinded else "B^{+}#rightarrow K^{+} J/#psi(#rightarrow e^{+}e^{-})","l");
 
     legend.SetTextFont(42);
@@ -317,7 +345,7 @@ def fit(tree, outputfile, sigPDF=3, bkgPDF=2, fitJpsi=False, isMC=False, doParti
     else:
       return 0.0, 0.0, 0.0
 
-def fit_kde(tree, outputfile, isMC=True):
+def fit_kde(tree, outputfile, isMC=True, pdfname='partial'):
     #msgservice = ROOT.RooMsgService.instance()
     #msgservice.setGlobalKillBelow(RooFit.FATAL)
     wspace = ROOT.RooWorkspace('myPartialWorkSpace')
@@ -353,8 +381,8 @@ def fit_kde(tree, outputfile, isMC=True):
     # make the set obs known to Python
     obs  = wspace.set('obs')
     #wspace.factory('KeysPdf::partial(x,data,MirrorBoth,2.0)')
-    wspace.factory('KeysPdf::partial(x,data,MirrorLeft,2.0)')
-    model = wspace.pdf('partial')
+    wspace.factory('KeysPdf::{0}(x,data,MirrorLeft,2.0)'.format(pdfname))
+    model = wspace.pdf(pdfname)
 
     # Plot results of fit on a different frame
     c2 = ROOT.TCanvas('fig_binnedFit', 'fit', 800, 600)
@@ -412,15 +440,18 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--inputfile", dest="inputfile", default="", help="Input file")
     parser.add_argument("-o", "--outputfile", dest="outputfile", default="", help="Output file")
     parser.add_argument("-p", "--partial", dest="partial", action="store_true", help="Fit partially reconstructed background")
+    parser.add_argument("-n", "--pdfname", dest="pdfname", default="partial", help="PDF name of the Partially reconstructed background")
     args = parser.parse_args()
+    
+    params = {'mean': 5.2654, 'width': 0.0638, 'alpha1': 0.655, 'n1': 1.75, 'alpha2': 1.509, 'n2': 9.85}
 
     tree = ROOT.TChain('tree')
     tree.AddFile(args.inputfile)
     if not args.partial:
       fit(tree, args.outputfile, fitJpsi=False, isMC=True)
       #fit(tree, args.outputfile, doPartial=True)
-      #fit(tree, args.outputfile, doPartial=True, partialinputfile='part_workspace_resonant_pf.root', drawSNR=True, mvaCut=7.0)
+      #fit(tree, args.outputfile, doPartial=True, partialinputfile='part_workspace_resonant_low.root', drawSNR=True, mvaCut=7.0, params=params)
     else:
-      fit_kde(tree, args.outputfile)
+      fit_kde(tree, args.outputfile, pdfname=args.pdfname)
     
 

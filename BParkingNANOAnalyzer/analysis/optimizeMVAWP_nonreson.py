@@ -8,6 +8,7 @@ from root_numpy import fill_hist, array2root, array2tree
 from root_pandas import to_root
 import ROOT
 from ROOT import RooFit
+import itertools
 import makePlot_fitPeak_unbinned as fit_unbinned
 import sys
 sys.path.append('../')
@@ -98,58 +99,82 @@ outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
                   'BToKEE_keras_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
                   }
 
-def plotSNR(cut, sig, sigError, bkg, CutBasedWP):
-    '''
+def plotSNR(cut, results):
     fig, ax1 = plt.subplots()
-    #plt.grid(linestyle='--')
-    snr_line, = ax1.plot(cut, sig/np.sqrt(sig+bkg), 'b-', label=r'$S/\sqrt{S+B}$')
-    snr_cb_line = ax1.axhline(y=CutBasedWP['SNR'], color='g', linestyle='-.')
+    snr_jpsi, = ax1.plot(cut, results['SNR_jpsi'], 'bo', label=r'$J/\psi: S/\sqrt{S+B}$')
     ax1.set_xlabel(r'MVA Cut')
-    ax1.set_ylabel(r'$S/\sqrt{S+B}$')
-    #ax1.set_ylim(ymin=0)
+    ax1.set_ylabel(r'$J/\psi: S/\sqrt{S+B}$')
+    ax1.yaxis.label.set_color('b')
     for t1 in ax1.get_yticklabels():
         t1.set_color('b')
-
-    lower_bound = [s-serror for (s, serror) in zip(sig, sigError)]
-    upper_bound = [s+serror for (s, serror) in zip(sig, sigError)]
-
     ax2 = ax1.twinx()
-    s_line, = ax2.plot(cut, sig, 'r-', label=r'Number of signals')
-    s_cb_line = ax2.axhline(y=CutBasedWP['S'], color='c', linestyle='-.')
-    ax2.fill_between(cut, lower_bound, upper_bound, facecolor='yellow', alpha=0.5)
-    ax2.set_ylabel(r'Number of signals')
-    ax2.set_ylim(ymin=0)
+    snr_nonresonant, = ax2.plot(cut, results['SNR_nonresonant'], 'ro', label=r'Non-resonant: $S/\sqrt{S+B}$')
+    #ax2.fill_between(cut, lower_bound, upper_bound, facecolor='yellow', alpha=0.5)
+    ax2.set_ylabel(r'Non-resonant: $S/\sqrt{S+B}$')
+    ax2.yaxis.label.set_color('r')
     for t1 in ax2.get_yticklabels():
         t1.set_color('r')
-    #ax2.legend(loc='upper left')
-    #lns = lns1+lns2
-    #labs = [l.get_label() for l in lns]
-    #ax2.legend(lns, labs, loc='upper left')
-    #fig.legend(loc=2, bbox_to_anchor=(0,1), bbox_transform=ax2.transAxes)
-    handles = [snr_line, s_line, snr_cb_line, s_cb_line]
-    labels = [r'Keras: $S/\sqrt{S+B}$', r'Keras: Number of signals', r'Cut-based: $S/\sqrt{S+B}$', r'Cut-based: Number of signals']
+    handles = [snr_jpsi, snr_nonresonant]
+    labels = [r'$J/\psi: S/\sqrt{S+B}$', r'Non-resonant: $S/\sqrt{S+B}$']
     #fig.legend(handles=handles, labels=labels, loc=1, bbox_to_anchor=(1,1), bbox_transform=ax2.transAxes)
     #fig.legend(handles=handles, labels=labels, loc=2, bbox_to_anchor=(0,1), bbox_transform=ax2.transAxes)
     fig.legend(handles=handles, labels=labels, loc=3, bbox_to_anchor=(0,0), bbox_transform=ax2.transAxes)
     fig.savefig('{}_SNRPlot.pdf'.format(args.outputfile), bbox_inches='tight')
-    '''
-    
-    fig3, ax3 = plt.subplots()
-    plt.grid(linestyle='--')
-    ax3.plot(sig, sig/np.sqrt(sig+bkg), 'bo', label='XGB')
-    #ax3.plot(CutBasedWP['S'], CutBasedWP['SNR'], 'r*', label='Cut-based')
-    ax3.set_xlabel(r'S')
-    ax3.set_ylabel(r'$S/\sqrt{S+B}$')
-    ax3.legend(loc=2)
-    fig3.savefig('{}_S_SNRPlot.pdf'.format(args.outputfile), bbox_inches='tight')
+
+    fig, ax1 = plt.subplots()
+    lower_bound_jpsi = [s-serror for (s, serror) in zip(results['S_jpsi'], results['SErr_jpsi'])]
+    upper_bound_jpsi = [s+serror for (s, serror) in zip(results['S_jpsi'], results['SErr_jpsi'])]
+    lower_bound_nonresonant = [s-serror for (s, serror) in zip(results['S_nonresonant'], results['SErr_nonresonant'])]
+    upper_bound_nonresonant = [s+serror for (s, serror) in zip(results['S_nonresonant'], results['SErr_nonresonant'])]
+    s_jpsi, = ax1.plot(cut, results['S_jpsi'], 'b-', label=r'$J/\psi$: Number of signals')
+    ax1.fill_between(cut, lower_bound_jpsi, upper_bound_jpsi, facecolor='blue', alpha=0.5)
+    ax1.set_xlabel(r'MVA Cut')
+    ax1.set_ylabel(r'$J/\psi$: Number of signals')
+    ax1.yaxis.label.set_color('b')
+    for t1 in ax1.get_yticklabels():
+        t1.set_color('b')
+    ax2 = ax1.twinx()
+    s_nonresonant, = ax2.plot(cut, results['S_nonresonant'], 'r-', label=r'Non-resonant: Number of signals')
+    ax2.fill_between(cut, lower_bound_nonresonant, upper_bound_nonresonant, facecolor='red', alpha=0.5)
+    ax2.set_ylabel(r'Non-resonant: Number of signals')
+    ax2.yaxis.label.set_color('r')
+    for t1 in ax2.get_yticklabels():
+        t1.set_color('r')
+    handles = [s_jpsi, s_nonresonant]
+    labels = [r'$J/\psi$: Number of signals', r'Non-resonant: Number of signals']
+    fig.legend(handles=handles, labels=labels, loc=3, bbox_to_anchor=(0,0), bbox_transform=ax2.transAxes)
+    fig.savefig('{}_SPlot.pdf'.format(args.outputfile), bbox_inches='tight')
+
+    fig, ax1 = plt.subplots()
+    b_jpsi, = ax1.plot(cut, results['B_jpsi'], 'b-', label=r'$J/\psi$: Number of background')
+    ax1.set_xlabel(r'MVA Cut')
+    ax1.set_ylabel(r'$J/\psi$: Number of background')
+    ax1.yaxis.label.set_color('b')
+    for t1 in ax1.get_yticklabels():
+        t1.set_color('b')
+    ax2 = ax1.twinx()
+    b_nonresonant, = ax2.plot(cut, results['B_nonresonant'], 'r-', label=r'Non-resonant: Number of background')
+    ax2.set_ylabel(r'Non-resonant: Number of background')
+    ax2.yaxis.label.set_color('r')
+    for t1 in ax2.get_yticklabels():
+        t1.set_color('r')
+    handles = [b_jpsi, b_nonresonant]
+    labels = [r'$J/\psi$: Number of background', r'Non-resonant: Number of background']
+    fig.legend(handles=handles, labels=labels, loc=1, bbox_to_anchor=(1,1), bbox_transform=ax2.transAxes)
+    fig.savefig('{}_BPlot.pdf'.format(args.outputfile), bbox_inches='tight')
 
 
 if __name__ == "__main__":
   inputfile = args.inputfile.replace('.root','').replace('.h5','')+'.root'
   outputfile = args.outputfile.replace('.root','').replace('.h5','')
 
-  partial_resonant = 'part_workspace_resonant_low.root'
+  partial_jpsi = 'part_workspace_jpsi_low.root'
+  #partial_jpsi = 'psi2s_workspace_jpsi_low.root'
   partial_nonresonant = 'part_workspace_nonresonant_low.root' 
+  psi2s_jpsi = 'psi2s_workspace_jpsi_low.root'
+  params_jpsi = params_jpsi_low
+  params_nonresonant = params_jpsi_low
+
   drawSNR = True
 
   events = uproot.open(inputfile)['tree']
@@ -158,41 +183,51 @@ if __name__ == "__main__":
 
   output_branches = {}
 
-  SList_R = []
-  SErrList_R = []
-  BList_R = []
-  SList_NR = []
-  SErrList_NR = []
-  BList_NR = []
+  results = {'{}_{}'.format(quantity, region): [] for quantity, region in itertools.product(['S', 'SErr', 'B', 'SNR'], ['nonresonant', 'jpsi', 'psi2s'])}
 
   mvaCutList = np.linspace(12.0, 17.0, 20)
   for mvaCut in mvaCutList:
     # mva selection
-    mva_selection = (branches['BToKEE_xgb'] > mvaCut) #& (branches['BToKEE_l1_mvaId'] > 4.24) & (branches['BToKEE_l2_mvaId'] > 4.24)#& (branches['BToKEE_Dmass'] > 1.9)
-    resonant_selection = (branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_UP) #& ((branches['BToKEE_fit_mass'] < BLIND_LOW) | (branches['BToKEE_fit_mass'] > BLIND_UP))
-    resonant_branches = np.array(branches[mva_selection & resonant_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
-    resonant_tree = array2tree(resonant_branches)
-    S_R, SErr_R, B_R = fit_unbinned.fit(resonant_tree, outputfile + '_resonant_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf', doPartial=True, partialinputfile=partial_resonant, drawSNR=drawSNR, mvaCut=mvaCut, blinded=False)
-    expS = S_R * BR_BToKLL / (BR_BToKJpsi * BR_JpsiToLL) * (12091.0/44024)
+    mva_selection = (branches['BToKEE_xgb'] > mvaCut)
 
-    nonresonant_selection = (branches['BToKEE_mll_fullfit'] > NR_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_LOW) #& ((branches['BToKEE_fit_mass'] < BLIND_LOW) | (branches['BToKEE_fit_mass'] > BLIND_UP))
-    #nonresonant_selection = (branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_UP) & ((branches['BToKEE_fit_mass'] < BLIND_LOW) | (branches['BToKEE_fit_mass'] > BLIND_UP))
+    # j/psi selection
+    jpsi_selection = (branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_UP)
+    jpsi_branches = np.array(branches[mva_selection & jpsi_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
+    jpsi_tree = array2tree(jpsi_branches)
 
+    S_jpsi, SErr_jpsi, B_jpsi = fit_unbinned.fit(jpsi_tree, outputfile + '_jpsi_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf', doPartial=True, partialinputfile=partial_jpsi, drawSNR=drawSNR, mvaCut=mvaCut, blinded=False, params=params_jpsi)
+    results['S_jpsi'].append(S_jpsi)
+    results['SErr_jpsi'].append(SErr_jpsi)
+    results['B_jpsi'].append(B_jpsi)
+    results['SNR_jpsi'].append(S_jpsi/np.sqrt(S_jpsi + B_jpsi))
+
+    expS = S_jpsi * BR_BToKLL / (BR_BToKJpsi * BR_JpsiToLL) * (12091.0/44024)
+
+    # psi(2s) selection
+    '''
+    psi2s_selection = (branches['BToKEE_mll_fullfit'] > JPSI_UP) & (branches['BToKEE_mll_fullfit'] < PSI2S_UP)
+    psi2s_branches = np.array(branches[mva_selection & psi2s_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
+    psi2s_tree = array2tree(psi2s_branches)
+
+    S_psi2s, SErr_psi2s, B_psi2s = fit_unbinned.fit(psi2s_tree, outputfile + '_psi2s_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf', doPartial=True, partialinputfile=partial_psi2s, drawSNR=drawSNR, mvaCut=mvaCut, blinded=False, params=params_psi2s)
+    results['S_psi2s'].append(S_psi)
+    results['SErr_psi2s'].append(SErr_psi2s)
+    results['B_psi2s'].append(B_psi2s)
+    results['SNR_psi2s'].append(S_psi2s/np.sqrt(S_psi2s + B_psi2s))
+    '''
+
+    nonresonant_selection = (branches['BToKEE_mll_fullfit'] > NR_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_LOW)
     nonresonant_branches = np.array(branches[mva_selection & nonresonant_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
     nonresonant_tree = array2tree(nonresonant_branches)
-    S_NR, SErr_NR, B_NR = fit_unbinned.fit(nonresonant_tree, outputfile + '_nonresonant_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf', doPartial=True, partialinputfile=partial_nonresonant, drawSNR=drawSNR, mvaCut=mvaCut, blinded=True, expS=expS)
-    #S_NR, SErr_NR, B_NR = fit_unbinned.fit(nonresonant_tree, outputfile + '_nonresonant_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf', doPartial=True, partialinputfile=partial_resonant, drawSNR=True, mvaCut=mvaCut, blinded=True, expS=expS)
+    S_NR, SErr_NR, B_NR = fit_unbinned.fit(nonresonant_tree, outputfile + '_nonresonant_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf', doPartial=True, partialinputfile=partial_nonresonant, drawSNR=drawSNR, mvaCut=mvaCut, blinded=True, expS=expS, params=params_nonresonant)
+    results['S_nonresonant'].append(S_NR)
+    results['SErr_nonresonant'].append(SErr_NR)
+    results['B_nonresonant'].append(B_NR)
+    results['SNR_nonresonant'].append(S_NR/np.sqrt(S_NR + B_NR))
 
+    print('MVA: {}\n\tJ/psi - S: {}, B: {}, S/sqrt(S+B): {}\n\tNon-resonant - S: {}, B: {}, S/sqrt(S+B): {}'.format(mvaCut, S_jpsi, B_jpsi, S_jpsi/np.sqrt(S_jpsi+B_jpsi), S_NR, B_NR, S_NR/np.sqrt(S_NR+B_NR)))
 
-    print('MVA: {}\n\tResonant - S: {}, B: {}, S/sqrt(S+B): {}\n\tNon-resonant - S: {}, B: {}, S/sqrt(S+B): {}'.format(mvaCut, S_R, B_R, S_R/np.sqrt(S_R+B_R), S_NR, B_NR, S_NR/np.sqrt(S_NR+B_NR)))
-    SList_R.append(S_R)
-    SErrList_R.append(SErr_R)
-    BList_R.append(B_R)
-
-  SList_R = np.array(SList_R)
-  SErrList_R = np.array(SErrList_R)
-  BList_R = np.array(BList_R)
-  SNR_R = SList_R / np.sqrt(SList_R + BList_R)
+  results = {key: np.array(value) for key, value in results.items()}
 
   df_roc = pd.read_csv('training_results_roc_csv_18Mar2020_fullq2_isoMVADRptImb_weighted_pauc02_low.csv')
   fpr = df_roc['fpr'].values
@@ -206,7 +241,7 @@ if __name__ == "__main__":
   ax.plot(np.logspace(-5, 0, 1000), np.logspace(-5, 0, 1000), linestyle='--', color='k')
   ax.scatter(wp_fpr, wp_tpr, c='r', label="Working point")
   for i, mva in enumerate(mvaCutList):
-    ax.annotate("{0:.2f}, SNR: {1:.1f}".format(mva, SNR_R[i]), (wp_fpr[i], wp_tpr[i]), fontsize=10, xytext=(10,-20), textcoords="offset points", arrowprops=dict(arrowstyle="->"))
+    ax.annotate("{0:.2f}, SNR: {1:.1f}".format(mva, results['SNR_jpsi'][i]), (wp_fpr[i], wp_tpr[i]), fontsize=10, xytext=(10,-20), textcoords="offset points", arrowprops=dict(arrowstyle="->"))
   ax.set_xlim([1.0e-5, 1.0])
   ax.set_ylim([0.0, 1.0])
   ax.set_xscale('log')
@@ -216,9 +251,9 @@ if __name__ == "__main__":
   ax.legend(loc='lower right', fontsize=10)
   fig.savefig('{}_roc_curve.pdf'.format(args.outputfile), bbox_inches='tight')
 
-  argmax_SNR_R = np.argmax(SNR_R)
-  print('Best SNR: {}, Best cut: {}'.format(np.max(SNR_R), mvaCutList[argmax_SNR_R]))
-  plotSNR(mvaCutList, SList_R, SErrList_R, BList_R, {})
+  #argmax_SNR_R = np.argmax(SNR_R)
+  #print('Best SNR: {}, Best cut: {}'.format(np.max(SNR_R), mvaCutList[argmax_SNR_R]))
+  plotSNR(mvaCutList, results)
 
   '''
   if args.hist:

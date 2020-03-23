@@ -217,7 +217,7 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description="A simple ttree plotter")
     parser.add_argument("-s", "--signal", dest="signal", default="RootTree_2020Jan16_BuToKee_all_BToKEEAnalyzer_2020Mar06_fullq2_low.root", help="Signal file")
-    parser.add_argument("-b", "--background", dest="background", default="RootTree_2020Jan16_Run2018ABCD_random30_BToKEEAnalyzer_2020Mar15_fullq2_upSB_low.root", help="Background file")
+    parser.add_argument("-b", "--background", dest="background", default="RootTree_2020Jan16_Run2018ABCD_random30_BToKEEAnalyzer_2020Mar22_fullq2_upSB_low.root", help="Background file")
     parser.add_argument("-f", "--suffix", dest="suffix", default=None, help="Suffix of the output name")
     parser.add_argument("-o", "--optimization", dest="optimization", action='store_true', help="Perform Bayesian optimization")
     args = parser.parse_args()
@@ -269,7 +269,7 @@ if __name__ == '__main__':
     n_calls = 80
     n_random_starts = 40
     do_bo = args.optimization
-    do_cv = False
+    do_cv = True
     best_params = {'colsample_bytree': 0.9941558266562529, 'min_child_weight': 3, 'subsample': 0.8093116877101184, 'eta': 0.06016397615851377, 'alpha': 2.4938889169897323, 'max_depth': 7, 'gamma': 2.617369630201258, 'lambda': 3.3796763511036194}
 
     # split X and y up in train and test samples
@@ -445,7 +445,7 @@ if __name__ == '__main__':
     df["eta_binned"] = get_bins_center(df["BToKEE_fit_eta"], eta_bins)
 
     n_q2_bins = 100
-    q2_bins = np.linspace(1.1, 14.0, n_q2_bins)
+    q2_bins = np.linspace(0.045, 14.8, n_q2_bins)
     df["q2_binned"] = get_bins_center(df["BToKEE_q2"], q2_bins)
 
     n_mvaId_bins = 100

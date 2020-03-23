@@ -9,7 +9,8 @@ import random
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/BdToKstarJpsi_ToKPiee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BdToKstarJpsi_Toee/200116_220459/0000/']
 #mypath2 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb26/BuToKee_MufilterPt6_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKee_ext/200226_210729/0000/']
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb26/BuToKJpsi_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKJpsi_Toee/200226_153915/0000/']
-mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Mar22/BuToKPsi2S_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKPsi2S_Toee/200322_185610/0000/']
+#mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Mar22/BuToKPsi2S_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKPsi2S_Toee/200322_185610/0000/']
+mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Mar22/BdToKstarPsi2S_ToKPiee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BdToKstarPsi2S_Toee/200322_185719/0000/']
 
 '''
 mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH1/crab_data_Run2018A_part1/200116_150535/0000/',
@@ -113,7 +114,8 @@ filelist = ['{}{}'.format(redirector, f.replace('/eos/cms/','')) for f in fileli
 #outputFile = open('BParkingNANO_2020Jan16_Run2018ABCD_random30.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BuToKee_all.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BuToKJpsi_Toee_svprob0.list', 'w+')
-outputFile = open('BParkingNANO_2020Jan16_BuToKPsi2S_Toee.list', 'w+')
+#outputFile = open('BParkingNANO_2020Jan16_BuToKPsi2S_Toee.list', 'w+')
+outputFile = open('BParkingNANO_2020Jan16_BdToKstarPsi2S_ToKPiee.list', 'w+')
 
 for f in filelist:
     outputFile.write('%s\n'%(f))

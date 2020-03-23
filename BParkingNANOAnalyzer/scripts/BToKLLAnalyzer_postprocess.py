@@ -130,10 +130,10 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         all_selection = pf_selection | low_pfveto_selection | mix_net_selection 
 
         # general selection
-        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_UP) # full q2
+        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) & (self._branches['BToKEE_mll_fullfit'] < PSI2S_UP) # full q2
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_LOW) #low q2
-        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_UP) # Jpsi
-        mll_selection = (self._branches['BToKEE_mll_fullfit'] > JPSI_UP) & (self._branches['BToKEE_mll_fullfit'] < PSI2S_UP) # psi(2S)
+        mll_selection = (self._branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_UP) # Jpsi
+        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > JPSI_UP) & (self._branches['BToKEE_mll_fullfit'] < PSI2S_UP) # psi(2S)
         b_upsb_selection = (self._branches['BToKEE_fit_mass'] > B_UP)
         b_bothsb_selection = ((self._branches['BToKEE_fit_mass'] > B_SB_LOW) & (self._branches['BToKEE_fit_mass'] < B_LOW)) | ((self._branches['BToKEE_fit_mass'] > B_UP) & (self._branches['BToKEE_fit_mass'] < B_SB_UP))
         d_veto_selection = self._branches['BToKEE_Dmass'] > D_MASS_CUT
@@ -144,7 +144,7 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         general_selection = l1_selection & l2_selection
         #general_selection = d_veto_selection
         #general_selection &= (self._branches['BToKEE_eleEtaCats'] == 0)
-        #general_selection &= mll_selection
+        general_selection &= mll_selection
         #general_selection &= pf_selection
         general_selection &= low_selection
         #general_selection &= mix_net_selection
