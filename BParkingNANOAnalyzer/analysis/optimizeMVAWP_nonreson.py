@@ -9,8 +9,9 @@ from root_pandas import to_root
 import ROOT
 from ROOT import RooFit
 import itertools
+import PyPDF2
 import makePlot_fitPeak_unbinned as fit_unbinned
-import sys
+import os, sys, copy
 sys.path.append('../')
 from scripts.helper import *
 
@@ -163,17 +164,54 @@ def plotSNR(cut, results):
     fig.legend(handles=handles, labels=labels, loc=1, bbox_to_anchor=(1,1), bbox_transform=ax2.transAxes)
     fig.savefig('{}_BPlot.pdf'.format(args.outputfile), bbox_inches='tight')
 
+    fig, ax1 = plt.subplots()
+    ax1.plot(cut, results['S_jpsi']/results['S_psi2s'])
+    ax1.set_xlabel(r'MVA Cut')
+    ax1.set_ylabel(r'$N(J/\psi) / N(\psi (2S))$')
+    fig.savefig('{}_Jpsi2Psi2SRatio.pdf'.format(args.outputfile), bbox_inches='tight')
+
+def pdf_combine(pdf_list, outputfile):
+    merger = PyPDF2.PdfFileMerger()
+    for pdf in pdf_list:
+        merger.append(pdf)
+    merger.write(outputfile)
+
+def pdf_sidebyside(out, inputfile):
+    output = PyPDF2.PdfFileWriter()
+    reader = [PyPDF2.PdfFileReader(file(in1, "rb")) for in1 in inputfile]
+    m = min([in1.getNumPages() for in1 in reader])
+    print("common pages",m)
+    for i in range(0,m):
+        print "adding page common",i
+        p = [in1.getPage(i) for in1 in reader]
+        nPages = len(p)
+        p1 = p[0]
+        offset_x = 0.0
+        for i, p2 in enumerate(p[1:]):
+            offset_y = -(i+1)*p1.cropBox[1] + (i+1)*p1.cropBox[3]
+            p1.mergeTranslatedPage(p2, offset_x, offset_y, expand=True)
+        bounding_box = copy.deepcopy(p1.cropBox)
+        p1.trimBox.lowerLeft = (bounding_box[0], bounding_box[1])
+        p1.trimBox.upperRight = (bounding_box[2], bounding_box[1] + nPages*(bounding_box[3] - bounding_box[1]))
+        p1.cropBox.lowerLeft = (bounding_box[0], bounding_box[1])
+        p1.cropBox.upperRight = (bounding_box[2], bounding_box[1] + nPages*(bounding_box[3] - bounding_box[1]))
+        output.addPage(p1)
+    outputStream = file(out, "wb")
+    output.write(outputStream)
+    outputStream.close()
 
 if __name__ == "__main__":
   inputfile = args.inputfile.replace('.root','').replace('.h5','')+'.root'
   outputfile = args.outputfile.replace('.root','').replace('.h5','')
 
-  partial_jpsi = 'part_workspace_jpsi_low.root'
-  #partial_jpsi = 'psi2s_workspace_jpsi_low.root'
-  partial_nonresonant = 'part_workspace_nonresonant_low.root' 
-  psi2s_jpsi = 'psi2s_workspace_jpsi_low.root'
-  params_jpsi = params_jpsi_low
-  params_nonresonant = params_jpsi_low
+  eleType = 'low'
+  partial_jpsi = 'part_workspace_jpsi_{}.root'.format(eleType)
+  partial_psi2s = 'part_workspace_psi2s_{}.root'.format(eleType)
+  partial_nonresonant = 'part_workspace_nonresonant_{}.root'.format(eleType)
+  psi2s_jpsi = 'psi2s_workspace_jpsi_{}.root'.format(eleType)
+  params_jpsi = eval('params_jpsi_{}'.format(eleType))
+  params_psi2s = eval('params_psi2s_{}'.format(eleType))
+  params_nonresonant = eval('params_jpsi_{}'.format(eleType))
 
   drawSNR = True
 
@@ -184,48 +222,98 @@ if __name__ == "__main__":
   output_branches = {}
 
   results = {'{}_{}'.format(quantity, region): [] for quantity, region in itertools.product(['S', 'SErr', 'B', 'SNR'], ['nonresonant', 'jpsi', 'psi2s'])}
+  outputplots = {'jpsi': [],
+                 'psi2s': [],
+                 'nonresonant': [],
+                 }
 
-  mvaCutList = np.linspace(12.0, 17.0, 20)
+  mvaCutList = np.linspace(12.0, 15.0, 20)
   for mvaCut in mvaCutList:
     # mva selection
     mva_selection = (branches['BToKEE_xgb'] > mvaCut)
 
     # j/psi selection
+    fit_params_jpsi = {'doPartial': True,
+                       'partialinputfile': partial_jpsi,
+                       'drawSNR': drawSNR,
+                       'mvaCut': mvaCut,
+                       'blinded': False,
+                       'params': params_jpsi,
+                       }
+
     jpsi_selection = (branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_UP)
     jpsi_branches = np.array(branches[mva_selection & jpsi_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
     jpsi_tree = array2tree(jpsi_branches)
 
-    S_jpsi, SErr_jpsi, B_jpsi = fit_unbinned.fit(jpsi_tree, outputfile + '_jpsi_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf', doPartial=True, partialinputfile=partial_jpsi, drawSNR=drawSNR, mvaCut=mvaCut, blinded=False, params=params_jpsi)
+    outputname_jpsi = outputfile + '_jpsi_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf'
+    outputplots['jpsi'].append(outputname_jpsi)
+    S_jpsi, SErr_jpsi, B_jpsi = fit_unbinned.fit(jpsi_tree, outputname_jpsi, **fit_params_jpsi)
     results['S_jpsi'].append(S_jpsi)
     results['SErr_jpsi'].append(SErr_jpsi)
     results['B_jpsi'].append(B_jpsi)
     results['SNR_jpsi'].append(S_jpsi/np.sqrt(S_jpsi + B_jpsi))
 
-    expS = S_jpsi * BR_BToKLL / (BR_BToKJpsi * BR_JpsiToLL) * (12091.0/44024)
+    expS = S_jpsi * BR_BToKLL / (BR_BToKJpsi * BR_JpsiToLL) * (517790.0/1678742) #(12091.0/44024)
 
     # psi(2s) selection
-    '''
+    fit_params_psi2s = {'doPartial': True,
+                        'partialinputfile': partial_psi2s,
+                        'drawSNR': drawSNR,
+                        'mvaCut': mvaCut,
+                        'blinded': False,
+                        'params': params_jpsi,
+                        'sigName': "B^{+}#rightarrow K^{+} #psi (2S)(#rightarrow e^{+}e^{-})",
+                        }
+   
     psi2s_selection = (branches['BToKEE_mll_fullfit'] > JPSI_UP) & (branches['BToKEE_mll_fullfit'] < PSI2S_UP)
     psi2s_branches = np.array(branches[mva_selection & psi2s_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
     psi2s_tree = array2tree(psi2s_branches)
 
-    S_psi2s, SErr_psi2s, B_psi2s = fit_unbinned.fit(psi2s_tree, outputfile + '_psi2s_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf', doPartial=True, partialinputfile=partial_psi2s, drawSNR=drawSNR, mvaCut=mvaCut, blinded=False, params=params_psi2s)
-    results['S_psi2s'].append(S_psi)
+    outputname_psi2s = outputfile + '_psi2s_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf'
+    outputplots['psi2s'].append(outputname_psi2s)
+    S_psi2s, SErr_psi2s, B_psi2s = fit_unbinned.fit(psi2s_tree, outputname_psi2s, **fit_params_psi2s)
+    results['S_psi2s'].append(S_psi2s)
     results['SErr_psi2s'].append(SErr_psi2s)
     results['B_psi2s'].append(B_psi2s)
     results['SNR_psi2s'].append(S_psi2s/np.sqrt(S_psi2s + B_psi2s))
-    '''
+    
+
+    fit_params_nonresonant = {'doPartial': True,
+                              'partialinputfile': partial_nonresonant,
+                              'drawSNR': drawSNR,
+                              'mvaCut': mvaCut,
+                              'blinded': True,
+                              'expS': expS,
+                              'params': params_nonresonant,
+                              'sigName': "B^{+}#rightarrow K^{+} e^{+}e^{-}",
+                              }
 
     nonresonant_selection = (branches['BToKEE_mll_fullfit'] > NR_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_LOW)
     nonresonant_branches = np.array(branches[mva_selection & nonresonant_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
     nonresonant_tree = array2tree(nonresonant_branches)
-    S_NR, SErr_NR, B_NR = fit_unbinned.fit(nonresonant_tree, outputfile + '_nonresonant_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf', doPartial=True, partialinputfile=partial_nonresonant, drawSNR=drawSNR, mvaCut=mvaCut, blinded=True, expS=expS, params=params_nonresonant)
+
+    outputname_nonresonant = outputfile + '_nonresonant_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf'
+    outputplots['nonresonant'].append(outputname_nonresonant)
+    S_NR, SErr_NR, B_NR = fit_unbinned.fit(nonresonant_tree, outputname_nonresonant, **fit_params_nonresonant)
     results['S_nonresonant'].append(S_NR)
     results['SErr_nonresonant'].append(SErr_NR)
     results['B_nonresonant'].append(B_NR)
     results['SNR_nonresonant'].append(S_NR/np.sqrt(S_NR + B_NR))
 
     print('MVA: {}\n\tJ/psi - S: {}, B: {}, S/sqrt(S+B): {}\n\tNon-resonant - S: {}, B: {}, S/sqrt(S+B): {}'.format(mvaCut, S_jpsi, B_jpsi, S_jpsi/np.sqrt(S_jpsi+B_jpsi), S_NR, B_NR, S_NR/np.sqrt(S_NR+B_NR)))
+
+  
+  outputname_jpsi = '{}_jpsi_{}.pdf'.format(outputfile, eleType)
+  outputname_psi2s = '{}_psi2s_{}.pdf'.format(outputfile, eleType)
+  outputname_nonresonant = '{}_nonresonant_{}.pdf'.format(outputfile, eleType)
+  pdf_combine(outputplots['jpsi'], outputname_jpsi)
+  pdf_combine(outputplots['psi2s'], outputname_psi2s)
+  pdf_combine(outputplots['nonresonant'], outputname_nonresonant)
+  pdf_sidebyside('{}_combined_{}.pdf'.format(outputfile, eleType), [outputname_jpsi, outputname_psi2s, outputname_nonresonant])
+
+  map(lambda x: os.system('rm {}'.format(x)), outputplots['jpsi'])
+  map(lambda x: os.system('rm {}'.format(x)), outputplots['psi2s'])
+  map(lambda x: os.system('rm {}'.format(x)), outputplots['nonresonant'])
 
   results = {key: np.array(value) for key, value in results.items()}
 

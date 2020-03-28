@@ -7,12 +7,14 @@ import numpy as np
 import time
 from helper import *
 import xgboost as xgb
+import lightgbm as lgb
 from BParkingNANOAnalysis.BParkingNANOAnalyzer.BaseAnalyzer import BParkingNANOAnalyzer
 
 class BToKLLAnalyzer(BParkingNANOAnalyzer):
-  def __init__(self, inputfiles, outputfile, hist=False, isMC=False, evalMVA=False, modelfile='xgb.model'):
+  def __init__(self, inputfiles, outputfile, hist=False, isMC=False, evalMVA=False, model='xgb', modelfile='mva.model'):
     self._isMC = isMC
     self._evalMVA = evalMVA
+    self._model = model
     self._modelfile = modelfile
     inputbranches_BToKEE = ['nBToKEE',
                             'BToKEE_mll_fullfit',
@@ -141,7 +143,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                                 'BToKEE_k_genPdgId': {'nbins': 10, 'xmin': 0, 'xmax': 10},
                                 }
 
-    outputbranches_BToKEE_mva = {'BToKEE_xgb': {'nbins': 100, 'xmin': -20.0, 'xmax': 20.0},
+    outputbranches_BToKEE_mva = {'BToKEE_mva': {'nbins': 100, 'xmin': -20.0, 'xmax': 20.0},
                                  }
 
     if self._isMC:
@@ -169,10 +171,13 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
 
       training_branches = sorted(features)
-      mvaCut = 10.0
-      ntree_limit = 797
-      model = xgb.Booster({'nthread': 6})
-      model.load_model(self._modelfile)
+      mvaCut = 8.0
+      ntree_limit = 800
+      if self._model == 'xgb':
+          model = xgb.Booster({'nthread': 6})
+          model.load_model(self._modelfile)
+      if self._model == 'lgb':
+          model = lgb.Booster(model_file=self._modelfile)
 
     for (self._ifile, filename) in enumerate(self._file_in_name):
       print('[BToKLLAnalyzer::run] INFO: FILE: {}/{}. Loading file...'.format(self._ifile+1, self._num_files))
@@ -266,16 +271,16 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
         b_upsb_selection = (self._branches['BToKEE_fit_mass'] > B_UP)
 
         #sv_selection = (self._branches['BToKEE_fit_pt'] > 3.0)
-        l1_selection = (self._branches['BToKEE_l1_convVeto']) #& (self._branches['BToKEE_l1_mvaId'] > 3.0)
-        l2_selection = (self._branches['BToKEE_l2_convVeto']) #& (self._branches['BToKEE_l2_mvaId'] > 0.0)
+        l1_selection = (self._branches['BToKEE_l1_convVeto']) & (self._branches['BToKEE_l1_mvaId'] > 3.0)
+        l2_selection = (self._branches['BToKEE_l2_convVeto']) & (self._branches['BToKEE_l2_mvaId'] > 0.0)
         #k_selection = (self._branches['BToKEE_fit_k_pt'] > 0.7)
         additional_selection = (self._branches['BToKEE_fit_mass'] > B_MIN) & (self._branches['BToKEE_fit_mass'] < B_MAX)
 
         selection = l1_selection & l2_selection
-        #selection &= mll_selection
+        selection &= mll_selection
         selection &= additional_selection
         #selection &= pf_selection
-        #selection &= low_selection
+        selection &= low_selection
         #selection &= b_upsb_selection
 
         self._branches = self._branches[selection]
@@ -341,9 +346,12 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
           self._branches['BToKEE_l2_pfmvaId_highPt'] = np.where(self._branches['BToKEE_l2_pfmvaCats'] == 1, self._branches['BToKEE_l2_pfmvaId'], 20.0)
 
           if self._evalMVA:
-            self._branches['BToKEE_xgb'] = model.predict(xgb.DMatrix(self._branches[training_branches].replace([np.inf, -np.inf], 0.0).sort_index(axis=1)), ntree_limit=ntree_limit)
+            if self._model == 'xgb':
+              self._branches['BToKEE_mva'] = model.predict(xgb.DMatrix(self._branches[training_branches].replace([np.inf, -np.inf], 0.0).sort_index(axis=1)), ntree_limit=ntree_limit)
+            if self._model == 'lgb':
+              self._branches['BToKEE_mva'] = model.predict(self._branches[training_branches].replace([np.inf, -np.inf], 0.0).sort_index(axis=1), raw_score=True)
             #self._branches = self._branches[(self._branches['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')
-            self._branches = self._branches[(self._branches['BToKEE_xgb'] > mvaCut)]
+            self._branches = self._branches[(self._branches['BToKEE_mva'] > mvaCut)]
 
           # fill output
           self.fill_output()

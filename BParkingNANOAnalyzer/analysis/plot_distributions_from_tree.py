@@ -59,7 +59,7 @@ def get_label(name):
     if name == -1:
         return "Data bkg"
     if name == 0:
-      return "MC bkg: B+ to K+ ee"
+      return "MC: B+ to K+ ee"
         #return "EB" #"B+ to K+ ee"
     if name == 1:
       return "data" #"B0 to K* ee"
@@ -198,9 +198,9 @@ if __name__ == '__main__':
     df2['Category'] = -1
     
     #df1.drop(columns=['BToKEE_decay'])
-    df1 = df1[np.logical_not(df1['BToKEE_l1_isGen'] | df1['BToKEE_l2_isGen'] | df1['BToKEE_k_isGen'])]
-    drop_columns = ['BToKEE_decay', 'BToKEE_l1_isGen', 'BToKEE_l2_isGen', 'BToKEE_k_isGen', 'BToKEE_l1_genPdgId', 'BToKEE_l2_genPdgId', 'BToKEE_k_genPdgId']
-    df1 = df1[(df1['BToKEE_decay'] != 0)].drop(columns=drop_columns)
+    #df1 = df1[np.logical_not(df1['BToKEE_l1_isGen'] | df1['BToKEE_l2_isGen'] | df1['BToKEE_k_isGen'])]
+    #drop_columns = ['BToKEE_decay', 'BToKEE_l1_isGen', 'BToKEE_l2_isGen', 'BToKEE_k_isGen', 'BToKEE_l1_genPdgId', 'BToKEE_l2_genPdgId', 'BToKEE_k_genPdgId']
+    #df1 = df1[(df1['BToKEE_decay'] != 0)].drop(columns=drop_columns)
     #df2 = df2.drop(columns=['BToKEE_decay'])
     #df1.drop(columns=['BToKEE_decay'])
     df1 = df1[:5000000]
@@ -208,7 +208,9 @@ if __name__ == '__main__':
     df = pd.concat((df1, df2), ignore_index=True).replace([np.inf, -np.inf], 0.0)
     #df = df1.copy()
 
-    
+   
+    df = df[(df['BToKEE_svprob'] > 0.1) & (df['BToKEE_fit_cos2D'] > 0.999)]
+
     l1_pf_selection = (df['BToKEE_l1_isPF'])
     l2_pf_selection = (df['BToKEE_l2_isPF'])
     l1_low_selection = (df['BToKEE_l1_isLowPt']) 
@@ -226,6 +228,32 @@ if __name__ == '__main__':
     
     #pu_selection = (df['BToKEE_PV_npvsGood'] < 15)
 
+    '''
+    df_pf = df[pf_selection].sort_values('BToKEE_fit_pt', ascending=False).groupby('BToKEE_event').filter(lambda g: any(g.BToKEE_decay == 0))
+    df_pf['cumcount'] = df_pf.groupby('BToKEE_event').cumcount()
+    df_pf_loc = df_pf[df_pf['BToKEE_decay'] == 0]['cumcount']
+
+    df_low = df[low_selection].sort_values('BToKEE_fit_pt', ascending=False).groupby('BToKEE_event').filter(lambda g: any(g.BToKEE_decay == 0))
+    df_low['cumcount'] = df_low.groupby('BToKEE_event').cumcount()
+    df_low_loc = df_low[df_low['BToKEE_decay'] == 0]['cumcount']
+
+    bins = np.linspace(0, 10, 10)
+    fig, axes = plt.subplots(1, 2, figsize=(15, 5))
+    axes[0].hist(df_pf_loc, bins=bins, histtype='step', label='{0}, Mean: {1:.2f}'.format(get_label(0), np.mean(df_pf_loc)), normed=True)
+    axes[0].set_ylabel("density")
+    axes[0].set_xlabel("Position of truth combination of Kee")
+    axes[0].legend()
+    axes[0].set_title("PF-PF")
+    axes[0].set_yscale("log", nonposy='clip')
+    axes[1].hist(df_low_loc, bins=bins, histtype='step', label='{0}, Mean: {1:.2f}'.format(get_label(0), np.mean(df_low_loc)), normed=True)
+    axes[1].set_ylabel("density")
+    axes[1].set_xlabel("Position of truth combination of Kee")
+    axes[1].legend()
+    axes[1].set_title("LowPt-LwoPt")
+    axes[1].set_yscale("log", nonposy='clip')
+    fig.savefig('test.pdf', bbox_inches='tight')
+    '''
+
     #print(df[trigger_selection].groupby('BToKMuMu_event').count()['BToKMuMu_fit_mass'])
     #print(df[trigger_selection])
     bins = np.linspace(0.0, 50.0, 50)
@@ -234,6 +262,7 @@ if __name__ == '__main__':
     #plot_duplicates(df[trigger_selection], 'BToKMuMu_fit_mass', bins=bins, ax=axes[0], title='Tag side')
     #plot_duplicates(df[np.logical_not(trigger_selection)], 'BToKMuMu_fit_mass', bins=bins, ax=axes[1], title='Probe side')
     #plot_duplicates(df[(df['BToKMuMu_nTriggerMuon'] - df['BToKMuMu_l1_isTriggering'] - df['BToKMuMu_l2_isTriggering']) > 0.0], 'BToKMuMu_fit_mass', bins=bins, ax=axes[1], title='Probe side')
+    
     
     
     plot_duplicates(df, 'BToKEE_q2', bins=bins, ax=axes[0], title='All')
@@ -284,7 +313,7 @@ if __name__ == '__main__':
         plt.close()
     
     '''
-    
+    '''    
     with PdfPages(args.outputfile.replace('.pdf','')+'.pdf') as pdf:
       for var, bins in features.items():
         #if var != "ele_pt": continue
@@ -300,7 +329,7 @@ if __name__ == '__main__':
         pdf.savefig(fig, bbox_inches='tight')
         plt.close()
         print("finished plotting {}...".format(var))
-    
+    '''
     '''    
     training_features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_l1_dxy_sig',
               'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_l2_dxy_sig',

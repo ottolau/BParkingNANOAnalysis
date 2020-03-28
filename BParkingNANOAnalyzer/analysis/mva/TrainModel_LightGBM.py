@@ -35,7 +35,7 @@ from tqdm import tqdm
 import numpy as np
 from sklearn.model_selection import train_test_split, StratifiedKFold, KFold
 from sklearn.metrics import classification_report, roc_curve, auc, roc_auc_score
-import xgboost as xgb
+import lightgbm as lgb
 from sklearn import metrics
 import numpy as np
 from skopt import gp_minimize
@@ -46,8 +46,9 @@ from scipy import interp
 import h5py
 import time
 import ROOT
-import sys
+import os, sys
 from collections import OrderedDict
+import PyPDF2
 
 def get_df(root_file_name, branches):
     f = uproot.open(root_file_name)
@@ -145,6 +146,26 @@ def plot_turnon_curve(df_group, group, working_points, label, isSignal=True, ax=
     ax.yaxis.set_tick_params(labelsize=12)
     ax.grid(True)
 
+def pdf_combine(pdf_list, outputfile):
+    merger = PyPDF2.PdfFileMerger()
+    for pdf in pdf_list:
+        merger.append(pdf)
+    merger.write(outputfile)
+
+def learning_rate_010_decay_power_099(current_iter):
+    base_learning_rate = 0.1
+    lr = base_learning_rate  * np.power(.99, current_iter)
+    return lr if lr > 1e-3 else 1e-3
+
+def learning_rate_010_decay_power_0995(current_iter):
+    base_learning_rate = 0.1
+    lr = base_learning_rate  * np.power(.995, current_iter)
+    return lr if lr > 1e-3 else 1e-3
+
+def learning_rate_005_decay_power_099(current_iter):
+    base_learning_rate = 0.05
+    lr = base_learning_rate  * np.power(.99, current_iter)
+    return lr if lr > 1e-3 else 1e-3
 
 def fpreproc(dtrain, dtest, param):
     label = dtrain.get_label()
@@ -154,16 +175,15 @@ def fpreproc(dtrain, dtest, param):
 
 def pauc(predt, dtrain):
     y = dtrain.get_label()
-    return 'pauc', roc_auc_score(y, predt, max_fpr=1.0e-2)
+    return 'pauc', roc_auc_score(y, predt, max_fpr=1.0e-2), True
 
-space  = [Integer(5, 8, name='max_depth'),
-         Real(0.01, 0.2, name='eta'),
-         Real(0.0, 10.0, name='gamma'),
-         Integer(1.0, 10.0, name='min_child_weight'),
+space  = [Integer(100, 500, name='num_leaves'),
+         Real(10**-5, 10**+3, "log-uniform", name='min_child_weight'),
+         Integer(0.0, 500.0, name='min_child_samples'),
          Real(0.5, 1.0, name='subsample'),
          Real(0.1, 1.0, name='colsample_bytree'),
-         Real(0.0, 10.0, name='alpha'),
-         Real(0.0, 10.0, name='lambda'),
+         Real(0.0, 10.0, name='lambda_l1'),
+         Real(0.0, 10.0, name='lambda_l2'),
          ]
 
 @use_named_args(space)
@@ -171,13 +191,15 @@ def objective(**X):
     global best_auc, best_auc_std, best_params
     print("New configuration: {}".format(X))
     params = X.copy()
-    params['objective'] = 'binary:logitraw'
+    params['learning_rate'] = 0.05
+    params['objective'] = 'binary'
     #params['eval_metric'] = 'auc'
     params['nthread'] = 6
-    params['silent'] = 1
-    cv_result = xgb.cv(params, dmatrix_train, num_boost_round=n_boost_rounds, nfold=5, shuffle=True, stratified=True, maximize=True, early_stopping_rounds=75, fpreproc=fpreproc, feval=pauc)
-    ave_auc = cv_result['test-pauc-mean'].iloc[-1]
-    ave_auc_std = cv_result['test-pauc-std'].iloc[-1]
+    params['verbose'] = -1
+    #cv_result = lgb.cv(params, dmatrix_train, num_boost_round=n_boost_rounds, nfold=5, shuffle=True, stratified=True, early_stopping_rounds=75, fpreproc=fpreproc, feval=pauc)
+    cv_result = lgb.cv(params, dmatrix_train, num_boost_round=n_boost_rounds, nfold=5, shuffle=True, stratified=True, early_stopping_rounds=100, feval=pauc)
+    ave_auc = cv_result['pauc-mean'][-1]
+    ave_auc_std = cv_result['pauc-stdv'][-1]
     print("Average pauc: {}+-{}".format(ave_auc, ave_auc_std))
     if ave_auc > best_auc:
       best_auc = ave_auc
@@ -186,28 +208,32 @@ def objective(**X):
     print("Best pauc: {}+-{}, Best configuration: {}".format(best_auc, best_auc_std, best_params))
     return -ave_auc
 
-def train(xgtrain, xgtest, hyper_params=None):
-    watchlist = [(xgtrain, 'train'), (xgtest, 'eval')]
+def train(xgtrain, xgtest, hyper_params=None, cv=False):
     params = hyper_params.copy()
     label = xgtrain.get_label()
     ratio = float(np.sum(label == 0)) / np.sum(label == 1)
     params['scale_pos_weight'] = ratio
-    params['objective'] = 'binary:logitraw'
+    params['objective'] = 'binary'
     #params['eval_metric'] = 'auc'
     params['nthread'] = 10
-    params['silent'] = 1
+    params['verbose'] = -1
     results = {}
-    model = xgb.train(params, xgtrain, num_boost_round=n_boost_rounds, evals=watchlist, evals_result=results, maximize=True, early_stopping_rounds=75, verbose_eval=False, feval=pauc)
+    if cv:
+      params['learning_rate'] = 0.05
+      model = lgb.train(params, xgtrain, num_boost_round=n_boost_rounds, valid_sets=xgtest, evals_result=results, early_stopping_rounds=100, verbose_eval=False, feval=pauc)
+    else:
+      model = lgb.train(params, xgtrain, num_boost_round=n_boost_rounds, valid_sets=[xgtest, xgtrain], valid_names=['eval', 'train'], evals_result=results, early_stopping_rounds=100, verbose_eval=False, feval=pauc, callbacks=[lgb.reset_parameter(learning_rate=learning_rate_010_decay_power_0995)])
+    #model = lgb.train(params, xgtrain, num_boost_round=n_boost_rounds, early_stopping_rounds=75, verbose_eval=False, feval=pauc)
     best_iteration = model.best_iteration + 1
     if best_iteration < n_boost_rounds:
         print("early stopping after {0} boosting rounds".format(best_iteration))
     return model, results
 
 def train_cv(X_train_val, Y_train_val, X_test, Y_test, w_train_val, hyper_params=None):
-    xgtrain = xgb.DMatrix(X_train_val, label=Y_train_val, weight=w_train_val)
-    xgtest  = xgb.DMatrix(X_test , label=Y_test )
-    model, results = train(xgtrain, xgtest, hyper_params=hyper_params)
-    Y_predict = model.predict(xgtest, ntree_limit=model.best_ntree_limit)
+    xgtrain = lgb.Dataset(X_train_val, label=Y_train_val, weight=w_train_val)
+    xgtest  = lgb.Dataset(X_test , label=Y_test, reference=xgtrain)
+    model, results = train(xgtrain, xgtest, hyper_params=hyper_params, cv=True)
+    Y_predict = model.predict(X_test, raw_score=True)
     fpr, tpr, thresholds = roc_curve(Y_test, Y_predict, drop_intermediate=True)
     roc_auc = roc_auc_score(Y_test, Y_predict, max_fpr=1.0e-2)
     print("Best pauc: {}".format(roc_auc))
@@ -265,12 +291,12 @@ if __name__ == '__main__':
     W = df['weights']
 
     suffix = args.suffix
-    n_boost_rounds = 800
+    n_boost_rounds = 5000
     n_calls = 80
     n_random_starts = 40
     do_bo = args.optimization
     do_cv = True
-    best_params = {'colsample_bytree': 0.5646282034743916, 'min_child_weight': 9, 'subsample': 0.9707346064629926, 'eta': 0.04577526450794918, 'alpha': 6.537773473724525, 'max_depth': 7, 'gamma': 3.445226736766573, 'lambda': 0.0855102092404514}
+    best_params = {'num_leaves': 119, 'colsample_bytree': 0.462895782036834, 'subsample': 0.9565005845248696, 'lambda_l1': 0.642535538842698, 'min_child_samples': 43, 'lambda_l2': 4.4071882417829045, 'min_child_weight': 182.12727208918622}
 
     # split X and y up in train and test samples
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.20)
@@ -287,8 +313,8 @@ if __name__ == '__main__':
 
     w_train = W.loc[idx_train]
 
-    dmatrix_train = xgb.DMatrix(X_train.copy(), label=np.copy(y_train), feature_names=[f.replace('_','-') for f in features], weight=np.copy(w_train))
-    dmatrix_test  = xgb.DMatrix(X_test.copy(), label=np.copy(y_test), feature_names=[f.replace('_','-') for f in features])
+    dmatrix_train = lgb.Dataset(X_train.copy(), label=np.copy(y_train), feature_name=[f.replace('_','-') for f in features], weight=np.copy(w_train))
+    dmatrix_test  = lgb.Dataset(X_test.copy(), label=np.copy(y_test), reference=dmatrix_train, feature_name=[f.replace('_','-') for f in features])
 
     # Bayesian optimization
     if do_bo:
@@ -299,15 +325,9 @@ if __name__ == '__main__':
         best_params = {}
         res_gp = gp_minimize(objective, space, n_calls=n_calls, n_random_starts=n_random_starts, verbose=True, random_state=36)
         print("Finish optimization in {}s".format(time.time()-begt))
-        plt.figure()
-        plot_convergence(res_gp)
-        plt.savefig('training_resultis_bo_convergencePlot_xgb_{}.pdf'.format(suffix))
         #plt.figure()
-        #plot_evaluations(res_gp)
-        #plt.savefig('training_resultis_bo_evaluationsPlot_xgb_{}.pdf'.format(suffix))
-        #plt.figure()
-        #plot_objective(res_gp)
-        #plt.savefig('training_resultis_bo_objectivePlot_xgb_{}.pdf'.format(suffix))
+        #plot_convergence(res_gp)
+        #plt.savefig('lgb_training_resultis_bo_convergencePlot_lgb_{}.pdf'.format(suffix))
 
     # Get the cv plots with the best hyper-parameters
     if do_bo or do_cv:
@@ -317,7 +337,7 @@ if __name__ == '__main__':
         figs, axs = plt.subplots()
         #cv = KFold(n_splits=5, shuffle=True)
         cv = StratifiedKFold(n_splits=5, shuffle=True)
-        mean_fpr = np.logspace(-6, 0, 100)
+        mean_fpr = np.logspace(-7, 0, 100)
 
         iFold = 0
         for train_idx, test_idx in cv.split(X_train, y_train):
@@ -328,16 +348,6 @@ if __name__ == '__main__':
             w_train_cv = w_train.loc[X_train_cv.index]
 
             model, fpr, tpr, thresholds, roc_auc, results = train_cv(X_train_cv, Y_train_cv, X_test_cv, Y_test_cv, w_train_cv, hyper_params=best_params)
-            epochs = len(results['train']['pauc'])
-            x_axis = range(0, epochs)
-            fig, ax = plt.subplots()
-            ax.plot(x_axis, results['train']['pauc'], label='Train')
-            ax.plot(x_axis, results['eval']['pauc'], label='Test')
-            ax.legend()
-            plt.ylabel('PAUC')
-            plt.xlabel('Epoch')
-            plt.title('Fold: {}'.format(iFold))
-            fig.savefig('training_results_learning_curve_cv_fold_{}_{}.pdf'.format(suffix,iFold), bbox_inches='tight')
 
             tprs.append(interp(mean_fpr, fpr, tpr))
             tprs[-1][0] = 0.0
@@ -350,20 +360,20 @@ if __name__ == '__main__':
         mean_auc = auc(mean_fpr, mean_tpr)
         std_auc = np.std(aucs)
         axs.plot(mean_fpr, mean_tpr, color='b', label=r'Mean ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc), lw=2, alpha=.8)
-        axs.plot(np.logspace(-5, 0, 1000), np.logspace(-5, 0, 1000), linestyle='--', lw=2, color='k', label='Random chance')
+        axs.plot(np.logspace(-6, 0, 1000), np.logspace(-6, 0, 1000), linestyle='--', lw=2, color='k', label='Random chance')
 
         std_tpr = np.std(tprs, axis=0)
         tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
         tprs_lower = np.maximum(mean_tpr - std_tpr, 0)
         axs.fill_between(mean_fpr, tprs_lower, tprs_upper, color='grey', alpha=.2, label=r'$\pm$ 1 std. dev.')
         axs.set_xscale('log')
-        axs.set_xlim([1.0e-5, 1.0])
+        axs.set_xlim([1.0e-6, 1.0])
         axs.set_ylim([0.0, 1.0])
         axs.set_xlabel('False Alarm Rate')
         axs.set_ylabel('Signal Efficiency')
         axs.set_title('Cross-validation Receiver Operating Curve')
         axs.legend(loc="lower right") 
-        figs.savefig('training_results_roc_cv_{}.pdf'.format(suffix), bbox_inches='tight')
+        figs.savefig('lgb_training_results_roc_cv_{}.pdf'.format(suffix), bbox_inches='tight')
 
 
     xgboost_params = best_params.copy()
@@ -379,16 +389,16 @@ if __name__ == '__main__':
         print("Final model: early stopping after {0} boosting rounds".format(best_iteration))
     print("")
     
-    model.save_model("xgb_fulldata_{}.model".format(suffix))
+    model.save_model("lgb_fulldata_{}.model".format(suffix))
 
-    df.loc[idx_train, "score"] = model.predict(dmatrix_train, ntree_limit=model.best_ntree_limit)
-    df.loc[idx_test, "score"] = model.predict(dmatrix_test, ntree_limit=model.best_ntree_limit)
+    df.loc[idx_train, "score"] = model.predict(X_train, raw_score=True)
+    df.loc[idx_test, "score"] = model.predict(X_test, raw_score=True)
    
     df.loc[idx_train, "test"] = False
     df.loc[idx_test, "test"] = True
 
     print("")
-    print("Final model: Best hyper-parameters: {}, ntree_limit: {}".format(best_params, model.best_ntree_limit))
+    print("Final model: Best hyper-parameters: {}, ntree_limit: {}".format(best_params, model.best_iteration))
     print("")
 
     #df_train = df.query("not test")
@@ -400,35 +410,44 @@ if __name__ == '__main__':
     fpr, tpr, thresholds = roc_curve(df_test["isSignal"], df_test["score"], drop_intermediate=True)
     roc_dict = {'fpr': fpr, 'tpr': tpr, 'thresholds': thresholds}
     roc_df = pd.DataFrame(data=roc_dict)
-    roc_df.to_csv('training_results_roc_csv_{}.csv'.format(suffix))
-
-    epochs = len(results['train']['pauc'])
-    x_axis = range(0, epochs)
-    fig, ax = plt.subplots()
-    ax.plot(x_axis, results['train']['pauc'], label='Train')
-    ax.plot(x_axis, results['eval']['pauc'], label='Test')
-    ax.legend()
-    plt.ylabel('PAUC')
-    plt.xlabel('Epoch')
-    fig.savefig('training_results_learning_curve_{}.pdf'.format(suffix), bbox_inches='tight')
+    roc_df.to_csv('lgb_training_results_roc_csv_{}.csv'.format(suffix))
 
 
     fig, ax = plt.subplots()
-    plot_roc_curve(df_test, "score", ax=ax, label="XGB")
-    ax.plot(np.logspace(-5, 0, 1000), np.logspace(-5, 0, 1000), linestyle='--', color='k')
-    ax.set_xlim([1.0e-5, 1.0])
+    plot_roc_curve(df_test, "score", ax=ax, label="LightGBM")
+    ax.plot(np.logspace(-6, 0, 1000), np.logspace(-6, 0, 1000), linestyle='--', color='k')
+    ax.set_xlim([1.0e-6, 1.0])
     ax.set_ylim([0.0, 1.0])
     ax.set_xscale('log')
     ax.set_xlabel("False Alarm Rate")
     ax.set_ylabel("Signal Efficiency")
     ax.set_title('Receiver Operating Curve')
     ax.legend(loc='lower right')
-    fig.savefig('training_results_roc_curve_{}.pdf'.format(suffix), bbox_inches='tight')
+    fig.savefig('lgb_training_results_roc_curve_{}.pdf'.format(suffix), bbox_inches='tight')
 
     plt.figure()
-    xgb.plot_importance(model)
-    plt.savefig('training_results_feature_importance_{}.pdf'.format(suffix), bbox_inches='tight')
+    lgb.plot_importance(model)
+    plt.savefig('lgb_training_results_feature_importance_{}.pdf'.format(suffix), bbox_inches='tight')
 
+    plt.figure()
+    lgb.plot_metric(results, metric='pauc', ylabel='PACU')
+    plt.savefig('lgb_training_results_learning_curve_{}.pdf'.format(suffix), bbox_inches='tight')
+
+    split_value_hist = []
+    plt.figure()
+    for feature in features:
+      feature = feature.replace('_','-')
+      outputname = 'lgb_training_results_split_value_histogram_{}_{}.pdf'.format(feature, suffix)
+      try:
+        lgb.plot_split_value_histogram(model, feature)
+        plt.savefig(outputname, bbox_inches='tight')
+        plt.cla()
+        split_value_hist.append(outputname)
+      except ValueError:
+        pass
+
+    pdf_combine(split_value_hist, 'lgb_training_results_split_value_histogram_{}.pdf'.format(suffix))
+    map(lambda x: os.system('rm {}'.format(x)), split_value_hist)
 
 
     print("Finding working points for new training:")
@@ -458,25 +477,25 @@ if __name__ == '__main__':
     plot_turnon_curve(df_test, 'pt_binned', working_points, r'$p_{T}(B) [GeV]$', isSignal=True, ax=axes_pt[0])
     plot_turnon_curve(df_test, 'pt_binned', working_points, r'$p_{T}(B) [GeV]$', isSignal=False, ax=axes_pt[1])
     fig_pt.subplots_adjust(hspace=0.05)      
-    fig_pt.savefig('training_results_eff_trunon_pt_{}.pdf'.format(suffix), bbox_inches='tight')
+    fig_pt.savefig('lgb_training_results_eff_trunon_pt_{}.pdf'.format(suffix), bbox_inches='tight')
 
     fig_eta, axes_eta = plt.subplots(2, 1)
     plot_turnon_curve(df_test, 'eta_binned', working_points, r'$\eta(B)$', isSignal=True, ax=axes_eta[0])
     plot_turnon_curve(df_test, 'eta_binned', working_points, r'$\eta(B)$', isSignal=False, ax=axes_eta[1])
     fig_eta.subplots_adjust(hspace=0.05)      
-    fig_eta.savefig('training_results_eff_trunon_eta_{}.pdf'.format(suffix), bbox_inches='tight')
+    fig_eta.savefig('lgb_training_results_eff_trunon_eta_{}.pdf'.format(suffix), bbox_inches='tight')
 
     fig_q2, axes_q2 = plt.subplots(2, 1)
     plot_turnon_curve(df_test, 'q2_binned', working_points, r'$q^{2} [GeV^{2}]$', isSignal=True, ax=axes_q2[0])
     plot_turnon_curve(df_test, 'q2_binned', working_points, r'$q^{2} [GeV^{2}]$', isSignal=False, ax=axes_q2[1])
     fig_q2.subplots_adjust(hspace=0.05)      
-    fig_q2.savefig('training_results_eff_trunon_q2_{}.pdf'.format(suffix), bbox_inches='tight')
+    fig_q2.savefig('lgb_training_results_eff_trunon_q2_{}.pdf'.format(suffix), bbox_inches='tight')
 
     fig_mvaId, axes_mvaId = plt.subplots(2, 1)
     plot_turnon_curve(df_test, 'mvaId_binned', working_points, r'Sub-leading electron mvaId', isSignal=True, ax=axes_mvaId[0])
     plot_turnon_curve(df_test, 'mvaId_binned', working_points, r'Sub-leading electron mvaId', isSignal=False, ax=axes_mvaId[1])
     fig_mvaId.subplots_adjust(hspace=0.05)      
-    fig_mvaId.savefig('training_results_eff_trunon_mvaId_{}.pdf'.format(suffix), bbox_inches='tight')
+    fig_mvaId.savefig('lgb_training_results_eff_trunon_mvaId_{}.pdf'.format(suffix), bbox_inches='tight')
 
     df = df.drop("pt_binned", axis=1)
     df = df.drop("eta_binned", axis=1)

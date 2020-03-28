@@ -49,6 +49,9 @@ def fit(tree, outputfile, **kwargs):
     blinded = kwargs.get('blinded', False)
     expS = kwargs.get('expS', 0)
     params = kwargs.get('params', {})
+    sigName = kwargs.get('sigName', "B^{+}#rightarrow K^{+} J/#psi(#rightarrow e^{+}e^{-})")
+    floatSig = kwargs.get('floatSig', False)
+
 
     msgservice = ROOT.RooMsgService.instance()
     msgservice.setGlobalKillBelow(RooFit.FATAL)
@@ -177,24 +180,25 @@ def fit(tree, outputfile, **kwargs):
       else:
         wspace.factory('SUM::model(nsig*sig,nbkg*bkg)')
 
-      mean = wspace.var('mean')
-      width = wspace.var('width')
-      alpha1 = wspace.var('alpha1')
-      n1 = wspace.var('n1')
-      alpha2 = wspace.var('alpha2')
-      n2 = wspace.var('n2')
-      mean.setVal(params['mean'])
-      width.setVal(params['width'])
-      alpha1.setVal(params['alpha1'])
-      n1.setVal(params['n1'])
-      alpha2.setVal(params['alpha2'])
-      n2.setVal(params['n2'])
-      mean.setConstant(True)
-      width.setConstant(True)
-      alpha1.setConstant(True)
-      n1.setConstant(True)
-      alpha2.setConstant(True)
-      n2.setConstant(True)
+      if not floatSig:
+        mean = wspace.var('mean')
+        width = wspace.var('width')
+        alpha1 = wspace.var('alpha1')
+        n1 = wspace.var('n1')
+        alpha2 = wspace.var('alpha2')
+        n2 = wspace.var('n2')
+        mean.setVal(params['mean'])
+        width.setVal(params['width'])
+        alpha1.setVal(params['alpha1'])
+        n1.setVal(params['n1'])
+        alpha2.setVal(params['alpha2'])
+        n2.setVal(params['n2'])
+        mean.setConstant(True)
+        width.setConstant(True)
+        alpha1.setConstant(True)
+        n1.setConstant(True)
+        alpha2.setConstant(True)
+        n2.setConstant(True)
 
     else:
       wspace.factory('ExtendPdf::model(sig,nsig)')
@@ -305,7 +309,7 @@ def fit(tree, outputfile, **kwargs):
       legend.AddEntry(xframe.findObject("global"),"Total Fit","l");
 
     else:
-      legend = ROOT.TLegend(0.60,0.65,0.92,0.85);
+      legend = ROOT.TLegend(0.56,0.65,0.92,0.85);
       legend.AddEntry(xframe.findObject("bkg"),"Combinatorial","f");
       pt = ROOT.TPaveText(0.72,0.37,0.92,0.63,"brNDC")
       #pt = ROOT.TPaveText(0.72,0.30,0.92,0.63,"brNDC")
@@ -313,7 +317,7 @@ def fit(tree, outputfile, **kwargs):
         legend.AddEntry(xframe.findObject("partial"),"Partially Reco.","f");
       if doPsi2S:
         legend.AddEntry(xframe.findObject("psi2s"),"B^{+}#rightarrow K^{+} #psi (2S)(#rightarrow e^{+}e^{-})","f");
-      legend.AddEntry(xframe.findObject("sig"),"B^{+}#rightarrow K^{+} e^{+}e^{-}" if blinded else "B^{+}#rightarrow K^{+} J/#psi(#rightarrow e^{+}e^{-})","l");
+      legend.AddEntry(xframe.findObject("sig"),sigName,"l");
 
     legend.SetTextFont(42);
     legend.SetTextSize(0.04);

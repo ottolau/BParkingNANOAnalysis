@@ -1,6 +1,7 @@
-import os,glob
 import sys, os, fnmatch
 import ROOT
+from os import listdir
+from os.path import isfile, join
 
 import argparse
 parser = argparse.ArgumentParser(description="A simple ttree plotter")
