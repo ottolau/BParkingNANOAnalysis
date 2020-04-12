@@ -10,7 +10,12 @@ import random
 #mypath2 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb26/BuToKee_MufilterPt6_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKee_ext/200226_210729/0000/']
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Feb26/BuToKJpsi_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKJpsi_Toee/200226_153915/0000/']
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Mar22/BuToKPsi2S_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKPsi2S_Toee/200322_185610/0000/']
-mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Mar22/BdToKstarPsi2S_ToKPiee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BdToKstarPsi2S_Toee/200322_185719/0000/']
+#mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Mar22/BdToKstarPsi2S_ToKPiee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BdToKstarPsi2S_Toee/200322_185719/0000/']
+#mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Mar31/BuToKee_MufilterPt6_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKee_ext/200331_183927/0000/']
+#mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Mar31/ParkingBPH2/crab_data_Run2018B_part2/200331_183424/0000/',
+#           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Mar31/ParkingBPH2/crab_data_Run2018B_part2/200331_183424/0001/',]
+#mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr11/BuToKJpsi_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKJpsi_Toee/200411_170141/0000/']
+mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr11/BuToKee_MufilterPt6_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKee_ext/200411_170027/0000/']
 
 '''
 mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH1/crab_data_Run2018A_part1/200116_150535/0000/',
@@ -97,10 +102,10 @@ redirector = 'root://cms-xrd-global.cern.ch//'
 #redirector = ''
 filelist = []
 for path in mypath:
-    #filename = subprocess.check_output('xrdfs {} ls {}'.format(redirector, path), shell=True).split('\n')
-    #filelist += filename
+    filename = subprocess.check_output('xrdfs {} ls {}'.format(redirector, path), shell=True).split('\n')
+    filelist += filename
     #path = '/eos/cms/' + path
-    filelist = filelist + [path + f for f in listdir(path) if isfile(join(path, f))]
+    #filelist = filelist + [path + f for f in listdir(path) if isfile(join(path, f))]
 
 #filelist = random.sample(filelist, k=30)
 filelist = ['{}{}'.format(redirector, f.replace('/eos/cms/','')) for f in filelist if ".root" in f]
@@ -115,7 +120,11 @@ filelist = ['{}{}'.format(redirector, f.replace('/eos/cms/','')) for f in fileli
 #outputFile = open('BParkingNANO_2020Jan16_BuToKee_all.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BuToKJpsi_Toee_svprob0.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BuToKPsi2S_Toee.list', 'w+')
-outputFile = open('BParkingNANO_2020Jan16_BdToKstarPsi2S_ToKPiee.list', 'w+')
+#outputFile = open('BParkingNANO_2020Jan16_BdToKstarPsi2S_ToKPiee.list', 'w+')
+#outputFile = open('BParkingNANO_2020Jan16_BuToKee_ext_yutaPR.list', 'w+')
+#outputFile = open('BParkingNANO_2020Jan16_Run2018B2_yutaPR.list', 'w+')
+#outputFile = open('BParkingNANO_2020Jan16_BuToKJpsi_Toee_loosePreselection.list', 'w+')
+outputFile = open('BParkingNANO_2020Jan16_BuToKee_ext_loosePreselection.list', 'w+')
 
 for f in filelist:
     outputFile.write('%s\n'%(f))

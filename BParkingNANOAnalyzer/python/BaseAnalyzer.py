@@ -78,51 +78,49 @@ class BParkingNANOAnalyzer(object):
   def run(self):
     pass
 
-  def GetDMass(self, row, prefix):
-    if (row[prefix+'_k_charge'] * row[prefix+'_l1_charge']) < 0.0:
-      return row[prefix+'_Dmass_l1']
-    else:
-      return row[prefix+'_Dmass_l2']
-
-  def EleEtaCats(self, row, prefix):    
+  def EleEtaCats(self, l1_eta, l2_eta):
     etaCut = 1.44
-    if (abs(row[prefix+'_fit_l1_eta']) < etaCut) and (abs(row[prefix+'_fit_l2_eta']) < etaCut):
+    if (abs(l1_eta) < etaCut) and (abs(l2_eta) < etaCut):
       return 0
-    elif (abs(row[prefix+'_fit_l1_eta']) > etaCut) and (abs(row[prefix+'_fit_l2_eta']) > etaCut):
+    elif (abs(l1_eta) > etaCut) and (abs(l2_eta) > etaCut):
       return 1
     else:
       return 2
+  
+  def DecayCats(self, l1_genPartIdx, l2_genPartIdx, k_genPartIdx,
+                l1_genPdgId, l2_genPdgId, k_genPdgId,
+                l1_genMotherPdgId, l2_genMotherPdgId, k_genMotherPdgId,
+                l1Mother_genMotherPdgId, l2Mother_genMotherPdgId, kMother_genMotherPdgId):    
 
-  def DecayCats(self, row, prefix):    
-    mc_matched_selection = (row[prefix+'_l1_genPartIdx'] > -0.5) & (row[prefix+'_l2_genPartIdx'] > -0.5) & (row[prefix+'_k_genPartIdx'] > -0.5)
+    mc_matched_selection = (l1_genPartIdx > -0.5) & (l2_genPartIdx > -0.5) & (k_genPartIdx > -0.5) & (abs(l1_genPdgId) == 11) & (abs(l2_genPdgId) == 11)
     # B->K ll
-    RK_nonresonant_chain_selection = (abs(row[prefix+'_l1_genMotherPdgId']) == 521) & (abs(row[prefix+'_k_genMotherPdgId']) == 521)
-    RK_nonresonant_chain_selection &= (row[prefix+'_l1_genMotherPdgId'] == row[prefix+'_l2_genMotherPdgId']) & (row[prefix+'_k_genMotherPdgId'] == row[prefix+'_l1_genMotherPdgId'])
+    RK_nonresonant_chain_selection = (abs(k_genPdgId) == 321) & (abs(l1_genMotherPdgId) == 521) & (abs(k_genMotherPdgId) == 521)
+    RK_nonresonant_chain_selection &= (l1_genMotherPdgId == l2_genMotherPdgId) & (k_genMotherPdgId == l1_genMotherPdgId)
     RK_nonresonant_chain_selection &= mc_matched_selection
 
     # B->K J/psi(ll) or B->K psi(2S)(ll)
-    RK_resonant_chain_selection = (abs(row[prefix+'_l1_genMotherPdgId']) in {443, 100443}) & (abs(row[prefix+'_k_genMotherPdgId']) == 521)
-    RK_resonant_chain_selection &= (row[prefix+'_l1_genMotherPdgId'] == row[prefix+'_l2_genMotherPdgId']) & (row[prefix+'_k_genMotherPdgId'] == row[prefix+'_l1Mother_genMotherPdgId']) & (row[prefix+'_k_genMotherPdgId'] == row[prefix+'_l2Mother_genMotherPdgId'])
+    RK_resonant_chain_selection = (abs(k_genPdgId) == 321) & (abs(l1_genMotherPdgId) in {443, 100443}) & (abs(k_genMotherPdgId) == 521)
+    RK_resonant_chain_selection &= (l1_genMotherPdgId == l2_genMotherPdgId) & (k_genMotherPdgId == l1Mother_genMotherPdgId) & (k_genMotherPdgId == l2Mother_genMotherPdgId)
     RK_resonant_chain_selection &= mc_matched_selection
 
     # B->K*(K pi) ll
-    RKstar_nonresonant_chain_selection = (abs(row[prefix+'_l1_genMotherPdgId']) == 511) & (abs(row[prefix+'_k_genMotherPdgId']) == 313)
-    RKstar_nonresonant_chain_selection &= (row[prefix+'_l1_genMotherPdgId'] == row[prefix+'_l2_genMotherPdgId']) & (row[prefix+'_l1_genMotherPdgId'] == row[prefix+'_kMother_genMotherPdgId']) 
+    RKstar_nonresonant_chain_selection = (abs(l1_genMotherPdgId) == 511) & (abs(k_genMotherPdgId) == 313)
+    RKstar_nonresonant_chain_selection &= (l1_genMotherPdgId == l2_genMotherPdgId) & (l1_genMotherPdgId == kMother_genMotherPdgId) 
     RKstar_nonresonant_chain_selection &= mc_matched_selection
 
     # B->K*(K pi) J/psi(ll) or B->K*(K pi) psi(2S)(ll)
-    RKstar_resonant_chain_selection = (abs(row[prefix+'_l1_genMotherPdgId']) in {443, 100443}) & (abs(row[prefix+'_k_genMotherPdgId']) == 313)
-    RKstar_resonant_chain_selection &= (row[prefix+'_l1_genMotherPdgId'] == row[prefix+'_l2_genMotherPdgId']) & (row[prefix+'_l1Mother_genMotherPdgId'] == row[prefix+'_kMother_genMotherPdgId']) 
+    RKstar_resonant_chain_selection = (abs(l1_genMotherPdgId) in {443, 100443}) & (abs(k_genMotherPdgId) == 313)
+    RKstar_resonant_chain_selection &= (l1_genMotherPdgId == l2_genMotherPdgId) & (l1Mother_genMotherPdgId == kMother_genMotherPdgId) 
     RKstar_resonant_chain_selection &= mc_matched_selection
 
     # Bs->phi(K K) ll
-    Rphi_nonresonant_chain_selection = (abs(row[prefix+'_l1_genMotherPdgId']) == 531) & (abs(row[prefix+'_k_genMotherPdgId']) == 333)
-    Rphi_nonresonant_chain_selection &= (row[prefix+'_l1_genMotherPdgId'] == row[prefix+'_l2_genMotherPdgId']) & (row[prefix+'_l1_genMotherPdgId'] == row[prefix+'_kMother_genMotherPdgId']) 
+    Rphi_nonresonant_chain_selection = (abs(k_genPdgId) == 321) & (abs(l1_genMotherPdgId) == 531) & (abs(k_genMotherPdgId) == 333)
+    Rphi_nonresonant_chain_selection &= (l1_genMotherPdgId == l2_genMotherPdgId) & (l1_genMotherPdgId == kMother_genMotherPdgId) 
     Rphi_nonresonant_chain_selection &= mc_matched_selection
 
     # Bs->phi(K K) J/psi(ll) or Bs->phi(K K) psi(2S)(ll)
-    Rphi_resonant_chain_selection = (abs(row[prefix+'_l1_genMotherPdgId']) in {443, 100443}) & (abs(row[prefix+'_k_genMotherPdgId']) == 333)
-    Rphi_resonant_chain_selection &= (row[prefix+'_l1_genMotherPdgId'] == row[prefix+'_l2_genMotherPdgId']) & (row[prefix+'_l1Mother_genMotherPdgId'] == row[prefix+'_kMother_genMotherPdgId']) 
+    Rphi_resonant_chain_selection = (abs(k_genPdgId) == 321) & (abs(l1_genMotherPdgId) in {443, 100443}) & (abs(k_genMotherPdgId) == 333)
+    Rphi_resonant_chain_selection &= (l1_genMotherPdgId == l2_genMotherPdgId) & (l1Mother_genMotherPdgId == kMother_genMotherPdgId) 
     Rphi_resonant_chain_selection &= mc_matched_selection
 
     if RK_nonresonant_chain_selection: return 0

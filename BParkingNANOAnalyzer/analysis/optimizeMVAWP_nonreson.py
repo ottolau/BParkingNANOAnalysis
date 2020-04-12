@@ -59,47 +59,6 @@ parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Stor
 args = parser.parse_args()
 
 
-outputbranches = {'BToKEE_mll_raw': {'nbins': 50, 'xmin': 0.0, 'xmax': 5.0},
-                  'BToKEE_mll_fullfit': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mll_llfit': {'nbins': 30, 'xmin': 2.6, 'xmax': 3.6},
-                  'BToKEE_mass': {'nbins': 30, 'xmin': 4.7, 'xmax': 6.0},
-                  'BToKEE_l1_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_l2_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_l1_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_l2_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_l1_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
-                  'BToKEE_l2_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
-                  'BToKEE_l1_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
-                  'BToKEE_l2_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
-                  'BToKEE_l1_dxy_sig': {'nbins': 50, 'xmin': -30.0, 'xmax': 30.0},
-                  'BToKEE_l2_dxy_sig': {'nbins': 50, 'xmin': -30.0, 'xmax': 30.0},
-                  'BToKEE_l1_dz': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
-                  'BToKEE_l2_dz': {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0},
-                  'BToKEE_l1_unBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
-                  'BToKEE_l2_unBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
-                  'BToKEE_l1_ptBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
-                  'BToKEE_l2_ptBiased': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
-                  'BToKEE_l1_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
-                  'BToKEE_l2_mvaId': {'nbins': 50, 'xmin': -2.0, 'xmax': 10.0},
-                  'BToKEE_l1_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
-                  'BToKEE_l2_isPF': {'nbins': 2, 'xmin': 0, 'xmax': 2},
-                  'BToKEE_l1_isLowPt': {'nbins': 2, 'xmin': 0, 'xmax': 2},
-                  'BToKEE_l2_isLowPt': {'nbins': 2, 'xmin': 0, 'xmax': 2},
-                  'BToKEE_l1_isPFoverlap': {'nbins': 2, 'xmin': 0, 'xmax': 2},
-                  'BToKEE_l2_isPFoverlap': {'nbins': 2, 'xmin': 0, 'xmax': 2},
-                  'BToKEE_k_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
-                  'BToKEE_k_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
-                  'BToKEE_k_eta': {'nbins': 50, 'xmin': -3.0, 'xmax': 3.0},
-                  'BToKEE_k_phi': {'nbins': 50, 'xmin': -4.0, 'xmax': 4.0},
-                  'BToKEE_k_DCASig': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
-                  'BToKEE_pt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_normpt': {'nbins': 50, 'xmin': 0.0, 'xmax': 30.0},
-                  'BToKEE_svprob': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
-                  'BToKEE_cos2D': {'nbins': 50, 'xmin': 0.999, 'xmax': 1.0},
-                  'BToKEE_l_xy_sig': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
-                  'BToKEE_keras_pf': {'nbins': 50, 'xmin': 0.0, 'xmax': 1.0},
-                  }
-
 def plotSNR(cut, results):
     fig, ax1 = plt.subplots()
     snr_jpsi, = ax1.plot(cut, results['SNR_jpsi'], 'bo', label=r'$J/\psi: S/\sqrt{S+B}$')
@@ -169,6 +128,33 @@ def plotSNR(cut, results):
     ax1.set_xlabel(r'MVA Cut')
     ax1.set_ylabel(r'$N(J/\psi) / N(\psi (2S))$')
     fig.savefig('{}_Jpsi2Psi2SRatio.pdf'.format(args.outputfile), bbox_inches='tight')
+    
+    fig, ax1 = plt.subplots()
+    ax1.plot(cut, results['eff_jpsi'], 'b-', label=r'$J/\psi$')
+    ax1.plot(cut, results['eff_nonresonant'], 'r-', label=r'Non-resonant')
+    ax1.set_xlabel(r'MVA Cut')
+    ax1.set_ylabel(r'MVA efficiency')
+    ax1.legend(loc='upper right')
+    fig.savefig('{}_mvaEfficiency.pdf'.format(args.outputfile), bbox_inches='tight')
+
+    fig, ax1 = plt.subplots()
+    scl_jpsi, = ax1.plot(cut, results['S_jpsi']/results['eff_jpsi'], 'b-', label=r'$J/\psi$')
+    ax1.set_xlabel(r'MVA Cut')
+    ax1.set_ylabel(r'$J/\psi: S/\epsilon_{\rm MVA}$')
+    ax1.yaxis.label.set_color('b')
+    for t1 in ax1.get_yticklabels():
+        t1.set_color('b')
+    ax2 = ax1.twinx()
+    scl_nonresonant, = ax2.plot(cut, results['S_nonresonant']/results['eff_nonresonant'], 'r-', label=r'Non-resonant')
+    ax2.set_ylabel(r'Non-resonant: $S/\epsilon_{\rm MVA}$')
+    ax2.yaxis.label.set_color('r')
+    for t1 in ax2.get_yticklabels():
+        t1.set_color('r')
+    handles = [scl_jpsi, scl_nonresonant]
+    labels = [r'$J/\psi$', r'Non-resonant']
+    fig.legend(handles=handles, labels=labels, loc=1, bbox_to_anchor=(1,1), bbox_transform=ax2.transAxes)
+    fig.savefig('{}_scaledS.pdf'.format(args.outputfile), bbox_inches='tight')
+
 
 def pdf_combine(pdf_list, outputfile):
     merger = PyPDF2.PdfFileMerger()
@@ -204,14 +190,19 @@ if __name__ == "__main__":
   inputfile = args.inputfile.replace('.root','').replace('.h5','')+'.root'
   outputfile = args.outputfile.replace('.root','').replace('.h5','')
 
-  eleType = 'low'
+  eleType = 'pf'
   partial_jpsi = 'part_workspace_jpsi_{}.root'.format(eleType)
   partial_psi2s = 'part_workspace_psi2s_{}.root'.format(eleType)
   partial_nonresonant = 'part_workspace_nonresonant_{}.root'.format(eleType)
-  psi2s_jpsi = 'psi2s_workspace_jpsi_{}.root'.format(eleType)
+  #psi2s_jpsi = 'psi2s_workspace_jpsi_{}.root'.format(eleType)
+  jpsi_psi2s = 'jpsi_workspace_psi2s_{}.root'.format(eleType)
+  jpsi_nonresonant = 'jpsi_workspace_nonresonant_{}.root'.format(eleType)
   params_jpsi = eval('params_jpsi_{}'.format(eleType))
   params_psi2s = eval('params_psi2s_{}'.format(eleType))
   params_nonresonant = eval('params_jpsi_{}'.format(eleType))
+  jpsi_mc = 'RootTree_2020Jan16_BuToKJpsi_Toee_BToKEEAnalyzer_2020Mar06_mva_{}.root'.format(eleType)
+  nonresonant_mc = 'RootTree_2020Jan16_BuToKee_all_BToKEEAnalyzer_2020Mar06_mva_{}.root'.format(eleType)
+  mc_branches = ['BToKEE_mll_fullfit', 'BToKEE_mva']
 
   drawSNR = True
 
@@ -219,18 +210,27 @@ if __name__ == "__main__":
   params = events.arrays()
   branches = pd.DataFrame(params).sort_index(axis=1)
 
+  jpsi_mc_branches = pd.DataFrame(uproot.open(jpsi_mc)['tree'].arrays(branches=mc_branches)).sort_index(axis=1)
+  jpsi_mc_branches = jpsi_mc_branches[(jpsi_mc_branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (jpsi_mc_branches['BToKEE_mll_fullfit'] < JPSI_UP)]
+  nTot_jpsi = float(jpsi_mc_branches.shape[0])
+
+  nonresonant_mc_branches = pd.DataFrame(uproot.open(nonresonant_mc)['tree'].arrays(branches=mc_branches)).sort_index(axis=1)
+  nonresonant_mc_branches = nonresonant_mc_branches[(nonresonant_mc_branches['BToKEE_mll_fullfit'] > NR_LOW) & (nonresonant_mc_branches['BToKEE_mll_fullfit'] < JPSI_UP)]
+  nTot_nonresonant = float(nonresonant_mc_branches.shape[0])
+
   output_branches = {}
 
-  results = {'{}_{}'.format(quantity, region): [] for quantity, region in itertools.product(['S', 'SErr', 'B', 'SNR'], ['nonresonant', 'jpsi', 'psi2s'])}
+  results = {'{}_{}'.format(quantity, region): [] for quantity, region in itertools.product(['S', 'SErr', 'B', 'SNR', 'eff'], ['nonresonant', 'jpsi', 'psi2s'])}
   outputplots = {'jpsi': [],
                  'psi2s': [],
                  'nonresonant': [],
                  }
 
-  mvaCutList = np.linspace(12.0, 15.0, 20)
+  mvaCutList = np.linspace(10.0, 13.0, 20)
   for mvaCut in mvaCutList:
     # mva selection
-    mva_selection = (branches['BToKEE_xgb'] > mvaCut)
+    mva_selection = (branches['BToKEE_mva'] > mvaCut)
+    selected_branches = branches[mva_selection].sort_values('BToKEE_mva', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')
 
     # j/psi selection
     fit_params_jpsi = {'doPartial': True,
@@ -241,8 +241,8 @@ if __name__ == "__main__":
                        'params': params_jpsi,
                        }
 
-    jpsi_selection = (branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_UP)
-    jpsi_branches = np.array(branches[mva_selection & jpsi_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
+    jpsi_selection = (selected_branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (selected_branches['BToKEE_mll_fullfit'] < JPSI_UP)
+    jpsi_branches = np.array(selected_branches[jpsi_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
     jpsi_tree = array2tree(jpsi_branches)
 
     outputname_jpsi = outputfile + '_jpsi_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf'
@@ -253,7 +253,14 @@ if __name__ == "__main__":
     results['B_jpsi'].append(B_jpsi)
     results['SNR_jpsi'].append(S_jpsi/np.sqrt(S_jpsi + B_jpsi))
 
-    expS = S_jpsi * BR_BToKLL / (BR_BToKJpsi * BR_JpsiToLL) * (517790.0/1678742) #(12091.0/44024)
+    eff_jpsi = float(jpsi_mc_branches[(jpsi_mc_branches['BToKEE_mva'] > mvaCut)].shape[0]) / nTot_jpsi
+    eff_nonresonant = float(nonresonant_mc_branches[(nonresonant_mc_branches['BToKEE_mva'] > mvaCut)].shape[0]) / nTot_nonresonant
+    #nTot_nonresonant = float(nonresonant_mc_branches[(nonresonant_mc_branches['BToKEE_mva'] > mvaCut)].shape[0])
+    #eff_nonresonant = float(nonresonant_mc_branches[(nonresonant_mc_branches['BToKEE_mva'] > mvaCut) & (nonresonant_mc_branches['BToKEE_mll_fullfit'] > NR_LOW) & (nonresonant_mc_branches['BToKEE_mll_fullfit'] < JPSI_UP)].shape[0]) / nTot_nonresonant
+    results['eff_jpsi'].append(eff_jpsi)
+    results['eff_nonresonant'].append(eff_nonresonant)
+
+    expS = S_jpsi * BR_BToKLL / (BR_BToKJpsi * BR_JpsiToLL) * (517790.0/1678742) * (eff_nonresonant / eff_jpsi)#(12091.0/44024)
 
     # psi(2s) selection
     fit_params_psi2s = {'doPartial': True,
@@ -261,12 +268,14 @@ if __name__ == "__main__":
                         'drawSNR': drawSNR,
                         'mvaCut': mvaCut,
                         'blinded': False,
-                        'params': params_jpsi,
+                        'params': params_psi2s,
                         'sigName': "B^{+}#rightarrow K^{+} #psi (2S)(#rightarrow e^{+}e^{-})",
+                        'doJpsi': True,
+                        'jpsiinputfile': jpsi_psi2s,
                         }
    
-    psi2s_selection = (branches['BToKEE_mll_fullfit'] > JPSI_UP) & (branches['BToKEE_mll_fullfit'] < PSI2S_UP)
-    psi2s_branches = np.array(branches[mva_selection & psi2s_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
+    psi2s_selection = (selected_branches['BToKEE_mll_fullfit'] > JPSI_UP) & (selected_branches['BToKEE_mll_fullfit'] < PSI2S_UP)
+    psi2s_branches = np.array(selected_branches[psi2s_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
     psi2s_tree = array2tree(psi2s_branches)
 
     outputname_psi2s = outputfile + '_psi2s_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf'
@@ -286,10 +295,12 @@ if __name__ == "__main__":
                               'expS': expS,
                               'params': params_nonresonant,
                               'sigName': "B^{+}#rightarrow K^{+} e^{+}e^{-}",
+                              'doJpsi': False,
+                              'jpsiinputfile': jpsi_nonresonant,
                               }
 
-    nonresonant_selection = (branches['BToKEE_mll_fullfit'] > NR_LOW) & (branches['BToKEE_mll_fullfit'] < JPSI_LOW)
-    nonresonant_branches = np.array(branches[mva_selection & nonresonant_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
+    nonresonant_selection = (selected_branches['BToKEE_mll_fullfit'] > NR_LOW) & (selected_branches['BToKEE_mll_fullfit'] < JPSI_LOW)
+    nonresonant_branches = np.array(selected_branches[nonresonant_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
     nonresonant_tree = array2tree(nonresonant_branches)
 
     outputname_nonresonant = outputfile + '_nonresonant_mva_{0:.3f}'.format(mvaCut).replace('.','-') + '.pdf'
@@ -300,8 +311,10 @@ if __name__ == "__main__":
     results['B_nonresonant'].append(B_NR)
     results['SNR_nonresonant'].append(S_NR/np.sqrt(S_NR + B_NR))
 
+    print("="*80)
     print('MVA: {}\n\tJ/psi - S: {}, B: {}, S/sqrt(S+B): {}\n\tNon-resonant - S: {}, B: {}, S/sqrt(S+B): {}'.format(mvaCut, S_jpsi, B_jpsi, S_jpsi/np.sqrt(S_jpsi+B_jpsi), S_NR, B_NR, S_NR/np.sqrt(S_NR+B_NR)))
-
+    print('Jpsi eff: {}, non-resonant eff: {}'.format(eff_jpsi, eff_nonresonant))
+    print("="*80)
   
   outputname_jpsi = '{}_jpsi_{}.pdf'.format(outputfile, eleType)
   outputname_psi2s = '{}_psi2s_{}.pdf'.format(outputfile, eleType)
@@ -342,20 +355,5 @@ if __name__ == "__main__":
   #argmax_SNR_R = np.argmax(SNR_R)
   #print('Best SNR: {}, Best cut: {}'.format(np.max(SNR_R), mvaCutList[argmax_SNR_R]))
   plotSNR(mvaCutList, results)
-
-  '''
-  if args.hist:
-    file_out = root_open('{}.root'.format(outputfile), 'recreate')
-    hist_list = {hist_name: Hist(hist_bins['nbins'], hist_bins['xmin'], hist_bins['xmax'], name=hist_name, title='', type='F') for hist_name, hist_bins in sorted(outputbranches.items())}
-    for hist_name, hist_bins in sorted(outputbranches.items()):
-      if hist_name in branches.keys():
-        branch_np = output_branches[hist_name].values
-        fill_hist(hist_list[hist_name], branch_np[np.isfinite(branch_np)])
-        hist_list[hist_name].write()
-    file_out.close()
-
-  else:
-    output_branches[outputbranches.keys()].to_root('{}.root'.format(outputfile), key='tree')
-  '''
 
 

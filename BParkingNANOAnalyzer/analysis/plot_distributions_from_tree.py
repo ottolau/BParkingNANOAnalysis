@@ -101,7 +101,8 @@ def plot_corr(df, outputfile):
     print("Plotting correlation...")
     corr = df.corr()
     mask = np.triu(np.ones_like(corr, dtype=np.bool))
-    fig, ax = plt.subplots(figsize=(110, 90))
+    #fig, ax = plt.subplots(figsize=(110, 90))
+    fig, ax = plt.subplots()
     cmap = sns.diverging_palette(220, 10, as_cmap=True)
     sns.heatmap(corr, mask=mask, cmap=cmap, vmin=-1.0, vmax=1.0, center=0, square=True, linewidths=.5, annot=True, cbar_kws={"shrink": .5})
     fig.savefig(outputfile, bbox_inches='tight')
@@ -209,7 +210,7 @@ if __name__ == '__main__':
     #df = df1.copy()
 
    
-    df = df[(df['BToKEE_svprob'] > 0.1) & (df['BToKEE_fit_cos2D'] > 0.999)]
+    #df = df[(df['BToKEE_svprob'] > 0.1) & (df['BToKEE_fit_cos2D'] > 0.999)]
 
     l1_pf_selection = (df['BToKEE_l1_isPF'])
     l2_pf_selection = (df['BToKEE_l2_isPF'])
@@ -256,8 +257,8 @@ if __name__ == '__main__':
 
     #print(df[trigger_selection].groupby('BToKMuMu_event').count()['BToKMuMu_fit_mass'])
     #print(df[trigger_selection])
-    bins = np.linspace(0.0, 50.0, 50)
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    #bins = np.linspace(0.0, 50.0, 50)
+    #fig, axes = plt.subplots(1, 3, figsize=(15, 5))
     #fig, axes = plt.subplots()
     #plot_duplicates(df[trigger_selection], 'BToKMuMu_fit_mass', bins=bins, ax=axes[0], title='Tag side')
     #plot_duplicates(df[np.logical_not(trigger_selection)], 'BToKMuMu_fit_mass', bins=bins, ax=axes[1], title='Probe side')
@@ -265,15 +266,15 @@ if __name__ == '__main__':
     
     
     
-    plot_duplicates(df, 'BToKEE_q2', bins=bins, ax=axes[0], title='All')
-    print('plotting PF')
-    plot_duplicates(df[pf_selection], 'BToKEE_q2', bins=bins, ax=axes[1], title='PF-PF')
-    print('plotting lowPt')
-    plot_duplicates(df[low_selection], 'BToKEE_q2', bins=bins, ax=axes[2], title='LowPt-LowPt')
+    #plot_duplicates(df, 'BToKEE_q2', bins=bins, ax=axes[0], title='All')
+    #print('plotting PF')
+    #plot_duplicates(df[pf_selection], 'BToKEE_q2', bins=bins, ax=axes[1], title='PF-PF')
+    #print('plotting lowPt')
+    #plot_duplicates(df[low_selection], 'BToKEE_q2', bins=bins, ax=axes[2], title='LowPt-LowPt')
     #plot_duplicates(df, 'BToKEE_fit_mass', bins=bins, ax=axes, title='LowPt-LowPt', logscale=False)
     #plot_duplicates(df[mix_net_selection], 'BToKEE_fit_mass', bins=bins, ax=axes[1], title='PF-LowPt')
     #plot_duplicates(df[low_pfveto_selection], 'BToKEE_fit_mass', bins=bins, ax=axes[2], title='LowPt-LowPt')
-    fig.savefig('test.pdf', bbox_inches='tight')
+    #fig.savefig('test.pdf', bbox_inches='tight')
     
 
     '''
@@ -330,7 +331,7 @@ if __name__ == '__main__':
         plt.close()
         print("finished plotting {}...".format(var))
     '''
-    '''    
+    '''
     training_features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_l1_dxy_sig',
               'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_l2_dxy_sig',
               'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_k_DCASig',
@@ -341,12 +342,19 @@ if __name__ == '__main__':
     training_features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
     training_features += ['BToKEE_ptImbalance']
     #training_features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
-
-    plot_corr(df.query('Category == 0')[training_features], args.outputfile.replace('.pdf','') + '_corr_sig.pdf')
-    plot_corr(df.query('Category == 1')[training_features], args.outputfile.replace('.pdf','') + '_corr_bkg.pdf')
-    
-    plot_pairgrid(df[training_features+['Category']].sample(n=1000), args.outputfile.replace('.pdf','') + '_pairgrid.pdf')
     '''
+    training_features = ['BToKEE_iso_sv_rel', 'BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
+    #df = df[low_selection]
+    plot_corr(df.query('Category == 0')[training_features], args.outputfile.replace('.pdf','') + '_corr_sig.pdf')
+    plot_corr(df.query('Category == -1')[training_features], args.outputfile.replace('.pdf','') + '_corr_bkg.pdf')
+
+    bins = np.linspace(0.0, 10.0, 100)
+    fig, axes = plt.subplots()
+    plot_hist(df, 'BToKEE_iso_sv_rel', bins=bins, ax=axes, title='', logscale=True)
+    fig.savefig('test.pdf', bbox_inches='tight')
+   
+    #plot_pairgrid(df[training_features+['Category']].sample(n=1000), args.outputfile.replace('.pdf','') + '_pairgrid.pdf')
+    
 
 
 

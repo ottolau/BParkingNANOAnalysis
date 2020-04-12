@@ -42,8 +42,8 @@ def fit(tree, outputfile, **kwargs):
     isMC = kwargs.get('isMC', False)
     doPartial = kwargs.get('doPartial', False)
     partialinputfile = kwargs.get('partialinputfile', 'part_workspace.root')
-    doPsi2S = kwargs.get('doPsi2S', False)
-    psi2sinputfile = kwargs.get('psi2sinputfile', 'psi2s_workspace.root')
+    doJpsi = kwargs.get('doJpsi', False)
+    jpsiinputfile = kwargs.get('jpsiinputfile', 'jpsi_workspace.root')
     drawSNR = kwargs.get('drawSNR', False)
     mvaCut = kwargs.get('mvaCut', 0.0)
     blinded = kwargs.get('blinded', False)
@@ -154,7 +154,7 @@ def fit(tree, outputfile, **kwargs):
 
     if bkgPDF == 2:
         # Exponential
-        wspace.factory('exp_alpha[-3.0, -100.0, -1.0e-5]')
+        wspace.factory('exp_alpha[-10.0, -1000.0, -1.0]')
         alpha = wspace.var('alpha')
         wspace.factory('Exponential::bkg(x,exp_alpha)')
 
@@ -164,16 +164,16 @@ def fit(tree, outputfile, **kwargs):
         wp = wpf.Get("myPartialWorkSpace")
         partial = wp.pdf("partial")
         getattr(wspace, "import")(partial, RooFit.Rename("partial"))
-        if doPsi2S:
-          wpf2 = ROOT.TFile(psi2sinputfile,"READ")
+        if doJpsi:
+          wpf2 = ROOT.TFile(jpsiinputfile,"READ")
           wp2 = wpf2.Get("myPartialWorkSpace")
-          psi2s = wp2.pdf("psi2s")
-          getattr(wspace, "import")(psi2s, RooFit.Rename("psi2s"))
-          wspace.factory('SUM::model2(f1[0.8,0.0,1.0]*partial,psi2s)')
+          jpsi = wp2.pdf("jpsi")
+          getattr(wspace, "import")(jpsi, RooFit.Rename("jpsi"))
+          wspace.factory('SUM::model2(f1[0.5,0.0,1.0]*partial,jpsi)')
           print('Finished loading KDE!')
-          wspace.factory('SUM::model1(f2[0.5,0.0,1.0]*model2,bkg)')
+          wspace.factory('SUM::model1(f2[0.2,0.0,0.8]*model2,bkg)')
         else:
-          wspace.factory('SUM::model1(f1[0.5,0.0,1.0]*partial,bkg)')
+          wspace.factory('SUM::model1(f1[0.5,0.0,0.8]*partial,bkg)')
         print('Finished loading KDE!')
         wspace.factory('SUM::model(nsig*sig,nbkg*model1)')
 
@@ -275,8 +275,8 @@ def fit(tree, outputfile, **kwargs):
       model.plotOn(xframe,RooFit.Name("bkg"),RooFit.Components("bkg"),RooFit.Range("Full"),RooFit.Normalization(nd, ROOT.RooAbsReal.Relative),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(42),RooFit.LineColor(42),RooFit.LineWidth(1),RooFit.MoveToBack())
       if doPartial:
         model.plotOn(xframe,RooFit.Name("partial"),RooFit.Components("bkg,partial"),RooFit.Range("Full"),RooFit.Normalization(nd, ROOT.RooAbsReal.Relative),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(40),RooFit.LineColor(40),RooFit.LineWidth(1),RooFit.MoveToBack()) ;
-      if doPsi2S:
-        model.plotOn(xframe,RooFit.Name("psi2s"),RooFit.Components("bkg,partial,psi2s"),RooFit.Range("Full"),RooFit.Normalization(nd, ROOT.RooAbsReal.Relative),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(46),RooFit.LineColor(46),RooFit.LineWidth(1),RooFit.MoveToBack()) ;
+      if doJpsi:
+        model.plotOn(xframe,RooFit.Name("jpsi"),RooFit.Components("bkg,partial,jpsi"),RooFit.Range("Full"),RooFit.Normalization(nd, ROOT.RooAbsReal.Relative),RooFit.DrawOption("F"),RooFit.VLines(),RooFit.FillColor(46),RooFit.LineColor(46),RooFit.LineWidth(1),RooFit.MoveToBack()) ;
       model.plotOn(xframe,RooFit.Name("sig"),RooFit.Components("sig"),RooFit.Range("Full"),RooFit.Normalization(nd, ROOT.RooAbsReal.Relative),RooFit.DrawOption("L"),RooFit.LineStyle(2),RooFit.LineColor(1)) ;
 
 
@@ -315,8 +315,8 @@ def fit(tree, outputfile, **kwargs):
       #pt = ROOT.TPaveText(0.72,0.30,0.92,0.63,"brNDC")
       if doPartial:
         legend.AddEntry(xframe.findObject("partial"),"Partially Reco.","f");
-      if doPsi2S:
-        legend.AddEntry(xframe.findObject("psi2s"),"B^{+}#rightarrow K^{+} #psi (2S)(#rightarrow e^{+}e^{-})","f");
+      if doJpsi:
+        legend.AddEntry(xframe.findObject("jpsi"),"B^{+}#rightarrow K^{+} J/#psi(#rightarrow e^{+}e^{-})","f");
       legend.AddEntry(xframe.findObject("sig"),sigName,"l");
 
     legend.SetTextFont(42);
@@ -447,14 +447,15 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--pdfname", dest="pdfname", default="partial", help="PDF name of the Partially reconstructed background")
     args = parser.parse_args()
     
-    params = {'mean': 5.2654, 'width': 0.0638, 'alpha1': 0.655, 'n1': 1.75, 'alpha2': 1.509, 'n2': 9.85}
+    params = params_jpsi_low
 
     tree = ROOT.TChain('tree')
     tree.AddFile(args.inputfile)
     if not args.partial:
-      fit(tree, args.outputfile, fitJpsi=False, isMC=True)
+      #fit(tree, args.outputfile, fitJpsi=False, isMC=True)
       #fit(tree, args.outputfile, doPartial=True)
-      #fit(tree, args.outputfile, doPartial=True, partialinputfile='part_workspace_resonant_low.root', drawSNR=True, mvaCut=7.0, params=params)
+      fit(tree, args.outputfile, doPartial=True, partialinputfile='part_workspace_jpsi_low.root', drawSNR=True, mvaCut=13.58, params=params)
+      #fit(tree, args.outputfile, doPartial=True, partialinputfile='part_workspace_psi2s_pf.root', doJpsi=True, jpsiinputfile='jpsi_workspace_psi2s_pf.root', drawSNR=True, mvaCut=7.0, params=params)
     else:
       fit_kde(tree, args.outputfile, pdfname=args.pdfname)
     

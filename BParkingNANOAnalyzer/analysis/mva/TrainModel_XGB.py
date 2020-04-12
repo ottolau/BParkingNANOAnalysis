@@ -157,7 +157,7 @@ def pauc(predt, dtrain):
     return 'pauc', roc_auc_score(y, predt, max_fpr=1.0e-2)
 
 space  = [Integer(5, 8, name='max_depth'),
-         Real(0.01, 0.2, name='eta'),
+         Real(0.005, 0.1, name='eta'),
          Real(0.0, 10.0, name='gamma'),
          Integer(1.0, 10.0, name='min_child_weight'),
          Real(0.5, 1.0, name='subsample'),
@@ -172,6 +172,7 @@ def objective(**X):
     print("New configuration: {}".format(X))
     params = X.copy()
     params['objective'] = 'binary:logitraw'
+    params['tree_method'] = 'hist'
     #params['eval_metric'] = 'auc'
     params['nthread'] = 6
     params['silent'] = 1
@@ -193,6 +194,7 @@ def train(xgtrain, xgtest, hyper_params=None):
     ratio = float(np.sum(label == 0)) / np.sum(label == 1)
     params['scale_pos_weight'] = ratio
     params['objective'] = 'binary:logitraw'
+    params['tree_method'] = 'hist'
     #params['eval_metric'] = 'auc'
     params['nthread'] = 10
     params['silent'] = 1
@@ -257,20 +259,20 @@ if __name__ == '__main__':
     ddf['bkg']['isSignal'] = 0
 
     df = pd.concat([ddf['sig'],ddf['bkg']]).sort_index(axis=1).sample(frac=1).reset_index(drop=True)
-    df['weights'] = np.where(df['isSignal'], 1.0/df['BToKEE_fit_massErr'].replace(np.nan, 1.0), 1.0)
-    #df['weights'] = 1.0
+    #df['weights'] = np.where(df['isSignal'], 1.0/df['BToKEE_fit_massErr'].replace(np.nan, 1.0), 1.0)
+    df['weights'] = 1.0
 
     X = df[features]
     y = df['isSignal']
     W = df['weights']
 
     suffix = args.suffix
-    n_boost_rounds = 800
+    n_boost_rounds = 1200
     n_calls = 80
     n_random_starts = 40
     do_bo = args.optimization
     do_cv = True
-    best_params = {'colsample_bytree': 0.5646282034743916, 'min_child_weight': 9, 'subsample': 0.9707346064629926, 'eta': 0.04577526450794918, 'alpha': 6.537773473724525, 'max_depth': 7, 'gamma': 3.445226736766573, 'lambda': 0.0855102092404514}
+    best_params = {'colsample_bytree': 0.4048800845903312, 'min_child_weight': 4, 'subsample': 0.6625036039303215, 'eta': 0.0440179830884866, 'alpha': 4.393497894064571, 'max_depth': 9, 'gamma': 0.288003848166617, 'lambda': 8.195791858687405}
 
     # split X and y up in train and test samples
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.20)
@@ -299,9 +301,9 @@ if __name__ == '__main__':
         best_params = {}
         res_gp = gp_minimize(objective, space, n_calls=n_calls, n_random_starts=n_random_starts, verbose=True, random_state=36)
         print("Finish optimization in {}s".format(time.time()-begt))
-        plt.figure()
-        plot_convergence(res_gp)
-        plt.savefig('training_resultis_bo_convergencePlot_xgb_{}.pdf'.format(suffix))
+        #plt.figure()
+        #plot_convergence(res_gp)
+        #plt.savefig('training_resultis_bo_convergencePlot_xgb_{}.pdf'.format(suffix))
         #plt.figure()
         #plot_evaluations(res_gp)
         #plt.savefig('training_resultis_bo_evaluationsPlot_xgb_{}.pdf'.format(suffix))
@@ -317,7 +319,7 @@ if __name__ == '__main__':
         figs, axs = plt.subplots()
         #cv = KFold(n_splits=5, shuffle=True)
         cv = StratifiedKFold(n_splits=5, shuffle=True)
-        mean_fpr = np.logspace(-6, 0, 100)
+        mean_fpr = np.logspace(-7, 0, 100)
 
         iFold = 0
         for train_idx, test_idx in cv.split(X_train, y_train):
@@ -350,7 +352,7 @@ if __name__ == '__main__':
         mean_auc = auc(mean_fpr, mean_tpr)
         std_auc = np.std(aucs)
         axs.plot(mean_fpr, mean_tpr, color='b', label=r'Mean ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc), lw=2, alpha=.8)
-        axs.plot(np.logspace(-5, 0, 1000), np.logspace(-5, 0, 1000), linestyle='--', lw=2, color='k', label='Random chance')
+        axs.plot(np.logspace(-6, 0, 1000), np.logspace(-6, 0, 1000), linestyle='--', lw=2, color='k', label='Random chance')
 
         std_tpr = np.std(tprs, axis=0)
         tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
@@ -415,8 +417,8 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots()
     plot_roc_curve(df_test, "score", ax=ax, label="XGB")
-    ax.plot(np.logspace(-5, 0, 1000), np.logspace(-5, 0, 1000), linestyle='--', color='k')
-    ax.set_xlim([1.0e-5, 1.0])
+    ax.plot(np.logspace(-6, 0, 1000), np.logspace(-6, 0, 1000), linestyle='--', color='k')
+    ax.set_xlim([1.0e-6, 1.0])
     ax.set_ylim([0.0, 1.0])
     ax.set_xscale('log')
     ax.set_xlabel("False Alarm Rate")
@@ -448,9 +450,6 @@ if __name__ == '__main__':
     q2_bins = np.linspace(0.045, 14.8, n_q2_bins)
     df["q2_binned"] = get_bins_center(df["BToKEE_q2"], q2_bins)
 
-    n_mvaId_bins = 100
-    mvaId_bins = np.linspace(0.0, 10.0, n_mvaId_bins)
-    df["mvaId_binned"] = get_bins_center(df["BToKEE_l2_mvaId"], mvaId_bins)
 
     df_test = df[df["test"]]
 
@@ -472,17 +471,21 @@ if __name__ == '__main__':
     fig_q2.subplots_adjust(hspace=0.05)      
     fig_q2.savefig('training_results_eff_trunon_q2_{}.pdf'.format(suffix), bbox_inches='tight')
 
+    
+    n_mvaId_bins = 100
+    mvaId_bins = np.linspace(0.0, 10.0, n_mvaId_bins)
+    df["mvaId_binned"] = get_bins_center(df["BToKEE_l2_mvaId"], mvaId_bins)
+
     fig_mvaId, axes_mvaId = plt.subplots(2, 1)
     plot_turnon_curve(df_test, 'mvaId_binned', working_points, r'Sub-leading electron mvaId', isSignal=True, ax=axes_mvaId[0])
     plot_turnon_curve(df_test, 'mvaId_binned', working_points, r'Sub-leading electron mvaId', isSignal=False, ax=axes_mvaId[1])
     fig_mvaId.subplots_adjust(hspace=0.05)      
     fig_mvaId.savefig('training_results_eff_trunon_mvaId_{}.pdf'.format(suffix), bbox_inches='tight')
+    
 
     df = df.drop("pt_binned", axis=1)
     df = df.drop("eta_binned", axis=1)
     df = df.drop("q2_binned", axis=1)
     df = df.drop("mvaId_binned", axis=1)
-
-
 
 

@@ -59,7 +59,7 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
                       'BToKEE_svprob': {'nbins': 100, 'xmin': 0.0, 'xmax': 1.0},
                       'BToKEE_fit_cos2D': {'nbins': 100, 'xmin': 0.999, 'xmax': 1.0},
                       'BToKEE_l_xy_sig': {'nbins': 100, 'xmin': 0.0, 'xmax': 50.0},
-                      'BToKEE_ptImbalance': {'nbins': 100, 'xmin': 0.0, 'xmax': 50.0},
+                      'BToKEE_ptImbalance': {'nbins': 100, 'xmin': 0.0, 'xmax': 5.0},
                       'BToKEE_Dmass': {'nbins': 100, 'xmin': 0.0, 'xmax': 5.0},
                       'BToKEE_Dmass_flip': {'nbins': 100, 'xmin': 0.0, 'xmax': 5.0},
                       'BToKEE_maxDR': {'nbins': 100, 'xmin': 0.0, 'xmax': 4.0},
@@ -69,12 +69,21 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
                       'BToKEE_event': {'nbins': 10, 'xmin': 0.0, 'xmax': 10.0},
                       }
 
-    outputbranches_mva = {'BToKEE_xgb': {'nbins': 50, 'xmin': -20.0, 'xmax': 20.0},
+    outputbranches_mva = {'BToKEE_mva': {'nbins': 50, 'xmin': -20.0, 'xmax': 20.0},
                          }
 
     if evalMVA:
       outputbranches.update(outputbranches_mva)
-    #outputbranches.update(outputbranches_mva)
+    outputbranches.update(outputbranches_mva)
+
+    self._yutaPR = False
+    outputbranches_yutaPR = {'BToKEE_iso_sv_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                                    'BToKEE_iso_ntrack': {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0},
+                                    'BToKEE_ptImbalance_yutaPR': {'nbins': 100, 'xmin': 0.0, 'xmax': 5.0},
+                                    }
+
+    if self._yutaPR:
+      outputbranches.update(outputbranches_yutaPR)
 
     super(BToKLLAnalyzer_postprocess, self).__init__(inputfiles, outputfile, inputbranches, outputbranches, hist)
 
@@ -91,17 +100,15 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
       features += ['BToKEE_dz']
       features += ['BToKEE_minDR', 'BToKEE_maxDR']
       features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
-      #features += ['BToKEE_l1_iso03_rel', 'BToKEE_l2_iso03_rel', 'BToKEE_k_iso03_rel', 'BToKEE_b_iso03_rel']
-      features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
       features += ['BToKEE_ptImbalance']
-      #features += ['BToKEE_trg_eta']
-      #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+      #features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
+      features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
 
       training_branches = sorted(features)
-      mvaCut = 5.0
+      mvaCut = -99
       ntree_limit = 800
       model = xgb.Booster({'nthread': 6})
-      model.load_model('xgb_fulldata_10Mar2020_fullq2_isoPFMVADRptImb_weighted_pauc02_pf.model')
+      model.load_model('xgb_fulldata_23Mar2020_fullq2_isoMVADRptImb_weighted_pauc02_low.model')
 
     for (self._ifile, filename) in enumerate(self._file_in_name):
       print('[BToKLLAnalyzer_postprocess::run] INFO: FILE: {}/{}. Loading file...'.format(self._ifile+1, self._num_files))
@@ -129,11 +136,13 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         low_pfveto_selection = low_selection & overlap_veto_selection
         mix_net_selection = overlap_veto_selection & np.logical_not(pf_selection | low_selection)
         all_selection = pf_selection | low_pfveto_selection | mix_net_selection 
-
+        
+        low_notpf_selection = low_selection & np.logical_not(self._branches['BToKEE_l1_isPFoverlap'] & self._branches['BToKEE_l2_isPFoverlap'])
+      
         # general selection
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) & (self._branches['BToKEE_mll_fullfit'] < PSI2S_UP) # full q2
-        mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_LOW) #low q2
-        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_UP) # Jpsi
+        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_LOW) #low q2
+        mll_selection = (self._branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_UP) # Jpsi
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > JPSI_UP) & (self._branches['BToKEE_mll_fullfit'] < PSI2S_UP) # psi(2S)
         b_upsb_selection = (self._branches['BToKEE_fit_mass'] > B_UP)
         b_bothsb_selection = ((self._branches['BToKEE_fit_mass'] > B_SB_LOW) & (self._branches['BToKEE_fit_mass'] < B_LOW)) | ((self._branches['BToKEE_fit_mass'] > B_UP) & (self._branches['BToKEE_fit_mass'] < B_SB_UP))
@@ -141,27 +150,30 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
 
         l1_selection = (self._branches['BToKEE_l1_mvaId'] > 3.0) 
         l2_selection = (self._branches['BToKEE_l2_mvaId'] > 0.0)
+        cutbased_selection = (self._branches['BToKEE_fit_pt'] > 10.0) & (self._branches['BToKEE_l_xy_sig'] > 6.0) & (self._branches['BToKEE_svprob'] > 0.1) & (self._branches['BToKEE_fit_cos2D'] > 0.999)
 
         general_selection = l1_selection & l2_selection
         #general_selection = d_veto_selection
         #general_selection &= (self._branches['BToKEE_eleEtaCats'] == 0)
-        #general_selection &= mll_selection
+        general_selection &= mll_selection
         #general_selection &= pf_selection
-        general_selection &= low_selection
+        #general_selection &= low_selection
+        general_selection &= low_notpf_selection
         #general_selection &= mix_net_selection
         #general_selection &= low_pfveto_selection
         #general_selection &= b_upsb_selection
         #general_selection &= b_bothsb_selection
-        #general_selection &= (self._branches['BToKEE_xgb'] > 12.0)
+        #general_selection &= (self._branches['BToKEE_mva'] > 13.58)
         #general_selection &= (self._branches['BToKEE_l1_pfmvaId'] > -2.0) & (self._branches['BToKEE_l2_pfmvaId'] > -2.0)
+        #general_selection &= cutbased_selection
 
         self._branches = self._branches[general_selection]
 
         if self._evalMVA:
-          #self._branches['BToKEE_xgb'] = model.predict(xgb.DMatrix(self._branches[training_branches].sort_index(axis=1).values), ntree_limit=ntree_limit)
-          self._branches['BToKEE_xgb'] = model.predict(xgb.DMatrix(self._branches[training_branches].replace([np.inf, -np.inf], 0.0).sort_index(axis=1)), ntree_limit=ntree_limit)
-          self._branches = self._branches[(self._branches['BToKEE_xgb'] > mvaCut)].sort_values('BToKEE_xgb', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')
-          #self._branches = self._branches[(self._branches['BToKEE_xgb'] > mvaCut)]
+          #self._branches['BToKEE_mva'] = model.predict(xgb.DMatrix(self._branches[training_branches].sort_index(axis=1).values), ntree_limit=ntree_limit)
+          self._branches['BToKEE_mva'] = model.predict(xgb.DMatrix(self._branches[training_branches].replace([np.inf, -np.inf], 0.0).sort_index(axis=1)), ntree_limit=ntree_limit)
+          #self._branches = self._branches[(self._branches['BToKEE_mva'] > mvaCut)].sort_values('BToKEE_mva', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')
+          self._branches = self._branches[(self._branches['BToKEE_mva'] > mvaCut)]
 
         self.fill_output()
         startTime = time.time()

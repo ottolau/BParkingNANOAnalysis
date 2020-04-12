@@ -70,6 +70,7 @@ def write_bash(temp = 'runjob.sh', command = '', outputdir = ''):
     out += 'tar -xf BParkingNANOAnalysis.tgz\n'
     out += 'rm BParkingNANOAnalysis.tgz\n'
     out += 'cd BParkingNANOAnalysis\n'
+    out += 'cp ${MAINDIR}/setup_condor.sh BParkingNANOAnalyzer/setup_condor.sh\n'
     out += '. BParkingNANOAnalyzer/setup_condor.sh\n'
     out += 'scram b clean; scram b\n'
     out += 'cd BParkingNANOAnalyzer/test\n'
@@ -133,7 +134,7 @@ if __name__ == '__main__':
     exec_me("git clone https://github.com/ottolau/BParkingNANOAnalysis.git {}".format(os.path.join(zipPath, "BParkingNANOAnalysis")), False)
     exec_me("tar -zcvf BParkingNANOAnalysis.tgz -C {} {}".format(zipPath, "BParkingNANOAnalysis"), False)
 
-    files = ['../../scripts/BToKLLAnalyzer.py', '../../scripts/BToKstarLLAnalyzer.py', '../runAnalyzer.py', 'BParkingNANOAnalysis.tgz']
+    files = ['../../setup_condor.sh', '../../scripts/BToKLLAnalyzer.py', '../../scripts/BToKstarLLAnalyzer.py', '../runAnalyzer.py', 'BParkingNANOAnalysis.tgz']
     if args.mva:
         files += ['../../models/mva.model']
     files_condor = [f.split('/')[-1] for f in files]

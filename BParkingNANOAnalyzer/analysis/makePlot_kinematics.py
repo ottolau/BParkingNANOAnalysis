@@ -37,6 +37,7 @@ varUnitMap = OrderedDict([("k_pt", "kaon p_{T} [GeV]"),
               ("isPFoverlap", "isPFoverlap"),
               ("isPF", "isPF"),
               ("Dmass", "m(K^{+}l^{-}[#rightarrow #pi^{-}]) [GeV]"),
+              ("ptImbalance", "|#bf{p(e^{+}e^{-})}#times #bf{r}|/|#bf{p(K^{+})}#times #bf{r}|"),
               ])
 
 def setup_pad():
@@ -175,6 +176,11 @@ def make_2plots(inputfile, hist_name_1, hist_name_2, outputfile):
     pad.Draw()
     pad.cd()
 
+    h1.SetMarkerStyle(32)
+    h1.SetMarkerSize(1)
+    h2.SetMarkerStyle(21)
+    h2.SetMarkerSize(1)
+
     draw_hist(h1, hist_name_1, unit, "Events", same=False, err=True)
     draw_hist(h2, hist_name_2, unit, "Events", same=True, err=True)
 
@@ -185,7 +191,7 @@ def make_2plots(inputfile, hist_name_1, hist_name_2, outputfile):
     l1.AddEntry(h2,hist_name_2)
     l1.Draw("same")
     pad.cd()
-    CMS_lumi(pad)
+    CMS_lumi()
 
     c.cd()
     c.Update()
@@ -433,9 +439,9 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--backgroundfile", dest="backgroundfile", default="", help="ROOT file contains histograms")
     args = parser.parse_args()
 
-    make_plots(args.inputfile)
+    #make_plots(args.inputfile)
     #make_comparisons(args.signalfile, args.backgroundfile)
-    #make_2plots(args.inputfile, 'BToKEE_mass_pf', 'BToKEE_fit_mass_pf', 'BToKEE_mass_comp_MC.pdf')
+    make_2plots(args.inputfile, 'BToKEE_ptImbalance', 'BToKEE_ptImbalance_yutaPR', 'test.pdf')
     #make_eleStack(args.inputfile, 'test.pdf')
     #make_subtraction(args.inputfile, 'test.pdf')
 
