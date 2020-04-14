@@ -123,6 +123,12 @@ if __name__ == '__main__':
       outputBase = "output_{}_{}".format(args.inputfiles.replace('.list',''),args.suffix)
       outputDir = 'root://eosuser.cern.ch//eos/user/k/klau/BParkingNANO_forCondor/output/{}_{}'.format(args.inputfiles.replace('.list',''),args.suffix)
       outputName = args.inputfiles.replace('.list','') + '_' +  args.suffix
+    if args.mc:
+      outputBase += '_mc'
+      outputName += '_mc'
+    if args.mva:
+      outputBase += '_mva'
+      outputName += '_mva'
 
     dryRun  = False
     subdir  = os.path.expandvars("$PWD")

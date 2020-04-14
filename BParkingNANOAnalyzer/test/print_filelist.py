@@ -15,7 +15,9 @@ import random
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Mar31/ParkingBPH2/crab_data_Run2018B_part2/200331_183424/0000/',
 #           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Mar31/ParkingBPH2/crab_data_Run2018B_part2/200331_183424/0001/',]
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr11/BuToKJpsi_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKJpsi_Toee/200411_170141/0000/']
-mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr11/BuToKee_MufilterPt6_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKee_ext/200411_170027/0000/']
+#mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr11/BuToKee_MufilterPt6_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKee_ext/200411_170027/0000/']
+#mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr13/BuToKJpsi_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKJpsi_Toee/200413_014042/0000/']
+mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr13/BuToKee_MufilterPt6_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKee_ext/200413_013817/0000/']
 
 '''
 mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH1/crab_data_Run2018A_part1/200116_150535/0000/',
@@ -123,8 +125,8 @@ filelist = ['{}{}'.format(redirector, f.replace('/eos/cms/','')) for f in fileli
 #outputFile = open('BParkingNANO_2020Jan16_BdToKstarPsi2S_ToKPiee.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BuToKee_ext_yutaPR.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_Run2018B2_yutaPR.list', 'w+')
-#outputFile = open('BParkingNANO_2020Jan16_BuToKJpsi_Toee_loosePreselection.list', 'w+')
-outputFile = open('BParkingNANO_2020Jan16_BuToKee_ext_loosePreselection.list', 'w+')
+#outputFile = open('BParkingNANO_2020Jan16_BuToKJpsi_Toee_loosePreselection_svprob0.list', 'w+')
+outputFile = open('BParkingNANO_2020Jan16_BuToKee_ext_loosePreselection_svprob0.list', 'w+')
 
 for f in filelist:
     outputFile.write('%s\n'%(f))
