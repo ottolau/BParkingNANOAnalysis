@@ -156,14 +156,14 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         #general_selection = d_veto_selection
         #general_selection &= (self._branches['BToKEE_eleEtaCats'] == 0)
         general_selection &= mll_selection
-        #general_selection &= pf_selection
+        general_selection &= pf_selection
         #general_selection &= low_selection
-        general_selection &= low_notpf_selection
+        #general_selection &= low_notpf_selection
         #general_selection &= mix_net_selection
         #general_selection &= low_pfveto_selection
         #general_selection &= b_upsb_selection
         #general_selection &= b_bothsb_selection
-        #general_selection &= (self._branches['BToKEE_mva'] > 13.58)
+        general_selection &= (self._branches['BToKEE_mva'] > 12.68)
         #general_selection &= (self._branches['BToKEE_l1_pfmvaId'] > -2.0) & (self._branches['BToKEE_l2_pfmvaId'] > -2.0)
         #general_selection &= cutbased_selection
 

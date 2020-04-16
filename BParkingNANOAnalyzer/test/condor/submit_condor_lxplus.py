@@ -125,14 +125,17 @@ if __name__ == '__main__':
       outputName = args.inputfiles.replace('.list','') + '_' +  args.suffix
     if args.mc:
       outputBase += '_mc'
+      outputDir += '_mc'
       outputName += '_mc'
     if args.mva:
       outputBase += '_mva'
+      outputDir += '_mva'
       outputName += '_mva'
 
     dryRun  = False
     subdir  = os.path.expandvars("$PWD")
     group   = 150
+    #group = 30
 
     zipPath = 'zip'
     if not os.path.exists(zipPath):

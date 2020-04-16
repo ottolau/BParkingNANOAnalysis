@@ -13,7 +13,6 @@ import numpy as np
 import uproot_methods
 import pandas as pd
 
-#import rootpy.ROOT as ROOT
 from rootpy.io import root_open
 from rootpy.plotting import Hist
 from rootpy.tree import Tree
@@ -53,21 +52,17 @@ class BParkingNANOAnalyzer(object):
           branch_np = self._branches[hist_name].values
           fill_hist(self._hist_list[hist_name], branch_np[np.isfinite(branch_np)])
     else:
-      self._branches = self._branches[self._outputbranches.keys()]
-      #self._branches.to_hdf(self._file_out_name+'.h5', 'branches', mode='a', format='table', append=True)
-      self._branches.to_root(self._file_out_name+'.root', key='tree', mode='a')
+      self._branches = self._branches[self._outputbranches.keys()].sort_index(axis=1)
+      self._branches.to_root(self._file_out_name+'.root', key='tree', mode='a', store_index=False)
 
   def finish(self):
     print('[BParkingNANOAnalyzer::finish] INFO: Merging the output files...')
-    #os.system("hadd -k -f {}.root {}_subset*.root".format(self._file_out_name, self._file_out_name))
-    #os.system("rm {}_subset*.root".format(self._file_out_name))
     if self._hist:
       for hist_name, hist in sorted(self._hist_list.items()):
         hist.write()
       self._file_out.close()
     else:
       pass
-
 
   def print_timestamp(self):
     ts_start = time.time()
