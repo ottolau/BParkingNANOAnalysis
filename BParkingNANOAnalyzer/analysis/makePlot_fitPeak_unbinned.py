@@ -66,10 +66,13 @@ def fit(tree, outputfile, **kwargs):
     thevars = ROOT.RooArgSet()
 
     if fitJpsi:
-      xmin, xmax = 2.5, 3.5
+      #xmin, xmax = 2.5, 3.5
       #xmin, xmax = 3.0, 4.0
-      bMass = ROOT.RooRealVar("BToKEE_mll_fullfit", "m(e^{+}e^{-})", 2.0, 5.0, "GeV")
-      wspace.factory('mean[3.096916, 2.9, 3.8]')
+      #bMass = ROOT.RooRealVar("BToKEE_mll_fullfit", "m(e^{+}e^{-})", 2.0, 5.0, "GeV")
+      #wspace.factory('mean[3.096916, 2.9, 3.8]')
+      xmin, xmax = -0.2, 0.2
+      bMass = ROOT.RooRealVar("BToKEE_mll_fullfit_decorr", "2nd principal component", -1.0, 1.0, "GeV")
+      wspace.factory('mean[0.0, -1.0, 1.0]')
 
     else:
       bMass = ROOT.RooRealVar("BToKEE_fit_mass", "m(K^{+}e^{+}e^{-})", 4.0, 6.0, "GeV")
@@ -154,27 +157,31 @@ def fit(tree, outputfile, **kwargs):
 
     if bkgPDF == 2:
         # Exponential
-        wspace.factory('exp_alpha[-10.0, -1000.0, -1.0]')
+        wspace.factory('exp_alpha[-10.0, -1000.0, -1.e-3]')
         alpha = wspace.var('alpha')
         wspace.factory('Exponential::bkg(x,exp_alpha)')
 
     if not isMC:
-      if doPartial:
-        wpf = ROOT.TFile(partialinputfile,"READ")
-        wp = wpf.Get("myPartialWorkSpace")
-        partial = wp.pdf("partial")
-        getattr(wspace, "import")(partial, RooFit.Rename("partial"))
+      if doPartial or doJpsi:
+        if doPartial:
+          wpf = ROOT.TFile(partialinputfile,"READ")
+          wp = wpf.Get("myPartialWorkSpace")
+          partial = wp.pdf("partial")
+          getattr(wspace, "import")(partial, RooFit.Rename("partial"))
         if doJpsi:
           wpf2 = ROOT.TFile(jpsiinputfile,"READ")
           wp2 = wpf2.Get("myPartialWorkSpace")
           jpsi = wp2.pdf("jpsi")
           getattr(wspace, "import")(jpsi, RooFit.Rename("jpsi"))
+
+        if doPartial and doJpsi:
           wspace.factory('SUM::model2(f1[0.5,0.0,1.0]*partial,jpsi)')
-          print('Finished loading KDE!')
           wspace.factory('SUM::model1(f2[0.2,0.0,0.8]*model2,bkg)')
-        else:
+        elif doPartial:
           wspace.factory('SUM::model1(f1[0.5,0.0,0.8]*partial,bkg)')
-        print('Finished loading KDE!')
+        elif doJpsi:
+          wspace.factory('SUM::model1(f1[0.5,0.0,1.0]*jpsi,bkg)')
+
         wspace.factory('SUM::model(nsig*sig,nbkg*model1)')
 
       else:
@@ -204,7 +211,7 @@ def fit(tree, outputfile, **kwargs):
       wspace.factory('ExtendPdf::model(sig,nsig)')
             
     model = wspace.pdf('model')
-    bkg = wspace.pdf('model1')
+    bkg = wspace.pdf('model1') if doPartial else wspace.pdf('bkg')
     sig = wspace.pdf('sig')
     nsig = wspace.var('nsig')
     nbkg = wspace.var('nbkg')
@@ -292,7 +299,8 @@ def fit(tree, outputfile, **kwargs):
     xframe.GetXaxis().SetLabelFont(42)
 
     xframe.GetYaxis().SetTitle("Events / {0:.2f} GeV".format((FIT_UP - FIT_LOW)/nbin_data))
-    xframe.GetXaxis().SetTitle("m(e^{+}e^{-}) [GeV]" if fitJpsi else "m(K^{+}e^{+}e^{-}) [GeV]")
+    #xframe.GetXaxis().SetTitle("m(e^{+}e^{-}) [GeV]" if fitJpsi else "m(K^{+}e^{+}e^{-}) [GeV]")
+    xframe.GetXaxis().SetTitle("2nd principal component [GeV]" if fitJpsi else "m(K^{+}e^{+}e^{-}) [GeV]")
     xframe.SetStats(0)
     xframe.SetMinimum(0)
     xframe.Draw()
@@ -452,9 +460,10 @@ if __name__ == "__main__":
     tree = ROOT.TChain('tree')
     tree.AddFile(args.inputfile)
     if not args.partial:
+      fit(tree, args.outputfile, fitJpsi=False, isMC=True)
       #fit(tree, args.outputfile, fitJpsi=False, isMC=True)
       #fit(tree, args.outputfile, doPartial=True)
-      fit(tree, args.outputfile, doPartial=True, partialinputfile='part_workspace_jpsi_low.root', drawSNR=True, mvaCut=13.58, params=params)
+      #fit(tree, args.outputfile, doPartial=True, partialinputfile='part_workspace_jpsi_low.root', drawSNR=True, mvaCut=13.58, params=params)
       #fit(tree, args.outputfile, doPartial=True, partialinputfile='part_workspace_psi2s_pf.root', doJpsi=True, jpsiinputfile='jpsi_workspace_psi2s_pf.root', drawSNR=True, mvaCut=7.0, params=params)
     else:
       fit_kde(tree, args.outputfile, pdfname=args.pdfname)

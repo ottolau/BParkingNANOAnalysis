@@ -1,5 +1,6 @@
 import os,glob
 import sys, os, fnmatch
+import random
 import ROOT
 
 import argparse
@@ -13,6 +14,7 @@ parser.add_argument("-m", "--maxevents", dest="maxevents", type=int, default=ROO
 parser.add_argument("-v", "--mva", dest="mva", action='store_true', help="Evaluate MVA")
 parser.add_argument("--model", dest="model", default='xgb', help="Type of classifier")
 parser.add_argument("--kstar", action='store_true', help="MC or data")
+parser.add_argument("--random", action='store_true', help="Randomize the files' order")
 args = parser.parse_args()
 
 def exec_me(command, dryRun=False):
@@ -131,6 +133,10 @@ if __name__ == '__main__':
       outputBase += '_mva'
       outputDir += '_mva'
       outputName += '_mva'
+    if args.random:
+      outputBase += '_random'
+      outputDir += '_random'
+      outputName += '_random'
 
     dryRun  = False
     subdir  = os.path.expandvars("$PWD")
@@ -151,6 +157,10 @@ if __name__ == '__main__':
     fileList = []
     with open(args.inputfiles) as filenames:
         fileList = [f.rstrip('\n') for f in filenames]
+
+    if args.random:
+        print('Shuffling the input files...')
+        random.shuffle(fileList)
 
     # stplie files in to n(group) of chunks
     fChunks= list(chunks(fileList,group))
