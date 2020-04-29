@@ -2,6 +2,7 @@ import ROOT
 import pandas as pd
 import os
 import multiprocessing as mp
+from functools import partial
 import sys
 sys.path.append('../')
 
@@ -17,7 +18,7 @@ parser.add_argument("-r", "--runparallel", dest="runparallel", action='store_tru
 parser.add_argument("-v", "--mva", dest="mva", action='store_true', help="Evaluate MVA")
 parser.add_argument("--model", dest="model", default='xgb', help="Type of classifier")
 parser.add_argument("--modelfile", dest="modelfile", default='../models/mva.model', help="Name of the classifier file")
-parser.add_argument("--kstar", action='store_true', help="Enable parallel run")
+parser.add_argument("--phi", action='store_true', help="Run R(phi) analyzer")
 args = parser.parse_args()
 
 
@@ -34,26 +35,19 @@ def chunks(l, n):
     for i in xrange(0, len(l), n):
         yield l[i:i + n]
 
-def analyze(inputfile, outputfile, Analyzer, hist, mc, mva, model, modelfile):
-    #if args.kstar:
-      #analyzer = BToKstarLLAnalyzer(inputfile, outputfile, hist, mc)
-    #else:
-      #analyzer = BToKLLAnalyzer(inputfile, outputfile, hist, mc)
+def analyze(inputfile, outputfile, Analyzer, hist, mc, mva, model, modelfile, parallel=False, outpath='.'):
+    if parallel:
+        ich, inputfile = inputfile
+        print("Processing chunk number %i"%(ich))
+        outputfile = outpath+'/'+outputfile.replace('.root','')+'_subset'+str(ich)+'.root'
     analyzer = Analyzer(inputfile, outputfile, hist, mc, mva, model, modelfile)
     analyzer.run()
-
-def analyzeParallel(enumfChunk):
-    ich, fChunk = enumfChunk
-    print("Processing chunk number %i"%(ich))
-    outputfile = outpath+'/'+args.outputfile.replace('.root','').replace('.h5','')+'_subset'+str(ich)+'.root'
-    analyze(fChunk, outputfile, Analyzer, args.hist, args.mc, args.mva, args.model, args.modelfile)
-
 
 if __name__ == "__main__":
     from scripts.BToKLLAnalyzer import BToKLLAnalyzer
     from scripts.BToKstarLLAnalyzer import BToKstarLLAnalyzer
-    global Analyzer
-    Analyzer = BToKLLAnalyzer
+    from scripts.BToPhiLLAnalyzer import BToPhiLLAnalyzer
+    Analyzer = BToKLLAnalyzer if not args.phi else BToPhiLLAnalyzer
 
     if '.root' in args.inputfiles:
         fileList = [args.inputfiles,]
@@ -67,10 +61,6 @@ if __name__ == "__main__":
         analyze(inputfile, outputfile, Analyzer, args.hist, args.mc, args.mva, args.model, args.modelfile)
 
     else:
-        global outpath
-        #outputBase = "/eos/uscms/store/user/klau/BsPhiLL_output/LowPtElectronSculpting"
-        #outputFolder = "BsPhiEE_CutBasedEvaluation"
-        #outpath  = "%s/%s"%(outputBase,outputFolder)
         outpath = '.'
         if not os.path.exists(outpath):
             exec_me("mkdir -p %s"%(outpath), False)
@@ -82,7 +72,9 @@ if __name__ == "__main__":
 
         pool = mp.Pool(processes = 4)
         input_parallel = list(enumerate(fChunks))
-        pool.map(analyzeParallel, input_parallel)
+        partial_func = partial(analyze, outputfile=args.outputfile, Analyzer=Analyzer, hist=args.hist, mc=args.mc, mva=args.mva, model=args.model, modelfile=args.modelfile, parallel=True, outpath=outpath)
+        pool.map(partial_func, input_parallel) 
+
         pool.close()
         pool.join()
 

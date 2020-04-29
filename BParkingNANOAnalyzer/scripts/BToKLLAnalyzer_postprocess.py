@@ -85,7 +85,7 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
 
     if evalMVA:
       outputbranches.update(outputbranches_mva)
-    outputbranches.update(outputbranches_mva)
+    #outputbranches.update(outputbranches_mva)
 
     self._yutaPR = False
     outputbranches_yutaPR = {'BToKEE_iso_sv_rel': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
@@ -168,26 +168,26 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
 
         l1_selection = (self._branches['BToKEE_l1_mvaId'] > 3.0) 
         l2_selection = (self._branches['BToKEE_l2_mvaId'] > 0.0)
-        cutbased_selection = (self._branches['BToKEE_fit_pt'] > 10.0) & (self._branches['BToKEE_l_xy_sig'] > 0.0) & (self._branches['BToKEE_svprob'] > 0.1) & (self._branches['BToKEE_fit_cos2D'] > 0.999)
+        #cutbased_selection = (self._branches['BToKEE_fit_pt'] > 10.0) & (self._branches['BToKEE_l_xy_sig'] > 0.0) & (self._branches['BToKEE_svprob'] > 0.1) & (self._branches['BToKEE_fit_cos2D'] > 0.999)
 
         general_selection = l1_selection & l2_selection
         #general_selection = d_veto_selection
         #general_selection &= (self._branches['BToKEE_eleEtaCats'] == 0)
         general_selection &= mll_selection
-        general_selection &= pf_selection
-        #general_selection &= low_selection
+        #general_selection &= pf_selection
+        general_selection &= low_selection
         #general_selection &= low_notpf_selection
         #general_selection &= mix_net_selection
         #general_selection &= low_pfveto_selection
         #general_selection &= b_upsb_selection
         #general_selection &= b_bothsb_selection
-        general_selection &= (self._branches['BToKEE_mva'] > 12.68)
-        general_selection &= (self._branches['BToKEE_fit_mass'] > 4.8) & (self._branches['BToKEE_fit_mass'] < 6.0)
+        #general_selection &= (self._branches['BToKEE_mva'] > 12.68)
+        #general_selection &= (self._branches['BToKEE_fit_mass'] > 4.8) & (self._branches['BToKEE_fit_mass'] < 6.0)
         #general_selection &= (self._branches['BToKEE_l1_pfmvaId'] > -2.0) & (self._branches['BToKEE_l2_pfmvaId'] > -2.0)
         #general_selection &= cutbased_selection
 
         self._branches = self._branches[general_selection]
-        self._branches = self._branches.sort_values('BToKEE_mva', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')
+        #self._branches = self._branches.sort_values('BToKEE_mva', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')
 
         if self._evalMVA:
           #self._branches['BToKEE_mva'] = model.predict(xgb.DMatrix(self._branches[training_branches].sort_index(axis=1).values), ntree_limit=ntree_limit)

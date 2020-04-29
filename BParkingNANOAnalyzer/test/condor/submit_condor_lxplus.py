@@ -13,7 +13,7 @@ parser.add_argument("-c", "--mc", dest="mc", action='store_true', help="MC or da
 parser.add_argument("-m", "--maxevents", dest="maxevents", type=int, default=ROOT.TTree.kMaxEntries, help="Maximum number events to loop over")
 parser.add_argument("-v", "--mva", dest="mva", action='store_true', help="Evaluate MVA")
 parser.add_argument("--model", dest="model", default='xgb', help="Type of classifier")
-parser.add_argument("--kstar", action='store_true', help="MC or data")
+parser.add_argument("--phi", action='store_true', help="Run R(phi) analyzer")
 parser.add_argument("--random", action='store_true', help="Randomize the files' order")
 args = parser.parse_args()
 
@@ -117,26 +117,15 @@ def chunks(l, n):
 if __name__ == '__main__':
     basePath = "."
     sampleFolders = os.listdir(basePath)
-    if args.suffix is None:
-      outputBase = "output_{}".format(args.inputfiles.replace('.list',''))
-      outputDir = 'root://eosuser.cern.ch//eos/user/k/klau/BParkingNANO_forCondor/output/{}'.format(args.inputfiles.replace('.list',''))
-      outputName = args.inputfiles.replace('.list','')
-    else:
-      outputBase = "output_{}_{}".format(args.inputfiles.replace('.list',''),args.suffix)
-      outputDir = 'root://eosuser.cern.ch//eos/user/k/klau/BParkingNANO_forCondor/output/{}_{}'.format(args.inputfiles.replace('.list',''),args.suffix)
-      outputName = args.inputfiles.replace('.list','') + '_' +  args.suffix
-    if args.mc:
-      outputBase += '_mc'
-      outputDir += '_mc'
-      outputName += '_mc'
-    if args.mva:
-      outputBase += '_mva'
-      outputDir += '_mva'
-      outputName += '_mva'
-    if args.random:
-      outputBase += '_random'
-      outputDir += '_random'
-      outputName += '_random'
+    inputfiles = args.inputfiles.replace('.list','')
+    inputfiles += '_{}'.format(args.suffix) if args.suffix is not None
+    inputfiles += '_mc' if args.mc
+    inputfiles += '_mva' if args.mva
+    inputfiles += '_random' if args.random
+    
+    outputBase = "output_{}".format(inputfiles)
+    outputDir = 'root://eosuser.cern.ch//eos/user/k/klau/BParkingNANO_forCondor/output/{}'.format(inputfiles)
+    outputName = inputfiles
 
     dryRun  = False
     subdir  = os.path.expandvars("$PWD")
@@ -160,7 +149,8 @@ if __name__ == '__main__':
 
     if args.random:
         print('Shuffling the input files...')
-        random.shuffle(fileList)
+        #random.shuffle(fileList)
+        fileList = random.sample(fileList, k=50)
 
     # stplie files in to n(group) of chunks
     fChunks= list(chunks(fileList,group))

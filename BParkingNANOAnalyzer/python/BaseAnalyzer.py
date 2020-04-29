@@ -32,6 +32,9 @@ class BParkingNANOAnalyzer(object):
     self._hist = hist
     self._ifile = 0
 
+  def get_events(self, filename, checkbranch='nBToKEE'):
+    events = uproot.open(filename)['Events']
+    return events if checkbranch in events.allkeys() else None
 
   def init_output(self):
     print('[BParkingNANOAnalyzer::init_output] INFO: FILE: {}/{}. Initializing output {}...'.format(self._ifile+1, self._num_files, 'histograms' if self._hist else 'tree'))
@@ -127,7 +130,7 @@ class BParkingNANOAnalyzer(object):
                 l1_genMotherPdgId, l2_genMotherPdgId, k_genMotherPdgId,
                 l1Mother_genMotherPdgId, l2Mother_genMotherPdgId, kMother_genMotherPdgId):    
 
-    mc_matched_selection = (l1_genPartIdx > -0.5) & (l2_genPartIdx > -0.5) & (k_genPartIdx > -0.5) & (abs(l1_genPdgId) == 11) & (abs(l2_genPdgId) == 11)
+    mc_matched_selection = (l1_genPartIdx > -0.5) & (l2_genPartIdx > -0.5) & (k_genPartIdx > -0.5) & (abs(l1_genPdgId) in {11, 13}) & (abs(l2_genPdgId) in {11, 13})
     # B->K ll
     RK_nonresonant_chain_selection = (abs(k_genPdgId) == 321) & (abs(l1_genMotherPdgId) == 521) & (abs(k_genMotherPdgId) == 521)
     RK_nonresonant_chain_selection &= (l1_genMotherPdgId == l2_genMotherPdgId) & (k_genMotherPdgId == l1_genMotherPdgId)
@@ -164,6 +167,27 @@ class BParkingNANOAnalyzer(object):
     elif RKstar_resonant_chain_selection: return 3
     elif Rphi_nonresonant_chain_selection: return 4
     elif Rphi_resonant_chain_selection: return 5
+    else: return -1
+
+  def DecayCats_BToPhiLL_vectorized(self, l1_genPartIdx, l2_genPartIdx, trk1_genPartIdx, trk2_genPartIdx,
+                                    l1_genPdgId, l2_genPdgId, trk1_genPdgId, trk2_genPdgId,
+                                    l1_genMotherPdgId, l2_genMotherPdgId, trk1_genMotherPdgId, trk2_genMotherPdgId,
+                                    l1Mother_genMotherPdgId, l2Mother_genMotherPdgId, trk1Mother_genMotherPdgId, trk2Mother_genMotherPdgId):    
+
+    mc_matched_selection = (l1_genPartIdx > -0.5) & (l2_genPartIdx > -0.5) & (trk1_genPartIdx > -0.5) & (trk2_genPartIdx > -0.5) & (abs(l1_genPdgId) in {11, 13}) & (abs(l2_genPdgId) in {11, 13})
+
+    # Bs->phi(K K) ll
+    Rphi_nonresonant_chain_selection = (abs(trk1_genPdgId) == 321) & (abs(trk2_genPdgId) == 321) & (abs(l1_genMotherPdgId) == 531) & (abs(trk1_genMotherPdgId) == 333) & (abs(trk2_genMotherPdgId) == 333)
+    Rphi_nonresonant_chain_selection &= (l1_genMotherPdgId == l2_genMotherPdgId) & (trk1_genMotherPdgId == trk2_genMotherPdgId) & (l1_genMotherPdgId == trk1Mother_genMotherPdgId) 
+    Rphi_nonresonant_chain_selection &= mc_matched_selection
+
+    # Bs->phi(K K) J/psi(ll) or Bs->phi(K K) psi(2S)(ll)
+    Rphi_resonant_chain_selection = (abs(trk1_genPdgId) == 321) & (abs(trk2_genPdgId) == 321) & (abs(l1_genMotherPdgId) in {443, 100443}) & (abs(trk1_genMotherPdgId) == 333) & (abs(trk2_genMotherPdgId) == 333)
+    Rphi_resonant_chain_selection &= (l1_genMotherPdgId == l2_genMotherPdgId) & (trk1_genMotherPdgId == trk2_genMotherPdgId) & (l1Mother_genMotherPdgId == trk1Mother_genMotherPdgId) 
+    Rphi_resonant_chain_selection &= mc_matched_selection
+
+    if Rphi_nonresonant_chain_selection: return 0
+    elif Rphi_resonant_chain_selection: return 1
     else: return -1
 
   def DeltaPhi(self, phi1, phi2):

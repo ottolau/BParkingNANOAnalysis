@@ -169,7 +169,10 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
 
     for (self._ifile, filename) in enumerate(self._file_in_name):
       print('[BToKLLAnalyzer::run] INFO: FILE: {}/{}. Loading file...'.format(self._ifile+1, self._num_files))
-      events = uproot.open(filename)['Events']
+      events = self.get_events(filename, checkbranch='nBToKEE')
+      if events is None:
+        print('Null file. Skipping file {}...'.format(filename))
+        continue
       print('[BToKLLAnalyzer::run] INFO: FILE: {}/{}. Analyzing...'.format(self._ifile+1, self._num_files))
 
       startTime = time.time()
