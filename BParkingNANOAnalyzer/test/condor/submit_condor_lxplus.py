@@ -118,10 +118,10 @@ if __name__ == '__main__':
     basePath = "."
     sampleFolders = os.listdir(basePath)
     inputfiles = args.inputfiles.replace('.list','')
-    inputfiles += '_{}'.format(args.suffix) if args.suffix is not None
-    inputfiles += '_mc' if args.mc
-    inputfiles += '_mva' if args.mva
-    inputfiles += '_random' if args.random
+    if args.suffix is not None: inputfiles += '_{}'.format(args.suffix)
+    if args.mc: inputfiles += '_mc'
+    if args.mva: inputfiles += '_mva'
+    if args.random: inputfiles += '_random'
     
     outputBase = "output_{}".format(inputfiles)
     outputDir = 'root://eosuser.cern.ch//eos/user/k/klau/BParkingNANO_forCondor/output/{}'.format(inputfiles)
@@ -129,7 +129,7 @@ if __name__ == '__main__':
 
     dryRun  = False
     subdir  = os.path.expandvars("$PWD")
-    group   = 150
+    group   = 500
     #group = 30
 
     zipPath = 'zip'
@@ -138,7 +138,7 @@ if __name__ == '__main__':
     exec_me("git clone https://github.com/ottolau/BParkingNANOAnalysis.git {}".format(os.path.join(zipPath, "BParkingNANOAnalysis")), False)
     exec_me("tar -zcvf BParkingNANOAnalysis.tgz -C {} {}".format(zipPath, "BParkingNANOAnalysis"), False)
 
-    files = ['../../setup_condor.sh', '../../scripts/BToKLLAnalyzer.py', '../../scripts/BToKstarLLAnalyzer.py', '../runAnalyzer.py', 'BParkingNANOAnalysis.tgz']
+    files = ['../../setup_condor.sh', '../../scripts/BToKLLAnalyzer.py', '../../scripts/BToPhiLLAnalyzer.py', '../runAnalyzer.py', 'BParkingNANOAnalysis.tgz']
     if args.mva:
         files += ['../../models/mva.model']
     files_condor = [f.split('/')[-1] for f in files]
@@ -149,8 +149,8 @@ if __name__ == '__main__':
 
     if args.random:
         print('Shuffling the input files...')
-        #random.shuffle(fileList)
-        fileList = random.sample(fileList, k=50)
+        random.shuffle(fileList)
+        #fileList = random.sample(fileList, k=50)
 
     # stplie files in to n(group) of chunks
     fChunks= list(chunks(fileList,group))
@@ -178,13 +178,13 @@ if __name__ == '__main__':
         if args.mva: 
             args_list.append('-v')
             args_list.append('--model {}'.format(args.model))
-        if args.kstar: args_list.append('--kstar')
+        if args.phi: args_list.append('--phi')
         args_str = " ".join(args_list)
 
         cmd = ""
         cmd += "cp ${{MAINDIR}}/inputfile_{0}.list .;".format(i)
         cmd += "cp ${MAINDIR}/BToKLLAnalyzer.py ${MAINDIR}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/;"
-        cmd += "cp ${MAINDIR}/BToKstarLLAnalyzer.py ${MAINDIR}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/;"
+        cmd += "cp ${MAINDIR}/BToPhiLLAnalyzer.py ${MAINDIR}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/;"
         if args.mva:
             cmd += "cp ${MAINDIR}/mva.model ${MAINDIR}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/models/;"
         cmd += "cp ${MAINDIR}/runAnalyzer.py ${MAINDIR}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/test/;"

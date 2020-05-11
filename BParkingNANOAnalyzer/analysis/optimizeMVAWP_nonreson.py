@@ -12,6 +12,7 @@ import itertools
 import PyPDF2
 import makePlot_fitPeak_unbinned as fit_unbinned
 import os, sys, copy
+import xgboost as xgb
 sys.path.append('../')
 from scripts.helper import *
 
@@ -207,10 +208,34 @@ if __name__ == "__main__":
   params_nonresonant_lowq2 = eval('params_jpsi_{}'.format(eleType))
   params_nonresonant_highq2 = eval('params_jpsi_{}'.format(eleType))
 
-  jpsi_mc = 'RootTree_2020Jan16_BuToKJpsi_Toee_BToKEEAnalyzer_2020Apr17_mc_mva_{}.root'.format(eleType)
-  nonresonant_mc = 'RootTree_2020Jan16_BuToKee_all_BToKEEAnalyzer_2020Apr17_mc_mva_{}.root'.format(eleType)
+  #jpsi_mc = 'RootTree_2020Jan16_BuToKJpsi_Toee_BToKEEAnalyzer_2020Apr17_mc_mva_{}.root'.format(eleType)
+  #nonresonant_mc = 'RootTree_2020Jan16_BuToKee_all_BToKEEAnalyzer_2020Apr17_mc_mva_{}.root'.format(eleType)
+  jpsi_mc = 'BParkingNANO_2020Jan16_BuToKJpsi_Toee_BToKEEAnalyzer_2020May03_newVar_mc.root'
+  nonresonant_mc = 'BParkingNANO_2020Jan16_BuToKee_all_BToKEEAnalyzer_2020May03_newVar_mc.root'
+
   data_branches = ['BToKEE_mll_fullfit', 'BToKEE_fit_mass', 'BToKEE_mva', 'BToKEE_event']
-  mc_branches = ['BToKEE_mll_fullfit', 'BToKEE_mva']
+
+  features = ['BToKEE_fit_l1_normpt', 'BToKEE_l1_dxy_sig',
+              'BToKEE_fit_l2_normpt', 'BToKEE_l2_dxy_sig',
+              'BToKEE_fit_k_normpt', 'BToKEE_k_DCASig',
+              'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig', 'BToKEE_dz'
+              ]
+  #features += ['BToKEE_fit_l1_eta', 'BToKEE_fit_l2_eta', 'BToKEE_fit_k_eta', 'BToKEE_fit_eta']
+  features += ['BToKEE_eleDR', 'BToKEE_llkDR']
+  features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
+  features += ['BToKEE_ptImbalance']
+  features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
+  #features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
+  #features += ['BToKEE_svprob_rank', 'BToKEE_fit_pt_rank', 'BToKEE_fit_cos2D_rank', 'BToKEE_l_xy_rank']
+
+  training_branches = sorted(features)
+  ntree_limit = 1196
+  modelfile = '../models/xgb_fulldata_06May2020_allq2_isoPFMVANewDRptImb_weighted_11lowq2_pauc02_pf.model'
+  model = xgb.Booster({'nthread': 6})
+  model.load_model(modelfile)
+
+
+  mc_branches = ['BToKEE_mll_fullfit', 'BToKEE_l1_isPF', 'BToKEE_l2_isPF', 'BToKEE_l1_pfmvaId', 'BToKEE_l2_pfmvaId'] + training_branches
 
   drawSNR = True
 
@@ -243,16 +268,22 @@ if __name__ == "__main__":
   branches['BToKEE_fit_mass_decorr_psi2s'] = data_decorr_psi2s[:,0]
   branches['BToKEE_mll_fullfit_decorr_psi2s'] = data_decorr_psi2s[:,1]
 
-  jpsi_mc_branches = pd.DataFrame(uproot.open(jpsi_mc)['tree'].arrays(branches=mc_branches)).sort_index(axis=1)
+  jpsi_mc_branches = pd.DataFrame(uproot.open(jpsi_mc)['tree'].arrays(branches=mc_branches)).sort_index(axis=1).query('(BToKEE_l1_isPF == True) and (BToKEE_l2_isPF == True)')
+  #jpsi_mc_branches = pd.DataFrame(uproot.open(jpsi_mc)['tree'].arrays(branches=mc_branches)).sort_index(axis=1).query('(BToKEE_l1_isPF == True) and (BToKEE_l2_isPF == True) and (BToKEE_l1_pfmvaId > -2.0) and (BToKEE_l2_pfmvaId > -2.0)')
+  jpsi_mc_branches['BToKEE_mva'] = model.predict(xgb.DMatrix(jpsi_mc_branches[training_branches].replace([np.inf, -np.inf], 0.0).sort_index(axis=1)), ntree_limit=ntree_limit)
   jpsi_mc_branches = jpsi_mc_branches[(jpsi_mc_branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (jpsi_mc_branches['BToKEE_mll_fullfit'] < JPSI_UP)]
   nTot_jpsi = float(jpsi_mc_branches.shape[0])
 
-  nonresonant_mc_branches = pd.DataFrame(uproot.open(nonresonant_mc)['tree'].arrays(branches=mc_branches)).sort_index(axis=1)
+  nonresonant_mc_branches = pd.DataFrame(uproot.open(nonresonant_mc)['tree'].arrays(branches=mc_branches)).sort_index(axis=1).query('(BToKEE_l1_isPF == True) and (BToKEE_l2_isPF == True)')
+  #nonresonant_mc_branches = pd.DataFrame(uproot.open(nonresonant_mc)['tree'].arrays(branches=mc_branches)).sort_index(axis=1).query('(BToKEE_l1_isPF == True) and (BToKEE_l2_isPF == True) and (BToKEE_l1_pfmvaId > -2.0) and (BToKEE_l2_pfmvaId > -2.0)')
+  nonresonant_mc_branches['BToKEE_mva'] = model.predict(xgb.DMatrix(nonresonant_mc_branches[training_branches].replace([np.inf, -np.inf], 0.0).sort_index(axis=1)), ntree_limit=ntree_limit)
   nonresonant_lowq2_mc_branches = nonresonant_mc_branches[(nonresonant_mc_branches['BToKEE_mll_fullfit'] > NR_LOW) & (nonresonant_mc_branches['BToKEE_mll_fullfit'] < JPSI_LOW)]
   nonresonant_highq2_mc_branches = nonresonant_mc_branches[(nonresonant_mc_branches['BToKEE_mll_fullfit'] > PSI2S_UP) & (nonresonant_mc_branches['BToKEE_mll_fullfit'] < NR_UP)]
   nTot_nonresonant_lowq2 = float(nonresonant_lowq2_mc_branches.shape[0])
   nTot_nonresonant_highq2 = float(nonresonant_highq2_mc_branches.shape[0])
   nTot_nonresonant = float(nonresonant_mc_branches.shape[0])
+
+  print(nTot_jpsi, nTot_nonresonant)
 
   print(nTot_nonresonant_lowq2, nTot_nonresonant_highq2, nTot_nonresonant)
   output_branches = {}
@@ -266,7 +297,7 @@ if __name__ == "__main__":
                  'nonresonant_highq2': [],
                  }
 
-  mvaCutList = np.linspace(10.0, 13.0, 20)
+  mvaCutList = np.linspace(10.0, 14.0, 30)
   for mvaCut in mvaCutList:
     # mva selection
     mva_selection = (branches['BToKEE_mva'] > mvaCut)
@@ -405,7 +436,7 @@ if __name__ == "__main__":
                                     'sigName': "B^{+}#rightarrow K^{+} e^{+}e^{-}",
                                     }
 
-    nonresonant_highq2_selection = (selected_branches['BToKEE_mll_fullfit'] > PSI2S_UP) & (nonresonant_mc_branches['BToKEE_mll_fullfit'] < NR_UP)
+    nonresonant_highq2_selection = (selected_branches['BToKEE_mll_fullfit'] > PSI2S_UP) & (selected_branches['BToKEE_mll_fullfit'] < NR_UP)
     nonresonant_highq2_branches = np.array(selected_branches[nonresonant_highq2_selection]['BToKEE_fit_mass'], dtype=[('BToKEE_fit_mass', 'f4')])
     nonresonant_highq2_tree = array2tree(nonresonant_highq2_branches)
 
@@ -435,6 +466,8 @@ if __name__ == "__main__":
   pdf_combine(outputplots['psi2stri'], outputname_psi2stri)
   pdf_combine(outputplots['nonresonant_lowq2'], outputname_nonresonant_lowq2)
   pdf_combine(outputplots['nonresonant_highq2'], outputname_nonresonant_highq2)
+  pdf_sidebyside('{}_combined_{}.pdf'.format(outputfile, eleType), [outputname_jpsitri, outputname_jpsi, outputname_psi2stri, outputname_psi2s, outputname_nonresonant_lowq2, outputname_nonresonant_highq2])
+  pdf_sidebyside('{}_rectangularCut_combined_{}.pdf'.format(outputfile, eleType), [outputname_jpsi, outputname_psi2s, outputname_nonresonant_lowq2])
   pdf_sidebyside('{}_jpsi_combined_{}.pdf'.format(outputfile, eleType), [outputname_jpsitri, outputname_jpsi])
   pdf_sidebyside('{}_psi2s_combined_{}.pdf'.format(outputfile, eleType), [outputname_psi2stri, outputname_psi2s])
   pdf_sidebyside('{}_nonresonant_combined_{}.pdf'.format(outputfile, eleType), [outputname_nonresonant_lowq2, outputname_nonresonant_highq2])

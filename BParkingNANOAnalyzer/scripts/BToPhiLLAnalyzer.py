@@ -21,8 +21,8 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
                      'BToPhiEE_trk1_idx', 'BToPhiEE_trk2_idx', 'BToPhiEE_l_xy', 'BToPhiEE_l_xy_unc', 'BToPhiEE_fit_pt', 'BToPhiEE_fit_eta', 'BToPhiEE_fit_phi',
                      'BToPhiEE_fit_l1_pt', 'BToPhiEE_fit_l1_eta', 'BToPhiEE_fit_l1_phi', 'BToPhiEE_fit_l2_pt', 'BToPhiEE_fit_l2_eta', 'BToPhiEE_fit_l2_phi',
                      'BToPhiEE_fit_trk1_pt', 'BToPhiEE_fit_trk1_eta', 'BToPhiEE_fit_trk1_phi', 'BToPhiEE_fit_trk2_pt', 'BToPhiEE_fit_trk2_eta', 'BToPhiEE_fit_trk2_phi', 
-                     'BToPhiEE_svprob', 'BToPhiEE_fit_cos2D', 'BToPhiEE_tk1_iso04', 'BToPhiEE_tk2_iso04', # tk1_iso4 instead of trk_iso4, will change in next pr
-                     'BToPhiEE_l1_iso04', 'BToPhiEE_l2_iso04', 'BToPhiEE_b_iso04', #'BToPhiEE_vtx_x', 'BToPhiEE_vtx_y', 'BToPhiEE_vtx_z',
+                     'BToPhiEE_svprob', 'BToPhiEE_fit_cos2D', 'BToPhiEE_trk1_iso04', 'BToPhiEE_trk2_iso04', # tk1_iso4 instead of trk_iso4, will change in next pr
+                     'BToPhiEE_l1_iso04', 'BToPhiEE_l2_iso04', 'BToPhiEE_b_iso04', 'BToPhiEE_vtx_x', 'BToPhiEE_vtx_y', 'BToPhiEE_vtx_z',
                      'Electron_pt', 'Electron_charge', 'Electron_dxy', 'Electron_dxyErr', 'Electron_convVeto', 'Electron_isPF', 'Electron_dz',
                      'Electron_isPFoverlap', 'Electron_mvaId', 'Electron_pfmvaId',
                      'ProbeTracks_charge', 'ProbeTracks_pt', 'ProbeTracks_DCASig', 'ProbeTracks_eta', 'ProbeTracks_phi',
@@ -77,7 +77,7 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
     outputbranches['BToPhiEE_fit_cos2D'] = {'nbins': 50, 'xmin': 0.999, 'xmax': 1.0}
     outputbranches['BToPhiEE_l_xy_sig'] = {'nbins': 50, 'xmin': 0.0, 'xmax': 50.0}
     outputbranches['BToPhiEE_dz'] = {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0}
-    #outputbranches['BToPhiEE_ptImbalance'] = {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0}
+    outputbranches['BToPhiEE_ptImbalance'] = {'nbins': 50, 'xmin': -1.0, 'xmax': 1.0}
     outputbranches['BToPhiEE_eleDR'] = {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0}
     outputbranches['BToPhiEE_trkDR'] = {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0}
     outputbranches['BToPhiEE_llkkDR'] = {'nbins': 50, 'xmin': 0.0, 'xmax': 3.0}
@@ -89,6 +89,16 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
     outputbranches['BToPhiEE_eleEtaCats'] = {'nbins': 3, 'xmin': 0.0, 'xmax': 3.0}
     outputbranches['BToPhiEE_event'] = {'nbins': 10, 'xmin': 0, 'xmax': 10}
     #outputbranches['BToPhiEE_PV_npvsGood'] = {'nbins': 10, 'xmin': 0, 'xmax': 10}
+    outputbranches['BToPhiEE_svprob_rank'] = {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0}
+    outputbranches['BToPhiEE_fit_pt_rank'] = {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0}
+    outputbranches['BToPhiEE_fit_cos2D_rank'] = {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0}
+    outputbranches['BToPhiEE_l_xy_rank'] = {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0}
+    outputbranches['BToPhiEE_ptAsym'] = {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0}
+    outputbranches['BToPhiEE_l1_pfmvaId_lowPt'] = {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0}
+    outputbranches['BToPhiEE_l2_pfmvaId_lowPt'] = {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0}
+    outputbranches['BToPhiEE_l1_pfmvaId_highPt'] = {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0}
+    outputbranches['BToPhiEE_l2_pfmvaId_highPt'] = {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0}
+
 
     outputbranches_mc = {}
     outputbranches_mc['BToPhiEE_l1_genPdgId'] = {'nbins': 10, 'xmin': 0, 'xmax': 10}
@@ -225,27 +235,61 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
         mix_net_selection = overlap_veto_selection & np.logical_not(pf_selection | low_selection)
         all_selection = pf_selection | low_pfveto_selection | mix_net_selection 
 
-        #eleType_selection = pf_selection
+        # add ranking info
+        idx_pf, idx_mix, idx_low = self._branches[pf_selection].index, self._branches[mix_selection].index, self._branches[low_selection].index
+
+        svprob_rank_pf = self._branches[pf_selection].sort_values('BToPhiEE_svprob', ascending=False).groupby('BToPhiEE_event').cumcount()
+        l_xy_rank_pf = self._branches[pf_selection].sort_values('BToPhiEE_l_xy', ascending=False).groupby('BToPhiEE_event').cumcount()
+        fit_cos2D_rank_pf = self._branches[pf_selection].sort_values('BToPhiEE_fit_cos2D', ascending=False).groupby('BToPhiEE_event').cumcount()
+        fit_pt_rank_pf = self._branches[pf_selection].sort_values('BToPhiEE_fit_pt', ascending=False).groupby('BToPhiEE_event').cumcount()
+
+        svprob_rank_mix = self._branches[mix_selection].sort_values('BToPhiEE_svprob', ascending=False).groupby('BToPhiEE_event').cumcount()
+        l_xy_rank_mix = self._branches[mix_selection].sort_values('BToPhiEE_l_xy', ascending=False).groupby('BToPhiEE_event').cumcount()
+        fit_cos2D_rank_mix = self._branches[mix_selection].sort_values('BToPhiEE_fit_cos2D', ascending=False).groupby('BToPhiEE_event').cumcount()
+        fit_pt_rank_mix = self._branches[mix_selection].sort_values('BToPhiEE_fit_pt', ascending=False).groupby('BToPhiEE_event').cumcount()
+
+        svprob_rank_low = self._branches[low_selection].sort_values('BToPhiEE_svprob', ascending=False).groupby('BToPhiEE_event').cumcount()
+        l_xy_rank_low = self._branches[low_selection].sort_values('BToPhiEE_l_xy', ascending=False).groupby('BToPhiEE_event').cumcount()
+        fit_cos2D_rank_low = self._branches[low_selection].sort_values('BToPhiEE_fit_cos2D', ascending=False).groupby('BToPhiEE_event').cumcount()
+        fit_pt_rank_low = self._branches[low_selection].sort_values('BToPhiEE_fit_pt', ascending=False).groupby('BToPhiEE_event').cumcount()
+
+        self._branches.loc[idx_pf, 'BToPhiEE_svprob_rank'] = svprob_rank_pf
+        self._branches.loc[idx_pf, 'BToPhiEE_l_xy_rank'] = l_xy_rank_pf
+        self._branches.loc[idx_pf, 'BToPhiEE_fit_cos2D_rank'] = fit_cos2D_rank_pf
+        self._branches.loc[idx_pf, 'BToPhiEE_fit_pt_rank'] = fit_pt_rank_pf
+
+        self._branches.loc[idx_mix, 'BToPhiEE_svprob_rank'] = svprob_rank_mix
+        self._branches.loc[idx_mix, 'BToPhiEE_l_xy_rank'] = l_xy_rank_mix
+        self._branches.loc[idx_mix, 'BToPhiEE_fit_cos2D_rank'] = fit_cos2D_rank_mix
+        self._branches.loc[idx_mix, 'BToPhiEE_fit_pt_rank'] = fit_pt_rank_mix
+
+        self._branches.loc[idx_low, 'BToPhiEE_svprob_rank'] = svprob_rank_low
+        self._branches.loc[idx_low, 'BToPhiEE_l_xy_rank'] = l_xy_rank_low
+        self._branches.loc[idx_low, 'BToPhiEE_fit_cos2D_rank'] = fit_cos2D_rank_low
+        self._branches.loc[idx_low, 'BToPhiEE_fit_pt_rank'] = fit_pt_rank_low
+
+        eleType_selection = pf_selection
         #eleType_selection = low_selection
-        #self._branches = self._branches[eleType_selection]
-        #self._branches = self._branches.sort_values('BToPhiEE_fit_pt', ascending=False).groupby('BToPhiEE_event').head(2)
+        self._branches = self._branches[eleType_selection]
 
         # general selection
-        mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > NR_LOW) & (self._branches['BToPhiEE_mll_fullfit'] < NR_UP)# all q2
+        mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > NR_LOW) #& (self._branches['BToPhiEE_mll_fullfit'] < NR_UP)# all q2
         #mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > NR_LOW) & (self._branches['BToPhiEE_mll_fullfit'] < PSI2S_UP) # full q2
         #mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > NR_LOW) & (self._branches['BToPhiEE_mll_fullfit'] < JPSI_LOW) #low q2
         #mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > JPSI_LOW) & (self._branches['BToPhiEE_mll_fullfit'] < JPSI_UP) # Jpsi
         #mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > JPSI_UP) & (self._branches['BToPhiEE_mll_fullfit'] < PSI2S_UP) # psi(2S)
-        b_upsb_selection = (self._branches['BToPhiEE_fit_mass'] > B_UP)
+        mkk_selection = (self._branches['BToPhiEE_fit_phi_mass'] > PHI_LOW) & (self._branches['BToPhiEE_fit_phi_mass'] < PHI_UP)
+        b_upsb_selection = (self._branches['BToPhiEE_fit_mass'] > BS_UP)
 
         l1_selection = (self._branches['BToPhiEE_l1_convVeto']) #& (self._branches['BToPhiEE_l1_mvaId'] > 3.0)
         l2_selection = (self._branches['BToPhiEE_l2_convVeto']) #& (self._branches['BToPhiEE_l2_mvaId'] > 0.0)
         additional_selection = (self._branches['BToPhiEE_fit_mass'] > B_MIN) & (self._branches['BToPhiEE_fit_mass'] < B_MAX)
 
         selection = l1_selection & l2_selection
-        #selection &= mll_selection
+        selection &= mll_selection
+        selection &= mkk_selection
         selection &= additional_selection
-        #selection &= b_upsb_selection
+        selection &= b_upsb_selection
 
         if self._isMC:
           selection &= (self._branches['BToPhiEE_l1_genPartIdx'] > -0.5) & (self._branches['BToPhiEE_l2_genPartIdx'] > -0.5) & (self._branches['BToPhiEE_trk1_genPartIdx'] > -0.5) & (self._branches['BToPhiEE_trk2_genPartIdx'] > -0.5)
@@ -266,13 +310,17 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
           self._branches['BToPhiEE_b_iso04_rel'] = self._branches['BToPhiEE_b_iso04'] / self._branches['BToPhiEE_fit_pt']
           self._branches['BToPhiEE_l1_iso04_rel'] = self._branches['BToPhiEE_l1_iso04'] / self._branches['BToPhiEE_fit_l1_pt']
           self._branches['BToPhiEE_l2_iso04_rel'] = self._branches['BToPhiEE_l2_iso04'] / self._branches['BToPhiEE_fit_l2_pt']
-          self._branches['BToPhiEE_trk1_iso04_rel'] = self._branches['BToPhiEE_tk1_iso04'] / self._branches['BToPhiEE_fit_trk1_pt']
-          self._branches['BToPhiEE_trk2_iso04_rel'] = self._branches['BToPhiEE_tk2_iso04'] / self._branches['BToPhiEE_fit_trk2_pt']
+          self._branches['BToPhiEE_trk1_iso04_rel'] = self._branches['BToPhiEE_trk1_iso04'] / self._branches['BToPhiEE_fit_trk1_pt']
+          self._branches['BToPhiEE_trk2_iso04_rel'] = self._branches['BToPhiEE_trk2_iso04'] / self._branches['BToPhiEE_fit_trk2_pt']
           self._branches['BToPhiEE_eleEtaCats'] = map(self.EleEtaCats, self._branches['BToPhiEE_fit_l1_eta'], self._branches['BToPhiEE_fit_l2_eta'])
           #self._branches['BToPhiEE_dz'] = self._branches['BToPhiEE_vtx_z'] - self._branches['BToPhiEE_trg_vz']
           self._branches['BToPhiEE_dz'] = self._branches['BToPhiEE_l1_dz']
           self._branches['BToPhiEE_l1_pfmvaCats'] = np.where(self._branches['BToPhiEE_l1_pt'] < 5.0, 0, 1)
           self._branches['BToPhiEE_l2_pfmvaCats'] = np.where(self._branches['BToPhiEE_l2_pt'] < 5.0, 0, 1)
+          self._branches['BToPhiEE_l1_pfmvaId_lowPt'] = np.where(self._branches['BToPhiEE_l1_pfmvaCats'] == 0, self._branches['BToPhiEE_l1_pfmvaId'], 20.0)
+          self._branches['BToPhiEE_l2_pfmvaId_lowPt'] = np.where(self._branches['BToPhiEE_l2_pfmvaCats'] == 0, self._branches['BToPhiEE_l2_pfmvaId'], 20.0)
+          self._branches['BToPhiEE_l1_pfmvaId_highPt'] = np.where(self._branches['BToPhiEE_l1_pfmvaCats'] == 1, self._branches['BToPhiEE_l1_pfmvaId'], 20.0)
+          self._branches['BToPhiEE_l2_pfmvaId_highPt'] = np.where(self._branches['BToPhiEE_l2_pfmvaCats'] == 1, self._branches['BToPhiEE_l2_pfmvaId'], 20.0)
 
 
           if self._isMC:
@@ -285,8 +333,8 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
                                                  self._branches['BToPhiEE_l1Mother_genMotherPdgId'], self._branches['BToPhiEE_l2Mother_genMotherPdgId'],
                                                  self._branches['BToPhiEE_trk1Mother_genMotherPdgId'], self._branches['BToPhiEE_trk2Mother_genMotherPdgId'])
 
-            #self._branches.query('BToPhiEE_decay == 0', inplace=True) # B->Phi ll
-            self._branches.query('BToPhiEE_decay == 1', inplace=True) # B->Phi J/psi(ll)
+            self._branches.query('BToPhiEE_decay == 0', inplace=True) # B->Phi ll
+            #self._branches.query('BToPhiEE_decay == 1', inplace=True) # B->Phi J/psi(ll)
 
           # mass hypothesis to veto fake event from semi-leptonic decay D
           l1_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToPhiEE_fit_l1_pt'], self._branches['BToPhiEE_fit_l1_eta'], self._branches['BToPhiEE_fit_l1_phi'], ELECTRON_MASS)
@@ -298,19 +346,14 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
           self._branches['BToPhiEE_trkDR'] = trk1_p4.delta_r(trk2_p4)
           self._branches['BToPhiEE_llkkDR'] = (l1_p4 + l2_p4).delta_r(trk1_p4 + trk2_p4)
 
-          '''
           diele_p3 = (l1_p4 + l2_p4).p3
           phi_p3 = (trk1_p4 + trk2_p4).p3
           pv2sv_p3 = uproot_methods.TVector3Array.from_cartesian(self._branches['BToPhiEE_PV_x'] - self._branches['BToPhiEE_vtx_x'], self._branches['BToPhiEE_PV_y'] - self._branches['BToPhiEE_vtx_y'], self._branches['BToPhiEE_PV_z'] - self._branches['BToPhiEE_vtx_z'])
-          self._branches['BToPhiEE_ptImbalance'] = np.array([p1.cross(p2).mag for p1, p2 in zip(diele_p3, pv2sv_p3)]) / np.array([p1.cross(p2).mag for p1, p2 in zip(phi_p4.p3, pv2sv_p3)])
-          '''
+          self._branches['BToPhiEE_ptImbalance'] = np.array([p1.cross(p2).mag for p1, p2 in zip(diele_p3, pv2sv_p3)]) / np.array([p1.cross(p2).mag for p1, p2 in zip(phi_p3, pv2sv_p3)])
+          self._branches['BToPhiEE_ptAsym'] = (np.array([p1.cross(p2).mag for p1, p2 in zip(diele_p3, pv2sv_p3)]) - np.array([p1.cross(p2).mag for p1, p2 in zip(phi_p3, pv2sv_p3)])) / (np.array([p1.cross(p2).mag for p1, p2 in zip(diele_p3, pv2sv_p3)]) + np.array([p1.cross(p2).mag for p1, p2 in zip(phi_p3, pv2sv_p3)])) 
+
 
           if self._evalMVA:
-            self._branches['BToPhiEE_l1_pfmvaId_lowPt'] = np.where(self._branches['BToPhiEE_l1_pfmvaCats'] == 0, self._branches['BToPhiEE_l1_pfmvaId'], 20.0)
-            self._branches['BToPhiEE_l2_pfmvaId_lowPt'] = np.where(self._branches['BToPhiEE_l2_pfmvaCats'] == 0, self._branches['BToPhiEE_l2_pfmvaId'], 20.0)
-            self._branches['BToPhiEE_l1_pfmvaId_highPt'] = np.where(self._branches['BToPhiEE_l1_pfmvaCats'] == 1, self._branches['BToPhiEE_l1_pfmvaId'], 20.0)
-            self._branches['BToPhiEE_l2_pfmvaId_highPt'] = np.where(self._branches['BToPhiEE_l2_pfmvaCats'] == 1, self._branches['BToPhiEE_l2_pfmvaId'], 20.0)
-
             if self._model == 'xgb':
               self._branches['BToPhiEE_mva'] = model.predict(xgb.DMatrix(self._branches[training_branches].replace([np.inf, -np.inf], 0.0).sort_index(axis=1)), ntree_limit=ntree_limit)
             if self._model == 'lgb':

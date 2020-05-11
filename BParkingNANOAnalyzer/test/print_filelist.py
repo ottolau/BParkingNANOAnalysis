@@ -26,7 +26,23 @@ import random
 #           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr19/ParkingBPH4/crab_data_Run2018B_part4/200419_194523/0001/',
 #           ]
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr19/BsToPhiee_MufilterPt3_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BsToPhiEE/200419_193103/0000/']
-mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr19/BsToPhiJpsi_ToKKee_MufilterPt2_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BsToPhiJpsi_Toee/200419_193225/0000/']
+#mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr19/BsToPhiJpsi_ToKKee_MufilterPt2_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BsToPhiJpsi_Toee/200419_193225/0000/']
+#mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/BsToPhiee_MufilterPt3_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BsToPhiEE/200429_221635/0000/']
+#mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/BsToPhiJpsi_ToKKee_MufilterPt2_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BsToPhiJpsi_Toee/200429_221930/0000/']
+mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018A_part2/200430_210553/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018A_part2/200430_210553/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018B_part2/200430_210746/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018B_part2/200430_210746/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018C_part2/200430_211114/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018C_part2/200430_211114/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018D_part2/200430_211314/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018D_part2/200430_211314/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018D_part2/200430_211314/0002/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018D_part2/200430_211314/0003/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018D_part2/200430_211314/0004/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018D_part2/200430_211314/0005/',
+           ]
+
 
 '''
 mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH1/crab_data_Run2018A_part1/200116_150535/0000/',
@@ -140,7 +156,8 @@ filelist = ['{}{}'.format(redirector, f.replace('/eos/cms/','')) for f in fileli
 #outputFile = open('BParkingNANO_2020Jan16_BuToKee_ext_rmUnbiased.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_Run2018B4_rmUnbiased.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BsToPhiee.list', 'w+')
-outputFile = open('BParkingNANO_2020Jan16_BsToPhiJpsi_Toee.list', 'w+')
+#outputFile = open('BParkingNANO_2020Jan16_BsToPhiJpsi_Toee.list', 'w+')
+outputFile = open('BParkingNANO_2020Jan16_Run2018ABCD2_BsToPhiLL.list', 'w+')
 
 for f in filelist:
     outputFile.write('%s\n'%(f))

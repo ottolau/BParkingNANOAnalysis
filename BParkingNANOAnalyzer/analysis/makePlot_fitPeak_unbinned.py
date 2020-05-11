@@ -39,6 +39,7 @@ def fit(tree, outputfile, **kwargs):
     sigPDF = kwargs.get('sigPDF', 3)
     bkgPDF = kwargs.get('bkgPDF', 2)
     fitJpsi = kwargs.get('fitJpsi', False)
+    fitPhi = kwargs.get('fitPhi', False)
     isMC = kwargs.get('isMC', False)
     doPartial = kwargs.get('doPartial', False)
     partialinputfile = kwargs.get('partialinputfile', 'part_workspace.root')
@@ -51,6 +52,7 @@ def fit(tree, outputfile, **kwargs):
     params = kwargs.get('params', {})
     sigName = kwargs.get('sigName', "B^{+}#rightarrow K^{+} J/#psi(#rightarrow e^{+}e^{-})")
     floatSig = kwargs.get('floatSig', False)
+    prefix = kwargs.get('prefix', 'BToKEE')
 
 
     msgservice = ROOT.RooMsgService.instance()
@@ -66,20 +68,25 @@ def fit(tree, outputfile, **kwargs):
     thevars = ROOT.RooArgSet()
 
     if fitJpsi:
-      #xmin, xmax = 2.5, 3.5
+      xmin, xmax = 2.5, 3.5
       #xmin, xmax = 3.0, 4.0
-      #bMass = ROOT.RooRealVar("BToKEE_mll_fullfit", "m(e^{+}e^{-})", 2.0, 5.0, "GeV")
-      #wspace.factory('mean[3.096916, 2.9, 3.8]')
-      xmin, xmax = -0.2, 0.2
-      bMass = ROOT.RooRealVar("BToKEE_mll_fullfit_decorr", "2nd principal component", -1.0, 1.0, "GeV")
-      wspace.factory('mean[0.0, -1.0, 1.0]')
+      bMass = ROOT.RooRealVar("{}_mll_fullfit".format(prefix), "m(e^{+}e^{-})", 2.0, 5.0, "GeV")
+      wspace.factory('mean[3.096916, 2.9, 3.8]')
+      #xmin, xmax = -0.2, 0.2
+      #bMass = ROOT.RooRealVar("BToKEE_mll_fullfit_decorr", "2nd principal component", -1.0, 1.0, "GeV")
+      #wspace.factory('mean[0.0, -1.0, 1.0]')
+
+    elif fitPhi:
+      xmin, xmax = 0.98, 1.06
+      bMass = ROOT.RooRealVar("{}_fit_phi_mass".format(prefix), "m(K^{+}K^{-})", 0.98, 1.06, "GeV")
+      wspace.factory('mean[1.02, 0.98, 1.06]')
 
     else:
-      bMass = ROOT.RooRealVar("BToKEE_fit_mass", "m(K^{+}e^{+}e^{-})", 4.0, 6.0, "GeV")
-      dieleMass = ROOT.RooRealVar("BToKEE_mll_fullfit", "m(e^{+}e^{-})", 2.0, 5.0, "GeV")
+      bMass = ROOT.RooRealVar("{}_fit_mass".format(prefix), "m(K^{+}e^{+}e^{-})", 4.0, 6.0, "GeV")
+      dieleMass = ROOT.RooRealVar("{}_mll_fullfit".format(prefix), "m(e^{+}e^{-})", 2.0, 5.0, "GeV")
       xmin, xmax = FIT_LOW, FIT_UP
       #xmin, xmax = 4.5, FIT_UP
-      wspace.factory('mean[5.272e+00, 5.22e+00, 5.3e+00]')
+      wspace.factory('mean[5.272e+00, 5.22e+00, 5.5e+00]')
       thevars.add(dieleMass)
 
     thevars.add(bMass)
@@ -126,18 +133,18 @@ def fit(tree, outputfile, **kwargs):
         #if isMC:
         wspace.factory('width[4.1858e-02, 1.0e-6, 5.0e-1]')
         wspace.factory('alpha1[1.0, 0.0, 10.0]')
-        wspace.factory('n1[1.0, 1.0, 10.0]')
+        wspace.factory('n1[1.0, 1.0, 20.0]')
         wspace.factory('alpha2[1.0, 0.0, 10.0]')
-        wspace.factory('n2[1.0, 1.0, 10.0]')
+        wspace.factory('n2[1.0, 1.0, 20.0]')
         wspace.factory('GenericPdf::sig("DoubleCBFast(x,mean,width,alpha1,n1,alpha2,n2)", {x,mean,width,alpha1,n1,alpha2,n2})')
 
     if sigPDF == 4:
         # Two Double-sided Crystal-ball
         wspace.factory('width[7.1858e-02, 1.0e-6, 5.0e-1]')
         wspace.factory('alpha1[1.0, 0.0, 10.0]')
-        wspace.factory('n1[2.0, 1.0, 10.0]')
+        wspace.factory('n1[2.0, 1.0, 20.0]')
         wspace.factory('alpha2[1.0, 0.0, 10.0]')
-        wspace.factory('n2[2.0, 1.0, 10.0]')
+        wspace.factory('n2[2.0, 1.0, 20.0]')
         wspace.factory('GenericPdf::cb("DoubleCBFast(x,mean,width,alpha1,n1,alpha2,n2)", {x,mean,width,alpha1,n1,alpha2,n2})')
         wspace.factory('sigma[7.1858e-03, 1.0e-6, 5.0e-1]')
         wspace.factory('Gaussian::gaus(x,mean,sigma)')
@@ -265,7 +272,7 @@ def fit(tree, outputfile, **kwargs):
     if isMC:
       data.plotOn(xframe, RooFit.Binning(nbin_data), RooFit.Name("data"))
       model.plotOn(xframe,RooFit.Name("global"),RooFit.Range("Full"),RooFit.LineColor(2),RooFit.MoveToBack()) # this will show fit overlay on canvas
-      if fitJpsi:
+      if fitJpsi or fitPhi:
         model.paramOn(xframe,RooFit.Layout(0.15,0.45,0.73))
       else:
         model.paramOn(xframe,RooFit.Layout(0.60,0.92,0.73))
@@ -273,7 +280,7 @@ def fit(tree, outputfile, **kwargs):
 
     else:
       if blinded:
-        nd = data.reduce('((BToKEE_fit_mass > {}) & (BToKEE_fit_mass < {})) | ((BToKEE_fit_mass > {}) & (BToKEE_fit_mass < {}))'.format(FIT_LOW, BLIND_LOW, BLIND_UP, FIT_UP)).sumEntries() / data.reduce('(BToKEE_fit_mass > {}) & (BToKEE_fit_mass < {})'.format(FIT_LOW, FIT_UP)).sumEntries()
+        nd = data.reduce('(({0}_fit_mass > {1}) & ({0}_fit_mass < {2})) | (({0}_fit_mass > {3}) & ({0}_fit_mass < {4}))'.format(prefix, FIT_LOW, BLIND_LOW, BLIND_UP, FIT_UP)).sumEntries() / data.reduce('({0}_fit_mass > {1}) & ({0}_fit_mass < {2})'.format(prefix, FIT_LOW, FIT_UP)).sumEntries()
         data.plotOn(xframe, RooFit.Binning(nbin_data), RooFit.CutRange("SB1,SB2"), RooFit.Name("data"))
       else:
         nd = 1.0
@@ -298,9 +305,14 @@ def fit(tree, outputfile, **kwargs):
     xframe.GetXaxis().SetLabelSize(0.04)
     xframe.GetXaxis().SetLabelFont(42)
 
-    xframe.GetYaxis().SetTitle("Events / {0:.2f} GeV".format((FIT_UP - FIT_LOW)/nbin_data))
-    #xframe.GetXaxis().SetTitle("m(e^{+}e^{-}) [GeV]" if fitJpsi else "m(K^{+}e^{+}e^{-}) [GeV]")
-    xframe.GetXaxis().SetTitle("2nd principal component [GeV]" if fitJpsi else "m(K^{+}e^{+}e^{-}) [GeV]")
+    xframe.GetYaxis().SetTitle("Events / {0:.0f} MeV".format((FIT_UP - FIT_LOW)/nbin_data*1000.))
+    xtitle = "m(K^{+}e^{+}e^{-}) [GeV]"
+    if fitJpsi:
+      xtitle = "m(e^{+}e^{-}) [GeV]"
+    elif fitPhi:
+      xtitle = "m(K^{+}K^{-}) [GeV]"
+    xframe.GetXaxis().SetTitle(xtitle)
+    #xframe.GetXaxis().SetTitle("2nd principal component [GeV]" if fitJpsi else "m(K^{+}e^{+}e^{-}) [GeV]")
     xframe.SetStats(0)
     xframe.SetMinimum(0)
     xframe.Draw()
@@ -308,7 +320,7 @@ def fit(tree, outputfile, **kwargs):
     CMS_lumi(isMC)
 
     if isMC:
-      if fitJpsi:
+      if fitJpsi or fitPhi:
         legend = ROOT.TLegend(0.15,0.75,0.42,0.85);
         pt = ROOT.TPaveText(0.15,0.38,0.45,0.50,"brNDC")
       else:
@@ -460,8 +472,9 @@ if __name__ == "__main__":
     tree = ROOT.TChain('tree')
     tree.AddFile(args.inputfile)
     if not args.partial:
-      fit(tree, args.outputfile, fitJpsi=False, isMC=True)
-      #fit(tree, args.outputfile, fitJpsi=False, isMC=True)
+      #fit(tree, args.outputfile, fitPhi=True, isMC=True, prefix='BToPhiEE')
+      fit(tree, args.outputfile, fitJpsi=True, isMC=True, prefix='BToPhiEE')
+      #fit(tree, args.outputfile, fitJpsi=False, isMC=True, prefix='BToPhiEE')
       #fit(tree, args.outputfile, doPartial=True)
       #fit(tree, args.outputfile, doPartial=True, partialinputfile='part_workspace_jpsi_low.root', drawSNR=True, mvaCut=13.58, params=params)
       #fit(tree, args.outputfile, doPartial=True, partialinputfile='part_workspace_psi2s_pf.root', doJpsi=True, jpsiinputfile='jpsi_workspace_psi2s_pf.root', drawSNR=True, mvaCut=7.0, params=params)

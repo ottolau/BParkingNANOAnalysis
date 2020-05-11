@@ -96,6 +96,20 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
     if self._yutaPR:
       outputbranches.update(outputbranches_yutaPR)
 
+    self._newVar = True
+    outputbranches_newVar = {'BToKEE_svprob_rank': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                             'BToKEE_fit_pt_rank': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                             'BToKEE_fit_cos2D_rank': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                             'BToKEE_l_xy_rank': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                             'BToKEE_ptAsym': {'nbins': 50, 'xmin': 0.0, 'xmax': 10.0},
+                             'BToKEE_l1_pfmvaId_lowPt': {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0},
+                             'BToKEE_l2_pfmvaId_lowPt': {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0},
+                             'BToKEE_l1_pfmvaId_highPt': {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0},
+                             'BToKEE_l2_pfmvaId_highPt': {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0},
+                             }
+    if self._newVar:
+      outputbranches.update(outputbranches_newVar)
+
     super(BToKLLAnalyzer_postprocess, self).__init__(inputfiles, outputfile, inputbranches, outputbranches, hist)
 
   def run(self):
@@ -157,7 +171,7 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         #low_notpf_selection = low_selection & np.logical_not(self._branches['BToKEE_l1_isPFoverlap'] & self._branches['BToKEE_l2_isPFoverlap'])
       
         # general selection
-        mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) & (self._branches['BToKEE_mll_fullfit'] < NR_UP) # all q2
+        mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) #& (self._branches['BToKEE_mll_fullfit'] < NR_UP) # all q2
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) & (self._branches['BToKEE_mll_fullfit'] < PSI2S_UP) # full q2
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_LOW) #low q2
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_UP) # Jpsi
@@ -174,8 +188,8 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         #general_selection = d_veto_selection
         #general_selection &= (self._branches['BToKEE_eleEtaCats'] == 0)
         general_selection &= mll_selection
-        #general_selection &= pf_selection
-        general_selection &= low_selection
+        general_selection &= pf_selection
+        #general_selection &= low_selection
         #general_selection &= low_notpf_selection
         #general_selection &= mix_net_selection
         #general_selection &= low_pfveto_selection
@@ -185,6 +199,7 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         #general_selection &= (self._branches['BToKEE_fit_mass'] > 4.8) & (self._branches['BToKEE_fit_mass'] < 6.0)
         #general_selection &= (self._branches['BToKEE_l1_pfmvaId'] > -2.0) & (self._branches['BToKEE_l2_pfmvaId'] > -2.0)
         #general_selection &= cutbased_selection
+        #general_selection &= (self._branches['BToKEE_l1_pfmvaId'] > 0.0) & (self._branches['BToKEE_l2_pfmvaId'] > 0.0)
 
         self._branches = self._branches[general_selection]
         #self._branches = self._branches.sort_values('BToKEE_mva', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')

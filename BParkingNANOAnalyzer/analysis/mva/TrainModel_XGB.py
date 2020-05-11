@@ -63,6 +63,60 @@ def get_label(name):
     else:
         return "signal"
 
+def get_weights(sig, bkg, suffix):
+    xedges = np.linspace(0.045, 20, 50)
+    q2_min, q2_max = min(xedges), max(xedges)
+    n     = len(bkg)
+    n_sig = len(sig)
+    n_bkg = len(bkg)
+
+    H_sig, xedges = np.histogram(sig, bins=xedges)
+    H_bkg, xedges = np.histogram(bkg, bins=xedges)
+
+    W = H_sig.astype(float) / H_bkg.astype(float)
+
+    W[W == np.inf] = 0
+    W = np.nan_to_num(W)
+    bkg_in_bin = np.logical_and.reduce([bkg > q2_min, bkg < q2_max])
+    bkg_in_bins = bkg[bkg_in_bin]
+
+    in_bin = np.logical_and.reduce([sig > q2_min, sig < q2_max])
+    sig_in_bins = sig[in_bin]
+    xinds = np.digitize(bkg_in_bins, xedges) - 1
+
+    n_bkg_in_bins = len(bkg_in_bins)
+    n_bkg_overflow = n_bkg - n_bkg_in_bins
+
+    weights = np.ones(n)
+    bkg_weights = np.zeros(n_bkg)
+    bkg_weights[bkg_in_bin] = W[xinds]
+
+    weights = bkg_weights
+
+    density=True
+    var_name, edges = r'$q^{2} [GeV^{2}]$', xedges
+
+    bin_centers = edges[:-1] + np.diff(edges)/2.
+
+    hist, _, _ = plt.hist(bkg_in_bins, edges, histtype='step', label="background")
+    hist_reweighted_density, _, _ = plt.hist(bkg_in_bins, edges, normed=density, histtype='step', weights=weights[bkg_in_bin])
+
+    plt.figure()
+    plt.hist(sig_in_bins, edges, normed=density, histtype='step', label="signal")
+    hist_density, _, _ = plt.hist(bkg_in_bins, edges, normed=density, histtype='step', label="background")
+
+    hist_err = np.sqrt(hist)
+    hist_reweighted_density_err = hist_err * hist_reweighted_density / hist
+
+    plt.errorbar(bin_centers, hist_reweighted_density, yerr=hist_reweighted_density_err, fmt='o', color='k', label="background reweighted", markersize="3")
+    plt.xlabel(var_name)
+    plt.ylabel('density')
+    plt.legend()
+    plt.savefig('training_results_q2weighting_{}.pdf'.format(suffix), bbox_inches='tight')
+    plt.close()
+
+    return weights
+
 def plot_roc_curve(df, score_column, tpr_threshold=0.0, ax=None, color=None, linestyle='-', label=None):
     print('Plotting ROC...')
     if ax is None:
@@ -156,8 +210,8 @@ def pauc(predt, dtrain):
     y = dtrain.get_label()
     return 'pauc', roc_auc_score(y, predt, max_fpr=1.0e-2)
 
-space  = [Integer(5, 8, name='max_depth'),
-         Real(0.005, 0.1, name='eta'),
+space  = [Integer(6, 10, name='max_depth'),
+         Real(0.001, 0.05, name='eta'),
          Real(0.0, 10.0, name='gamma'),
          Integer(1.0, 10.0, name='min_child_weight'),
          Real(0.5, 1.0, name='subsample'),
@@ -176,7 +230,7 @@ def objective(**X):
     #params['eval_metric'] = 'auc'
     params['nthread'] = 6
     params['silent'] = 1
-    cv_result = xgb.cv(params, dmatrix_train, num_boost_round=n_boost_rounds, nfold=5, shuffle=True, stratified=True, maximize=True, early_stopping_rounds=75, fpreproc=fpreproc, feval=pauc)
+    cv_result = xgb.cv(params, dmatrix_train, num_boost_round=n_boost_rounds, nfold=5, shuffle=True, stratified=True, maximize=True, early_stopping_rounds=100, fpreproc=fpreproc, feval=pauc)
     ave_auc = cv_result['test-pauc-mean'].iloc[-1]
     ave_auc_std = cv_result['test-pauc-std'].iloc[-1]
     print("Average pauc: {}+-{}".format(ave_auc, ave_auc_std))
@@ -199,7 +253,7 @@ def train(xgtrain, xgtest, hyper_params=None):
     params['nthread'] = 10
     params['silent'] = 1
     results = {}
-    model = xgb.train(params, xgtrain, num_boost_round=n_boost_rounds, evals=watchlist, evals_result=results, maximize=True, early_stopping_rounds=75, verbose_eval=False, feval=pauc)
+    model = xgb.train(params, xgtrain, num_boost_round=n_boost_rounds, evals=watchlist, evals_result=results, maximize=True, early_stopping_rounds=100, verbose_eval=False, feval=pauc)
     best_iteration = model.best_iteration + 1
     if best_iteration < n_boost_rounds:
         print("early stopping after {0} boosting rounds".format(best_iteration))
@@ -225,16 +279,18 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     
+    suffix = args.suffix
+
     features = ['BToKEE_fit_l1_normpt', 'BToKEE_l1_dxy_sig',
                 'BToKEE_fit_l2_normpt', 'BToKEE_l2_dxy_sig',
                 'BToKEE_fit_k_normpt', 'BToKEE_k_DCASig',
                 'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig', 'BToKEE_dz',
                 ]
-    features += ['BToKEE_minDR', 'BToKEE_maxDR']
+    features += ['BToKEE_eleDR', 'BToKEE_llkDR']
     features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
-    #features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
     features += ['BToKEE_ptImbalance']
-    features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+    features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
+    #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
    
 
     features = sorted(features)
@@ -258,18 +314,21 @@ if __name__ == '__main__':
     ddf['sig']['isSignal'] = 1
     ddf['bkg']['isSignal'] = 0
 
+    # add weights
+    ddf['sig']['weights'] = 1.0/ddf['sig']['BToKEE_fit_massErr'].replace(np.nan, 1.0)
+    ddf['bkg']['weights'] = get_weights(ddf['sig']['BToKEE_q2'], ddf['bkg']['BToKEE_q2'], suffix)
+
     df = pd.concat([ddf['sig'],ddf['bkg']]).sort_index(axis=1).sample(frac=1).reset_index(drop=True)
     #df['weights'] = np.where(df['isSignal'], 1.0/df['BToKEE_fit_massErr'].replace(np.nan, 1.0), 1.0)
-    df['weights'] = 1.0
+    #df['weights'] = 1.0
 
     X = df[features]
     y = df['isSignal']
     W = df['weights']
 
-    suffix = args.suffix
     n_boost_rounds = 1200
-    n_calls = 80
-    n_random_starts = 40
+    n_calls = 60
+    n_random_starts = 30
     do_bo = args.optimization
     do_cv = True
     best_params = {'colsample_bytree': 0.4048800845903312, 'min_child_weight': 4, 'subsample': 0.6625036039303215, 'eta': 0.0440179830884866, 'alpha': 4.393497894064571, 'max_depth': 9, 'gamma': 0.288003848166617, 'lambda': 8.195791858687405}
@@ -487,5 +546,4 @@ if __name__ == '__main__':
     df = df.drop("eta_binned", axis=1)
     df = df.drop("q2_binned", axis=1)
     df = df.drop("mvaId_binned", axis=1)
-
 
