@@ -79,6 +79,12 @@ class BToPhiLLAnalyzer_postprocess(BParkingNANOAnalyzer):
                       'BToPhiEE_l2_pfmvaId_lowPt': {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0},
                       'BToPhiEE_l1_pfmvaId_highPt': {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0},
                       'BToPhiEE_l2_pfmvaId_highPt': {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0},
+                      'BToPhiEE_k1ll_mass': {'nbins': 100, 'xmin': 3.0, 'xmax': 7.0},
+                      'BToPhiEE_k2ll_mass': {'nbins': 100, 'xmin': 3.0, 'xmax': 7.0},
+                      #'BToPhiEE_fit_phi_pt': {'nbins': 100, 'xmin': 0.0, 'xmax': 50.0},
+                      #'BToPhiEE_fit_phi_normpt': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
+                      #'BToPhiEE_fit_ll_pt': {'nbins': 100, 'xmin': 0.0, 'xmax': 50.0},
+                      #'BToPhiEE_fit_ll_normpt': {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0},
                       }
 
     outputbranches_mva = {'BToPhiEE_mva': {'nbins': 50, 'xmin': -20.0, 'xmax': 20.0},
@@ -86,7 +92,7 @@ class BToPhiLLAnalyzer_postprocess(BParkingNANOAnalyzer):
 
     if evalMVA:
       outputbranches.update(outputbranches_mva)
-    #outputbranches.update(outputbranches_mva)
+    outputbranches.update(outputbranches_mva)
 
     super(BToPhiLLAnalyzer_postprocess, self).__init__(inputfiles, outputfile, inputbranches, outputbranches, hist)
 
@@ -138,14 +144,12 @@ class BToPhiLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         #low_notpf_selection = low_selection & np.logical_not(self._branches['BToPhiEE_l1_isPFoverlap'] & self._branches['BToPhiEE_l2_isPFoverlap'])
       
         # general selection
-        #mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > NR_LOW) #& (self._branches['BToPhiEE_mll_fullfit'] < NR_UP) # all q2
+        mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > NR_LOW) #& (self._branches['BToPhiEE_mll_fullfit'] < NR_UP) # all q2
         #mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > NR_LOW) & (self._branches['BToPhiEE_mll_fullfit'] < PSI2S_UP) # full q2
         #mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > NR_LOW) & (self._branches['BToPhiEE_mll_fullfit'] < JPSI_LOW) #low q2
-        mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > JPSI_LOW) & (self._branches['BToPhiEE_mll_fullfit'] < JPSI_UP) # Jpsi
+        #mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > JPSI_LOW) & (self._branches['BToPhiEE_mll_fullfit'] < JPSI_UP) # Jpsi
         #mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > JPSI_UP) & (self._branches['BToPhiEE_mll_fullfit'] < PSI2S_UP) # psi(2S)
         mkk_selection = (self._branches['BToPhiEE_fit_phi_mass'] > PHI_LOW) & (self._branches['BToPhiEE_fit_phi_mass'] < PHI_UP)
-        b_upsb_selection = (self._branches['BToPhiEE_fit_mass'] > B_UP)
-        b_bothsb_selection = ((self._branches['BToPhiEE_fit_mass'] > B_SB_LOW) & (self._branches['BToPhiEE_fit_mass'] < B_LOW)) | ((self._branches['BToPhiEE_fit_mass'] > B_UP) & (self._branches['BToPhiEE_fit_mass'] < B_SB_UP))
 
         l1_selection = (self._branches['BToPhiEE_l1_mvaId'] > 3.0) 
         l2_selection = (self._branches['BToPhiEE_l2_mvaId'] > 0.0)
@@ -156,9 +160,12 @@ class BToPhiLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         general_selection &= pf_selection
         #general_selection &= low_selection
         #general_selection &= b_upsb_selection
+        general_selection &= (self._branches['BToPhiEE_mva'] > 7.9)
+        #general_selection &= (self._branches['BToPhiEE_svprob'] > 0.1) & (self._branches['BToPhiEE_fit_cos2D'] > 0.999) & (self._branches['BToPhiEE_l_xy_sig'] > 6) & (self._branches['BToPhiEE_fit_pt'] > 10.0)
 
         self._branches = self._branches[general_selection]
         #self._branches = self._branches.sort_values('BToPhiEE_mva', ascending=False).drop_duplicates(['BToPhiEE_event'], keep='first')
+        #self._branches = self._branches.sort_values('BToPhiEE_svprob', ascending=False).drop_duplicates(['BToPhiEE_event'], keep='first')
 
         if self._evalMVA:
           #self._branches['BToPhiEE_mva'] = model.predict(xgb.DMatrix(self._branches[training_branches].sort_index(axis=1).values), ntree_limit=ntree_limit)

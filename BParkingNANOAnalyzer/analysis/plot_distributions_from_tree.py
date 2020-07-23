@@ -57,9 +57,10 @@ def get_df(root_file_name):
 
 def get_label(name):
     if name == -1:
-        return "Data bkg"
+        #return "Data bkg"
+        return "MC: B+ to K+ ee - high q2"
     if name == 0:
-      return "MC: B+ to K+ ee"
+      return "MC: B+ to K+ ee - low q2"
         #return "EB" #"B+ to K+ ee"
     if name == 1:
       return "data" #"B0 to K* ee"
@@ -147,8 +148,8 @@ if __name__ == '__main__':
                             ('BToKEE_dz', np.linspace(-1.0, 1.0, 100)),
                             #('BToKEE_b_iso03_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_b_iso04_rel', np.linspace(0.0, 10.0, 100)),
-                            ('BToKEE_fit_l1_pt', np.linspace(0.0, 20.0, 100)),
-                            ('BToKEE_fit_l2_pt', np.linspace(0.0, 10.0, 100)),
+                            ('BToKEE_fit_l1_pt', np.linspace(0.0, 30.0, 100)),
+                            ('BToKEE_fit_l2_pt', np.linspace(0.0, 15.0, 100)),
                             ('BToKEE_fit_l1_normpt', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_fit_l2_normpt', np.linspace(0.0, 5.0, 100)),
                             ('BToKEE_fit_l1_eta', np.linspace(-3.0, 3.0, 100)),
@@ -161,8 +162,8 @@ if __name__ == '__main__':
                             #('BToKEE_l2_dz', np.linspace(-0.5, 0.5, 100)),
                             ('BToKEE_l1_mvaId', np.linspace(-10.0, 20.0, 100)),
                             ('BToKEE_l2_mvaId', np.linspace(-10.0, 20.0, 100)),
-                            ('BToKEE_l1_pfmvaId', np.linspace(-10.0, 20.0, 100)),
-                            ('BToKEE_l2_pfmvaId', np.linspace(-10.0, 20.0, 100)),
+                            #('BToKEE_l1_pfmvaId', np.linspace(-10.0, 20.0, 100)),
+                            #('BToKEE_l2_pfmvaId', np.linspace(-10.0, 20.0, 100)),
                             #('BToKEE_l1_pfmvaId_lowPt', np.linspace(-10.0, 10.0, 100)),
                             #('BToKEE_l2_pfmvaId_lowPt', np.linspace(-10.0, 10.0, 100)),
                             #('BToKEE_l1_pfmvaId_highPt', np.linspace(-10.0, 10.0, 100)),
@@ -171,21 +172,23 @@ if __name__ == '__main__':
                             #('BToKEE_l2_iso03_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_l1_iso04_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_l2_iso04_rel', np.linspace(0.0, 10.0, 100)),
-                            ('BToKEE_fit_k_pt', np.linspace(0.0, 10.0, 100)),
-                            ('BToKEE_fit_k_normpt', np.linspace(0.0, 2.0, 100)),
+                            ('BToKEE_fit_k_pt', np.linspace(0.0, 15.0, 100)),
+                            ('BToKEE_fit_k_normpt', np.linspace(0.0, 5.0, 100)),
                             ('BToKEE_fit_k_eta', np.linspace(-3.0, 3.0, 100)),
                             ('BToKEE_fit_k_phi', np.linspace(-np.pi, np.pi, 100)),
-                            ('BToKEE_k_DCASig', np.linspace(0.0, 10.0, 100)),
+                            ('BToKEE_k_DCASig', np.linspace(0.0, 15.0, 100)),
                             #('BToKEE_k_dz', np.linspace(-0.5, 0.5, 100)),
-                            ('BToKEE_k_nValidHits', np.linspace(0.0, 40.0, 40)),
+                            #('BToKEE_k_nValidHits', np.linspace(0.0, 40.0, 40)),
                             #('BToKEE_k_iso03_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_k_iso04_rel', np.linspace(0.0, 10.0, 100)),
                             ('BToKEE_svprob', np.linspace(0.0, 1.0, 100)),
                             ('BToKEE_fit_cos2D', np.linspace(0.999, 1.0, 100)),
                             ('BToKEE_l_xy_sig', np.linspace(0.0, 40.0, 100)),
                             ('BToKEE_Dmass', np.linspace(0.5, 5.0, 100)),
-                            ('BToKEE_maxDR', np.linspace(0.0, 5.0, 100)),
-                            ('BToKEE_minDR', np.linspace(0.0, 3.0, 100)),
+                            ('BToKEE_Dmass_flip', np.linspace(0.5, 5.0, 100)),
+                            ('BToKEE_eleDR', np.linspace(0.0, 5.0, 100)),
+                            ('BToKEE_llkDR', np.linspace(0.0, 5.0, 100)),
+                            ('BToKEE_ptImbalance', np.linspace(0.0, 10.0, 100)),
                             ])
     
     #n_files = 20
@@ -204,8 +207,10 @@ if __name__ == '__main__':
     #df1 = df1[(df1['BToKEE_decay'] != 0)].drop(columns=drop_columns)
     #df2 = df2.drop(columns=['BToKEE_decay'])
     #df1.drop(columns=['BToKEE_decay'])
-    df1 = df1[:5000000]
-    df2 = df2[:5000000]
+    #df1 = df1[:500000]
+    #df2 = df2[:500000]
+    df1 = df1.query('(BToKEE_q2 > 0.045) and (BToKEE_q2 < 6.5)')
+    df2 = df2.query('(BToKEE_mll_fullfit > 3.85)') 
     df = pd.concat((df1, df2), ignore_index=True).replace([np.inf, -np.inf], 0.0)
     #df = df1.copy()
 
@@ -214,8 +219,8 @@ if __name__ == '__main__':
 
     l1_pf_selection = (df['BToKEE_l1_isPF'])
     l2_pf_selection = (df['BToKEE_l2_isPF'])
-    l1_low_selection = (df['BToKEE_l1_isLowPt']) 
-    l2_low_selection = (df['BToKEE_l2_isLowPt']) 
+    l1_low_selection = (np.logical_not(df['BToKEE_l1_isPF'])) 
+    l2_low_selection = (np.logical_not(df['BToKEE_l2_isPF'])) 
 
     pf_selection = l1_pf_selection & l2_pf_selection # & (df['BToKEE_k_pt'] > 1.5) & (df['BToKEE_pt'] > 10.0)
     low_selection = l1_low_selection & l2_low_selection
@@ -228,6 +233,7 @@ if __name__ == '__main__':
     #trigger_selection = (df['BToKMuMu_l1_isTriggering'] == 1) | (df['BToKMuMu_l2_isTriggering'] == 1)
     
     #pu_selection = (df['BToKEE_PV_npvsGood'] < 15)
+    df = df[low_selection]
 
     '''
     df_pf = df[pf_selection].sort_values('BToKEE_fit_pt', ascending=False).groupby('BToKEE_event').filter(lambda g: any(g.BToKEE_decay == 0))
@@ -314,23 +320,24 @@ if __name__ == '__main__':
         plt.close()
     
     '''
-    '''    
+    
     with PdfPages(args.outputfile.replace('.pdf','')+'.pdf') as pdf:
       for var, bins in features.items():
         #if var != "ele_pt": continue
         print("plotting {}...".format(var))
-        #fig, axes = plt.subplots()
-        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-        plot_hist(df.sample(n=1000000), var, bins=bins, ax=axes[0], title='All')
-        plot_hist(df[pf_selection], var, bins=bins, ax=axes[1], title='PF-PF')
-        plot_hist(df[low_selection].sample(n=1000000), var, bins=bins, ax=axes[2], title='LowPt-LowPt')
+        fig, axes = plt.subplots()
+        #fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+        plot_hist(df, var, bins=bins, ax=axes)
+        #plot_hist(df.sample(n=1000000), var, bins=bins, ax=axes[0], title='All')
+        #plot_hist(df[pf_selection], var, bins=bins, ax=axes[1], title='PF-PF')
+        #plot_hist(df[low_selection].sample(n=1000000), var, bins=bins, ax=axes[2], title='LowPt-LowPt')
         #fig, axes = plt.subplots(1, 2, figsize=(15, 5))
         #plot_hist(df.query("abs(BToKEE_fit_eta) <= 1.57"), var, bins=bins, ax=axes[0], title="Barrel")
         #plot_hist(df, var, bins=bins, ax=axes[1], title="All")
         pdf.savefig(fig, bbox_inches='tight')
         plt.close()
         print("finished plotting {}...".format(var))
-    '''
+    
     '''
     training_features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l1_eta', 'BToKEE_l1_dxy_sig',
               'BToKEE_fit_l2_normpt', 'BToKEE_fit_l2_eta', 'BToKEE_l2_dxy_sig',
@@ -343,6 +350,7 @@ if __name__ == '__main__':
     training_features += ['BToKEE_ptImbalance']
     #training_features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
     '''
+    '''
     training_features = ['BToKEE_iso_sv_rel', 'BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
     #df = df[low_selection]
     plot_corr(df.query('Category == 0')[training_features], args.outputfile.replace('.pdf','') + '_corr_sig.pdf')
@@ -352,7 +360,7 @@ if __name__ == '__main__':
     fig, axes = plt.subplots()
     plot_hist(df, 'BToKEE_iso_sv_rel', bins=bins, ax=axes, title='', logscale=True)
     fig.savefig('test.pdf', bbox_inches='tight')
-   
+    '''
     #plot_pairgrid(df[training_features+['Category']].sample(n=1000), args.outputfile.replace('.pdf','') + '_pairgrid.pdf')
     
 

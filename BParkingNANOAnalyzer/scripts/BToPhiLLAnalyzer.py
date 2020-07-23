@@ -18,10 +18,10 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
     self._model = model
     self._modelfile = modelfile
     inputbranches = ['nBToPhiEE', 'BToPhiEE_mll_fullfit', 'BToPhiEE_fit_phi_mass', 'BToPhiEE_fit_mass', 'BToPhiEE_fit_massErr', 'BToPhiEE_l1_idx', 'BToPhiEE_l2_idx',
-                     'BToPhiEE_trk1_idx', 'BToPhiEE_trk2_idx', 'BToPhiEE_l_xy', 'BToPhiEE_l_xy_unc', 'BToPhiEE_fit_pt', 'BToPhiEE_fit_eta', 'BToPhiEE_fit_phi',
-                     'BToPhiEE_fit_l1_pt', 'BToPhiEE_fit_l1_eta', 'BToPhiEE_fit_l1_phi', 'BToPhiEE_fit_l2_pt', 'BToPhiEE_fit_l2_eta', 'BToPhiEE_fit_l2_phi',
+                     'BToPhiEE_trk1_idx', 'BToPhiEE_trk2_idx', 'BToPhiEE_l_xy', 'BToPhiEE_l_xy_unc', 'BToPhiEE_fit_pt', 'BToPhiEE_fit_eta', 'BToPhiEE_fit_phi', 'BToPhiEE_fit_phi_pt',
+                     'BToPhiEE_fit_l1_pt', 'BToPhiEE_fit_l1_eta', 'BToPhiEE_fit_l1_phi', 'BToPhiEE_fit_l2_pt', 'BToPhiEE_fit_l2_eta', 'BToPhiEE_fit_l2_phi', 
                      'BToPhiEE_fit_trk1_pt', 'BToPhiEE_fit_trk1_eta', 'BToPhiEE_fit_trk1_phi', 'BToPhiEE_fit_trk2_pt', 'BToPhiEE_fit_trk2_eta', 'BToPhiEE_fit_trk2_phi', 
-                     'BToPhiEE_svprob', 'BToPhiEE_fit_cos2D', 'BToPhiEE_trk1_iso04', 'BToPhiEE_trk2_iso04', # tk1_iso4 instead of trk_iso4, will change in next pr
+                     'BToPhiEE_svprob', 'BToPhiEE_fit_cos2D', 'BToPhiEE_trk1_iso04', 'BToPhiEE_trk2_iso04',
                      'BToPhiEE_l1_iso04', 'BToPhiEE_l2_iso04', 'BToPhiEE_b_iso04', 'BToPhiEE_vtx_x', 'BToPhiEE_vtx_y', 'BToPhiEE_vtx_z',
                      'Electron_pt', 'Electron_charge', 'Electron_dxy', 'Electron_dxyErr', 'Electron_convVeto', 'Electron_isPF', 'Electron_dz',
                      'Electron_isPFoverlap', 'Electron_mvaId', 'Electron_pfmvaId',
@@ -98,7 +98,12 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
     outputbranches['BToPhiEE_l2_pfmvaId_lowPt'] = {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0}
     outputbranches['BToPhiEE_l1_pfmvaId_highPt'] = {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0}
     outputbranches['BToPhiEE_l2_pfmvaId_highPt'] = {'nbins': 100, 'xmin': -10.0, 'xmax': 10.0}
-
+    outputbranches['BToPhiEE_k1ll_mass'] = {'nbins': 100, 'xmin': 3.0, 'xmax': 7.0}
+    outputbranches['BToPhiEE_k2ll_mass'] = {'nbins': 100, 'xmin': 3.0, 'xmax': 7.0}
+    outputbranches['BToPhiEE_fit_phi_pt'] = {'nbins': 100, 'xmin': 0.0, 'xmax': 50.0}
+    outputbranches['BToPhiEE_fit_phi_normpt'] = {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0}
+    outputbranches['BToPhiEE_fit_ll_pt'] = {'nbins': 100, 'xmin': 0.0, 'xmax': 50.0}
+    outputbranches['BToPhiEE_fit_ll_normpt'] = {'nbins': 100, 'xmin': 0.0, 'xmax': 10.0}
 
     outputbranches_mc = {}
     outputbranches_mc['BToPhiEE_l1_genPdgId'] = {'nbins': 10, 'xmin': 0, 'xmax': 10}
@@ -125,18 +130,19 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
     if self._evalMVA:
       features = ['BToPhiEE_fit_l1_normpt', 'BToPhiEE_l1_dxy_sig',
                   'BToPhiEE_fit_l2_normpt', 'BToPhiEE_l2_dxy_sig',
-                  'BToPhiEE_fit_k_normpt', 'BToPhiEE_k_DCASig',
-                  'BToPhiEE_fit_normpt', 'BToPhiEE_svprob', 'BToPhiEE_fit_cos2D', 'BToPhiEE_l_xy_sig', 'BToPhiEE_dz'
+                  'BToPhiEE_fit_trk1_normpt', 'BToPhiEE_trk1_DCASig', 'BToPhiEE_fit_trk2_normpt', 'BToPhiEE_trk2_DCASig',
+                  'BToPhiEE_fit_normpt', 'BToPhiEE_svprob', 'BToPhiEE_fit_cos2D', 'BToPhiEE_l_xy_sig', 'BToPhiEE_dz',
+                  'BToPhiEE_fit_phi_normpt',
                   ]
-      features += ['BToPhiEE_eleDR', 'BToPhiEE_llkDR']
-      features += ['BToPhiEE_l1_iso04_rel', 'BToPhiEE_l2_iso04_rel', 'BToPhiEE_k_iso04_rel', 'BToPhiEE_b_iso04_rel']
+      features += ['BToPhiEE_eleDR', 'BToPhiEE_llkkDR', 'BToPhiEE_trkDR']
+      features += ['BToPhiEE_l1_iso04_rel', 'BToPhiEE_l2_iso04_rel', 'BToPhiEE_trk1_iso04_rel', 'BToPhiEE_trk2_iso04_rel', 'BToPhiEE_b_iso04_rel']
       features += ['BToPhiEE_ptImbalance']
       features += ['BToPhiEE_l1_pfmvaId_lowPt', 'BToPhiEE_l2_pfmvaId_lowPt', 'BToPhiEE_l1_pfmvaId_highPt', 'BToPhiEE_l2_pfmvaId_highPt']
       #features += ['BToPhiEE_l1_mvaId', 'BToPhiEE_l2_mvaId']
 
       training_branches = sorted(features)
       mvaCut = 5.0
-      ntree_limit = 1042
+      ntree_limit = 659
       if self._model == 'xgb':
           model = xgb.Booster({'nthread': 6})
           model.load_model(self._modelfile)
@@ -278,7 +284,10 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
         #mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > NR_LOW) & (self._branches['BToPhiEE_mll_fullfit'] < JPSI_LOW) #low q2
         #mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > JPSI_LOW) & (self._branches['BToPhiEE_mll_fullfit'] < JPSI_UP) # Jpsi
         #mll_selection = (self._branches['BToPhiEE_mll_fullfit'] > JPSI_UP) & (self._branches['BToPhiEE_mll_fullfit'] < PSI2S_UP) # psi(2S)
-        mkk_selection = (self._branches['BToPhiEE_fit_phi_mass'] > PHI_LOW) & (self._branches['BToPhiEE_fit_phi_mass'] < PHI_UP)
+
+        #mkk_selection = (self._branches['BToPhiEE_fit_phi_mass'] > PHI_LOW) & (self._branches['BToPhiEE_fit_phi_mass'] < PHI_UP)
+        mkk_selection = (self._branches['BToPhiEE_fit_phi_mass'] > 0.98) & (self._branches['BToPhiEE_fit_phi_mass'] < 1.06)
+
         b_upsb_selection = (self._branches['BToPhiEE_fit_mass'] > BS_UP)
 
         l1_selection = (self._branches['BToPhiEE_l1_convVeto']) #& (self._branches['BToPhiEE_l1_mvaId'] > 3.0)
@@ -289,7 +298,7 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
         selection &= mll_selection
         selection &= mkk_selection
         selection &= additional_selection
-        selection &= b_upsb_selection
+        #selection &= b_upsb_selection
 
         if self._isMC:
           selection &= (self._branches['BToPhiEE_l1_genPartIdx'] > -0.5) & (self._branches['BToPhiEE_l2_genPartIdx'] > -0.5) & (self._branches['BToPhiEE_trk1_genPartIdx'] > -0.5) & (self._branches['BToPhiEE_trk2_genPartIdx'] > -0.5)
@@ -305,6 +314,7 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
           self._branches['BToPhiEE_fit_l2_normpt'] = self._branches['BToPhiEE_fit_l2_pt'] / self._branches['BToPhiEE_fit_mass']
           self._branches['BToPhiEE_fit_trk1_normpt'] = self._branches['BToPhiEE_fit_trk1_pt'] / self._branches['BToPhiEE_fit_mass']
           self._branches['BToPhiEE_fit_trk2_normpt'] = self._branches['BToPhiEE_fit_trk2_pt'] / self._branches['BToPhiEE_fit_mass']
+          self._branches['BToPhiEE_fit_phi_normpt'] = self._branches['BToPhiEE_fit_phi_pt'] / self._branches['BToPhiEE_fit_mass']
           self._branches['BToPhiEE_fit_normpt'] = self._branches['BToPhiEE_fit_pt'] / self._branches['BToPhiEE_fit_mass']
           self._branches['BToPhiEE_q2'] = self._branches['BToPhiEE_mll_fullfit'] * self._branches['BToPhiEE_mll_fullfit']
           self._branches['BToPhiEE_b_iso04_rel'] = self._branches['BToPhiEE_b_iso04'] / self._branches['BToPhiEE_fit_pt']
@@ -313,8 +323,8 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
           self._branches['BToPhiEE_trk1_iso04_rel'] = self._branches['BToPhiEE_trk1_iso04'] / self._branches['BToPhiEE_fit_trk1_pt']
           self._branches['BToPhiEE_trk2_iso04_rel'] = self._branches['BToPhiEE_trk2_iso04'] / self._branches['BToPhiEE_fit_trk2_pt']
           self._branches['BToPhiEE_eleEtaCats'] = map(self.EleEtaCats, self._branches['BToPhiEE_fit_l1_eta'], self._branches['BToPhiEE_fit_l2_eta'])
-          #self._branches['BToPhiEE_dz'] = self._branches['BToPhiEE_vtx_z'] - self._branches['BToPhiEE_trg_vz']
-          self._branches['BToPhiEE_dz'] = self._branches['BToPhiEE_l1_dz']
+          self._branches['BToPhiEE_dz'] = self._branches['BToPhiEE_vtx_z'] - self._branches['BToPhiEE_trg_vz']
+          #self._branches['BToPhiEE_dz'] = self._branches['BToPhiEE_l1_dz']
           self._branches['BToPhiEE_l1_pfmvaCats'] = np.where(self._branches['BToPhiEE_l1_pt'] < 5.0, 0, 1)
           self._branches['BToPhiEE_l2_pfmvaCats'] = np.where(self._branches['BToPhiEE_l2_pt'] < 5.0, 0, 1)
           self._branches['BToPhiEE_l1_pfmvaId_lowPt'] = np.where(self._branches['BToPhiEE_l1_pfmvaCats'] == 0, self._branches['BToPhiEE_l1_pfmvaId'], 20.0)
@@ -333,8 +343,8 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
                                                  self._branches['BToPhiEE_l1Mother_genMotherPdgId'], self._branches['BToPhiEE_l2Mother_genMotherPdgId'],
                                                  self._branches['BToPhiEE_trk1Mother_genMotherPdgId'], self._branches['BToPhiEE_trk2Mother_genMotherPdgId'])
 
-            self._branches.query('BToPhiEE_decay == 0', inplace=True) # B->Phi ll
-            #self._branches.query('BToPhiEE_decay == 1', inplace=True) # B->Phi J/psi(ll)
+            #self._branches.query('BToPhiEE_decay == 0', inplace=True) # B->Phi ll
+            self._branches.query('BToPhiEE_decay == 1', inplace=True) # B->Phi J/psi(ll)
 
           # mass hypothesis to veto fake event from semi-leptonic decay D
           l1_p4 = uproot_methods.TLorentzVectorArray.from_ptetaphim(self._branches['BToPhiEE_fit_l1_pt'], self._branches['BToPhiEE_fit_l1_eta'], self._branches['BToPhiEE_fit_l1_phi'], ELECTRON_MASS)
@@ -345,6 +355,10 @@ class BToPhiLLAnalyzer(BParkingNANOAnalyzer):
           self._branches['BToPhiEE_eleDR'] = l1_p4.delta_r(l2_p4)
           self._branches['BToPhiEE_trkDR'] = trk1_p4.delta_r(trk2_p4)
           self._branches['BToPhiEE_llkkDR'] = (l1_p4 + l2_p4).delta_r(trk1_p4 + trk2_p4)
+          self._branches['BToPhiEE_k1ll_mass'] = (l1_p4 + l2_p4 + trk1_p4).mass
+          self._branches['BToPhiEE_k2ll_mass'] = (l1_p4 + l2_p4 + trk2_p4).mass
+          self._branches['BToPhiEE_fit_ll_pt'] = (l1_p4 + l2_p4).pt
+          self._branches['BToPhiEE_fit_ll_normpt'] = self._branches['BToPhiEE_fit_ll_pt'] / self._branches['BToPhiEE_fit_mass']
 
           diele_p3 = (l1_p4 + l2_p4).p3
           phi_p3 = (trk1_p4 + trk2_p4).p3

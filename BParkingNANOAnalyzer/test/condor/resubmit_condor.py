@@ -29,6 +29,8 @@ if __name__ == '__main__':
     missing = missing_elements(filenumber)
     print("Missing: {}".format(missing))
 
+    raw_input("Press Enter to continue...")
+
     for i in missing:
         inpath  = "%s/sub_%d/"%(inputpath,i)
         os.chdir(os.path.join(subdir,inpath))

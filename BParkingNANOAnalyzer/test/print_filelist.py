@@ -29,21 +29,36 @@ import random
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr19/BsToPhiJpsi_ToKKee_MufilterPt2_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BsToPhiJpsi_Toee/200419_193225/0000/']
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/BsToPhiee_MufilterPt3_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BsToPhiEE/200429_221635/0000/']
 #mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/BsToPhiJpsi_ToKKee_MufilterPt2_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BsToPhiJpsi_Toee/200429_221930/0000/']
-mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018A_part2/200430_210553/0000/',
-           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018A_part2/200430_210553/0001/',
-           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018B_part2/200430_210746/0000/',
-           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018B_part2/200430_210746/0001/',
-           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018C_part2/200430_211114/0000/',
-           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018C_part2/200430_211114/0001/',
-           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018D_part2/200430_211314/0000/',
-           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018D_part2/200430_211314/0001/',
-           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018D_part2/200430_211314/0002/',
-           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018D_part2/200430_211314/0003/',
-           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018D_part2/200430_211314/0004/',
-           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Apr30/ParkingBPH2/crab_data_Run2018D_part2/200430_211314/0005/',
+
+#mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020May22/BsToPhiee_MufilterPt3_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BsToPhiEE/200522_034641/0000/']
+#mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020May22/BsToPhiJpsi_ToKKee_MufilterPt2_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BsToPhiJpsi_Toee/200522_034755/0000/']
+mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jul02/ParkingBPH1/crab_data_Run2018B_part1/200701_221618/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jul02/ParkingBPH1/crab_data_Run2018B_part1/200701_221618/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jun30/ParkingBPH2/crab_data_Run2018B_part2/200630_203700/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jun30/ParkingBPH2/crab_data_Run2018B_part2/200630_203700/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jun30/ParkingBPH3/crab_data_Run2018B_part3/200630_203815/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jun30/ParkingBPH3/crab_data_Run2018B_part3/200630_203815/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jul02/ParkingBPH4/crab_data_Run2018B_part4/200701_221732/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jul02/ParkingBPH4/crab_data_Run2018B_part4/200701_221732/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jul02/ParkingBPH5/crab_data_Run2018B_part5/200701_221854/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jul02/ParkingBPH5/crab_data_Run2018B_part5/200701_221854/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jul02/ParkingBPH6/crab_data_Run2018B_part6/200701_221949/0000/',
            ]
-
-
+'''
+mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020May22/ParkingBPH2/crab_data_Run2018A_part2/200522_193404/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020May22/ParkingBPH2/crab_data_Run2018A_part2/200522_193404/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020May22/ParkingBPH2/crab_data_Run2018B_part2/200522_035112/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020May22/ParkingBPH2/crab_data_Run2018B_part2/200522_035112/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020May22/ParkingBPH2/crab_data_Run2018C_part2/200522_193552/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020May22/ParkingBPH2/crab_data_Run2018C_part2/200522_193552/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020May22/ParkingBPH2/crab_data_Run2018D_part2/200522_193656/0000/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020May22/ParkingBPH2/crab_data_Run2018D_part2/200522_193656/0001/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020May22/ParkingBPH2/crab_data_Run2018D_part2/200522_193656/0002/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020May22/ParkingBPH2/crab_data_Run2018D_part2/200522_193656/0003/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020May22/ParkingBPH2/crab_data_Run2018D_part2/200522_193656/0004/',
+           '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020May22/ParkingBPH2/crab_data_Run2018D_part2/200522_193656/0005/',
+           ]
+'''
 '''
 mypath1 = ['/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH1/crab_data_Run2018A_part1/200116_150535/0000/',
            '/eos/cms/store/group/cmst3/group/bpark/BParkingNANO_2020Jan16/ParkingBPH1/crab_data_Run2018A_part1/200116_150535/0001/',
@@ -155,9 +170,10 @@ filelist = ['{}{}'.format(redirector, f.replace('/eos/cms/','')) for f in fileli
 #outputFile = open('BParkingNANO_2020Jan16_BuToKJpsi_Toee_rmUnbiased.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_BuToKee_ext_rmUnbiased.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_Run2018B4_rmUnbiased.list', 'w+')
-#outputFile = open('BParkingNANO_2020Jan16_BsToPhiee.list', 'w+')
-#outputFile = open('BParkingNANO_2020Jan16_BsToPhiJpsi_Toee.list', 'w+')
-outputFile = open('BParkingNANO_2020Jan16_Run2018ABCD2_BsToPhiLL.list', 'w+')
+#outputFile = open('BParkingNANO_2020May22_BsToPhiee.list', 'w+')
+#outputFile = open('BParkingNANO_2020May22_BsToPhiJpsi_Toee.list', 'w+')
+#outputFile = open('BParkingNANO_2020May22_Run2018ABCD2_BsToPhiLL.list', 'w+')
+outputFile = open('BParkingNANO_2020Jan16_Run2018B_likesign.list', 'w+')
 
 for f in filelist:
     outputFile.write('%s\n'%(f))

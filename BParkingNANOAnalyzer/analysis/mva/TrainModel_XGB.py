@@ -125,7 +125,7 @@ def plot_roc_curve(df, score_column, tpr_threshold=0.0, ax=None, color=None, lin
         label = score_column
     fpr, tpr, thresholds = roc_curve(df["isSignal"], df[score_column], drop_intermediate=True)
     roc_auc = roc_auc_score(df["isSignal"], df[score_column])
-    roc_pauc = roc_auc_score(df["isSignal"], df[score_column], max_fpr=1.0e-2)
+    roc_pauc = roc_auc_score(df["isSignal"], df[score_column], max_fpr=max_fpr)
     print("auc: {}, pauc: {}".format(roc_auc, roc_pauc))
     mask = tpr > tpr_threshold
     fpr, tpr = fpr[mask], tpr[mask]
@@ -208,7 +208,7 @@ def fpreproc(dtrain, dtest, param):
 
 def pauc(predt, dtrain):
     y = dtrain.get_label()
-    return 'pauc', roc_auc_score(y, predt, max_fpr=1.0e-2)
+    return 'pauc', roc_auc_score(y, predt, max_fpr=max_fpr)
 
 space  = [Integer(6, 10, name='max_depth'),
          Real(0.001, 0.05, name='eta'),
@@ -265,7 +265,7 @@ def train_cv(X_train_val, Y_train_val, X_test, Y_test, w_train_val, hyper_params
     model, results = train(xgtrain, xgtest, hyper_params=hyper_params)
     Y_predict = model.predict(xgtest, ntree_limit=model.best_ntree_limit)
     fpr, tpr, thresholds = roc_curve(Y_test, Y_predict, drop_intermediate=True)
-    roc_auc = roc_auc_score(Y_test, Y_predict, max_fpr=1.0e-2)
+    roc_auc = roc_auc_score(Y_test, Y_predict, max_fpr=max_fpr)
     print("Best pauc: {}".format(roc_auc))
     return model, fpr, tpr, thresholds, roc_auc, results
 
@@ -281,20 +281,37 @@ if __name__ == '__main__':
     
     suffix = args.suffix
 
-    features = ['BToKEE_fit_l1_normpt', 'BToKEE_l1_dxy_sig',
-                'BToKEE_fit_l2_normpt', 'BToKEE_l2_dxy_sig',
-                'BToKEE_fit_k_normpt', 'BToKEE_k_DCASig',
-                'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig', 'BToKEE_dz',
-                ]
-    features += ['BToKEE_eleDR', 'BToKEE_llkDR']
-    features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
-    features += ['BToKEE_ptImbalance']
-    features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
-    #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
-   
+    channel = 'BToKEE'
+    #channel = 'BToPhiEE'
+    max_fpr = 1.0e-2 if channel == 'BToKEE' else 1.0
+
+    if channel == 'BToKEE':
+      features = ['BToKEE_fit_l1_normpt', 'BToKEE_l1_dxy_sig',
+                  'BToKEE_fit_l2_normpt', 'BToKEE_l2_dxy_sig',
+                  'BToKEE_fit_k_normpt', 'BToKEE_k_DCASig',
+                  'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig', 'BToKEE_dz',
+                  ]
+      features += ['BToKEE_eleDR', 'BToKEE_llkDR']
+      features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
+      features += ['BToKEE_ptAsym']
+      features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
+      features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
+      #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+
+    elif channel == 'BToPhiEE': 
+      features = ['BToPhiEE_fit_l1_normpt', 'BToPhiEE_l1_dxy_sig',
+                  'BToPhiEE_fit_l2_normpt', 'BToPhiEE_l2_dxy_sig',
+                  'BToPhiEE_fit_trk1_normpt', 'BToPhiEE_trk1_DCASig', 'BToPhiEE_fit_trk2_normpt', 'BToPhiEE_trk2_DCASig',
+                  'BToPhiEE_fit_normpt', 'BToPhiEE_svprob', 'BToPhiEE_fit_cos2D', 'BToPhiEE_l_xy_sig', 'BToPhiEE_dz',
+                  ]
+      features += ['BToPhiEE_eleDR', 'BToPhiEE_llkkDR', 'BToPhiEE_trkDR']
+      features += ['BToPhiEE_l1_iso04_rel', 'BToPhiEE_l2_iso04_rel', 'BToPhiEE_trk1_iso04_rel', 'BToPhiEE_trk2_iso04_rel', 'BToPhiEE_b_iso04_rel']
+      features += ['BToPhiEE_ptAsym']
+      features += ['BToPhiEE_l1_pfmvaId_lowPt', 'BToPhiEE_l2_pfmvaId_lowPt', 'BToPhiEE_l1_pfmvaId_highPt', 'BToPhiEE_l2_pfmvaId_highPt']
+      #features += ['BToPhiEE_l1_mvaId', 'BToPhiEE_l2_mvaId']
 
     features = sorted(features)
-    branches = features + ['BToKEE_fit_massErr', 'BToKEE_fit_pt', 'BToKEE_fit_eta', 'BToKEE_q2']
+    branches = features + [channel + '_fit_massErr', channel + '_fit_pt', channel + '_fit_eta', channel + '_q2']
 
     ddf = {}
     ddf['sig'] = get_df(args.signal, branches)
@@ -315,12 +332,11 @@ if __name__ == '__main__':
     ddf['bkg']['isSignal'] = 0
 
     # add weights
-    ddf['sig']['weights'] = 1.0/ddf['sig']['BToKEE_fit_massErr'].replace(np.nan, 1.0)
-    ddf['bkg']['weights'] = get_weights(ddf['sig']['BToKEE_q2'], ddf['bkg']['BToKEE_q2'], suffix)
+    ddf['sig']['weights'] = 1.0/ddf['sig'][channel + '_fit_massErr'].replace(np.nan, 1.0)
+    #ddf['bkg']['weights'] = get_weights(ddf['sig']['BToKEE_q2'], ddf['bkg']['BToKEE_q2'], suffix)
+    ddf['bkg']['weights'] = 1.0
 
     df = pd.concat([ddf['sig'],ddf['bkg']]).sort_index(axis=1).sample(frac=1).reset_index(drop=True)
-    #df['weights'] = np.where(df['isSignal'], 1.0/df['BToKEE_fit_massErr'].replace(np.nan, 1.0), 1.0)
-    #df['weights'] = 1.0
 
     X = df[features]
     y = df['isSignal']
@@ -499,15 +515,15 @@ if __name__ == '__main__':
     n_pt_bins = 100
     pt_bins = np.linspace(3, 60, n_pt_bins)
     #pt_bins = np.concatenate((np.linspace(2, 5, n_pt_bins/2, endpoint=False), np.linspace(5, 20, n_pt_bins/2)))
-    df["pt_binned"] = get_bins_center(df["BToKEE_fit_pt"], pt_bins)
+    df["pt_binned"] = get_bins_center(df[channel + "_fit_pt"], pt_bins)
 
     n_eta_bins = 100
     eta_bins = np.linspace(-2.5, 2.5, n_eta_bins)
-    df["eta_binned"] = get_bins_center(df["BToKEE_fit_eta"], eta_bins)
+    df["eta_binned"] = get_bins_center(df[channel + "_fit_eta"], eta_bins)
 
     n_q2_bins = 100
-    q2_bins = np.linspace(0.045, 14.8, n_q2_bins)
-    df["q2_binned"] = get_bins_center(df["BToKEE_q2"], q2_bins)
+    q2_bins = np.linspace(0.045, 25.0, n_q2_bins)
+    df["q2_binned"] = get_bins_center(df[channel + "_q2"], q2_bins)
 
 
     df_test = df[df["test"]]
@@ -530,20 +546,21 @@ if __name__ == '__main__':
     fig_q2.subplots_adjust(hspace=0.05)      
     fig_q2.savefig('training_results_eff_trunon_q2_{}.pdf'.format(suffix), bbox_inches='tight')
 
-    
-    n_mvaId_bins = 100
-    mvaId_bins = np.linspace(0.0, 10.0, n_mvaId_bins)
-    df["mvaId_binned"] = get_bins_center(df["BToKEE_l2_mvaId"], mvaId_bins)
-
-    fig_mvaId, axes_mvaId = plt.subplots(2, 1)
-    plot_turnon_curve(df_test, 'mvaId_binned', working_points, r'Sub-leading electron mvaId', isSignal=True, ax=axes_mvaId[0])
-    plot_turnon_curve(df_test, 'mvaId_binned', working_points, r'Sub-leading electron mvaId', isSignal=False, ax=axes_mvaId[1])
-    fig_mvaId.subplots_adjust(hspace=0.05)      
-    fig_mvaId.savefig('training_results_eff_trunon_mvaId_{}.pdf'.format(suffix), bbox_inches='tight')
-    
-
     df = df.drop("pt_binned", axis=1)
     df = df.drop("eta_binned", axis=1)
     df = df.drop("q2_binned", axis=1)
-    df = df.drop("mvaId_binned", axis=1)
+   
+    if channel + '_l2_mvaId' in features:
+      n_mvaId_bins = 100
+      mvaId_bins = np.linspace(0.0, 10.0, n_mvaId_bins)
+      df["mvaId_binned"] = get_bins_center(df[channel + "_l2_mvaId"], mvaId_bins)
+      df_test = df[df["test"]]
+
+      fig_mvaId, axes_mvaId = plt.subplots(2, 1)
+      plot_turnon_curve(df_test, 'mvaId_binned', working_points, r'Sub-leading electron mvaId', isSignal=True, ax=axes_mvaId[0])
+      plot_turnon_curve(df_test, 'mvaId_binned', working_points, r'Sub-leading electron mvaId', isSignal=False, ax=axes_mvaId[1])
+      fig_mvaId.subplots_adjust(hspace=0.05)      
+      fig_mvaId.savefig('training_results_eff_trunon_mvaId_{}.pdf'.format(suffix), bbox_inches='tight')
+
+      df = df.drop("mvaId_binned", axis=1)
 

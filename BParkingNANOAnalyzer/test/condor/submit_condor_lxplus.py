@@ -118,6 +118,7 @@ if __name__ == '__main__':
     basePath = "."
     sampleFolders = os.listdir(basePath)
     inputfiles = args.inputfiles.replace('.list','')
+    inputfiles += '_BToPhiEEAnalyzer' if args.phi else '_BToKEEAnalyzer'
     if args.suffix is not None: inputfiles += '_{}'.format(args.suffix)
     if args.mc: inputfiles += '_mc'
     if args.mva: inputfiles += '_mva'
@@ -129,7 +130,7 @@ if __name__ == '__main__':
 
     dryRun  = False
     subdir  = os.path.expandvars("$PWD")
-    group   = 500
+    group   = 150
     #group = 30
 
     zipPath = 'zip'
@@ -149,8 +150,8 @@ if __name__ == '__main__':
 
     if args.random:
         print('Shuffling the input files...')
-        random.shuffle(fileList)
-        #fileList = random.sample(fileList, k=50)
+        #random.shuffle(fileList)
+        fileList = random.sample(fileList, k=150)
 
     # stplie files in to n(group) of chunks
     fChunks= list(chunks(fileList,group))
