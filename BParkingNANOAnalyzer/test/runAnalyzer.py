@@ -12,10 +12,10 @@ parser.add_argument("-i", "--inputfiles", dest="inputfiles", default="DoubleMuon
 parser.add_argument("-o", "--outputfile", dest="outputfile", default="plots.root", help="Output file containing plots")
 parser.add_argument("-m", "--maxevents", dest="maxevents", type=int, default=ROOT.TTree.kMaxEntries, help="Maximum number events to loop over")
 parser.add_argument("-t", "--ttree", dest="ttree", default="Events", help="TTree Name")
-parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Store histograms or tree")
 parser.add_argument("-c", "--mc", dest="mc", action='store_true', help="MC or data")
 parser.add_argument("-r", "--runparallel", dest="runparallel", action='store_true', help="Enable parallel run")
 parser.add_argument("-v", "--mva", dest="mva", action='store_true', help="Evaluate MVA")
+parser.add_argument("--random", dest="random", action='store_true', help="Randomly select one candidate per event")
 parser.add_argument("--model", dest="model", default='xgb', help="Type of classifier")
 parser.add_argument("--modelfile", dest="modelfile", default='../models/mva.model', help="Name of the classifier file")
 parser.add_argument("--phi", action='store_true', help="Run R(phi) analyzer")
@@ -35,19 +35,22 @@ def chunks(l, n):
     for i in xrange(0, len(l), n):
         yield l[i:i + n]
 
-def analyze(inputfile, outputfile, Analyzer, hist, mc, mva, model, modelfile, parallel=False, outpath='.'):
+def analyze(inputfile, outputfile, Analyzer, random, mc, mva, model, modelfile, parallel=False, outpath='.'):
     if parallel:
         ich, inputfile = inputfile
         print("Processing chunk number %i"%(ich))
         outputfile = outpath+'/'+outputfile.replace('.root','')+'_subset'+str(ich)+'.root'
-    analyzer = Analyzer(inputfile, outputfile, hist, mc, mva, model, modelfile)
+    analyzer = Analyzer(inputfile, outputfile, random, mc, mva, model, modelfile)
     analyzer.run()
 
 if __name__ == "__main__":
     from scripts.BToKLLAnalyzer import BToKLLAnalyzer
     from scripts.BToKstarLLAnalyzer import BToKstarLLAnalyzer
     from scripts.BToPhiLLAnalyzer import BToPhiLLAnalyzer
+    #from scripts.BToKMuMuAnalyzer import BToKMuMuAnalyzer
+
     Analyzer = BToKLLAnalyzer if not args.phi else BToPhiLLAnalyzer
+    #Analyzer = BToKMuMuAnalyzer 
 
     if '.root' in args.inputfiles:
         fileList = [args.inputfiles,]
@@ -58,7 +61,7 @@ if __name__ == "__main__":
     if not args.runparallel:
         inputfile = fileList
         outputfile = args.outputfile.replace('.root','').replace('.h5','')+'.root'
-        analyze(inputfile, outputfile, Analyzer, args.hist, args.mc, args.mva, args.model, args.modelfile)
+        analyze(inputfile, outputfile, Analyzer, args.random, args.mc, args.mva, args.model, args.modelfile)
 
     else:
         outpath = '.'
@@ -72,7 +75,7 @@ if __name__ == "__main__":
 
         pool = mp.Pool(processes = 4)
         input_parallel = list(enumerate(fChunks))
-        partial_func = partial(analyze, outputfile=args.outputfile, Analyzer=Analyzer, hist=args.hist, mc=args.mc, mva=args.mva, model=args.model, modelfile=args.modelfile, parallel=True, outpath=outpath)
+        partial_func = partial(analyze, outputfile=args.outputfile, Analyzer=Analyzer, random=args.random, mc=args.mc, mva=args.mva, model=args.model, modelfile=args.modelfile, parallel=True, outpath=outpath)
         pool.map(partial_func, input_parallel) 
 
         pool.close()

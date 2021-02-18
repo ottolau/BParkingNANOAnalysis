@@ -212,12 +212,13 @@ def pauc(predt, dtrain):
 
 space  = [Integer(6, 10, name='max_depth'),
          Real(0.001, 0.05, name='eta'),
-         Real(0.0, 10.0, name='gamma'),
-         Integer(1.0, 10.0, name='min_child_weight'),
+         Real(0.0, 3.0, name='gamma'),
+         #Integer(1.0, 10.0, name='min_child_weight'),
+         Real(0.0, 1.0, name='min_child_weight'),
          Real(0.5, 1.0, name='subsample'),
          Real(0.1, 1.0, name='colsample_bytree'),
          Real(0.0, 10.0, name='alpha'),
-         Real(0.0, 10.0, name='lambda'),
+         Real(0.1, 10.0, name='lambda'),
          ]
 
 @use_named_args(space)
@@ -272,8 +273,8 @@ def train_cv(X_train_val, Y_train_val, X_test, Y_test, w_train_val, hyper_params
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description="A simple ttree plotter")
-    parser.add_argument("-s", "--signal", dest="signal", default="RootTree_2020Jan16_BuToKee_all_BToKEEAnalyzer_2020Mar06_fullq2_low.root", help="Signal file")
-    parser.add_argument("-b", "--background", dest="background", default="RootTree_2020Jan16_Run2018ABCD_random30_BToKEEAnalyzer_2020Mar22_fullq2_upSB_low.root", help="Background file")
+    parser.add_argument("-s", "--signal", dest="signal", default="RootTree_2020Jan16_BuToKee_all_BToKEEAnalyzer_2020May03_newVar_mc_pf.root", help="Signal file")
+    parser.add_argument("-b", "--background", dest="background", default="BParkingNANO_2020Jan16_Run2018ABCD_BToKEEAnalyzer_2020May03_allq2_newVar_upSB_pf_random_subsample.root", help="Background file")
     parser.add_argument("-f", "--suffix", dest="suffix", default=None, help="Suffix of the output name")
     parser.add_argument("-o", "--optimization", dest="optimization", action='store_true', help="Perform Bayesian optimization")
     args = parser.parse_args()
@@ -286,32 +287,40 @@ if __name__ == '__main__':
     max_fpr = 1.0e-2 if channel == 'BToKEE' else 1.0
 
     if channel == 'BToKEE':
-      features = ['BToKEE_fit_l1_normpt', 'BToKEE_l1_dxy_sig',
-                  'BToKEE_fit_l2_normpt', 'BToKEE_l2_dxy_sig',
+      features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l2_normpt',
+      #features = ['BToKEE_fit_l1_pt', 'BToKEE_fit_l2_pt',
+                  'BToKEE_l1_dxy_sig', 'BToKEE_l2_dxy_sig',
                   'BToKEE_fit_k_normpt', 'BToKEE_k_DCASig',
                   'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig', 'BToKEE_dz',
                   ]
       features += ['BToKEE_eleDR', 'BToKEE_llkDR']
       features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
       features += ['BToKEE_ptAsym']
-      features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
+      #features += ['BToKEE_ptImbalance']
+      #features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
       features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
-      #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+      features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+      features += ['BToKEE_l1_iso04_dca_rel', 'BToKEE_l2_iso04_dca_rel', 'BToKEE_k_iso04_dca_rel', 'BToKEE_b_iso04_dca_rel']
+      #features += ['BToKEE_l1_iso04_dca_tight_rel', 'BToKEE_l2_iso04_dca_tight_rel', 'BToKEE_k_iso04_dca_tight_rel', 'BToKEE_b_iso04_dca_tight_rel']
+      #features += ['BToKEE_l1_n_isotrk', 'BToKEE_l2_n_isotrk', 'BToKEE_k_n_isotrk', 'BToKEE_b_n_isotrk']
+      #features += ['BToKEE_l1_n_isotrk_dca', 'BToKEE_l2_n_isotrk_dca', 'BToKEE_k_n_isotrk_dca', 'BToKEE_b_n_isotrk_dca']
+      #features += ['BToKEE_l1_n_isotrk_dca_tight', 'BToKEE_l2_n_isotrk_dca_tight', 'BToKEE_k_n_isotrk_dca_tight', 'BToKEE_b_n_isotrk_dca_tight']
 
     elif channel == 'BToPhiEE': 
       features = ['BToPhiEE_fit_l1_normpt', 'BToPhiEE_l1_dxy_sig',
                   'BToPhiEE_fit_l2_normpt', 'BToPhiEE_l2_dxy_sig',
                   'BToPhiEE_fit_trk1_normpt', 'BToPhiEE_trk1_DCASig', 'BToPhiEE_fit_trk2_normpt', 'BToPhiEE_trk2_DCASig',
                   'BToPhiEE_fit_normpt', 'BToPhiEE_svprob', 'BToPhiEE_fit_cos2D', 'BToPhiEE_l_xy_sig', 'BToPhiEE_dz',
+                  'BToPhiEE_fit_phi_normpt',
                   ]
       features += ['BToPhiEE_eleDR', 'BToPhiEE_llkkDR', 'BToPhiEE_trkDR']
       features += ['BToPhiEE_l1_iso04_rel', 'BToPhiEE_l2_iso04_rel', 'BToPhiEE_trk1_iso04_rel', 'BToPhiEE_trk2_iso04_rel', 'BToPhiEE_b_iso04_rel']
-      features += ['BToPhiEE_ptAsym']
-      features += ['BToPhiEE_l1_pfmvaId_lowPt', 'BToPhiEE_l2_pfmvaId_lowPt', 'BToPhiEE_l1_pfmvaId_highPt', 'BToPhiEE_l2_pfmvaId_highPt']
-      #features += ['BToPhiEE_l1_mvaId', 'BToPhiEE_l2_mvaId']
+      features += ['BToPhiEE_ptImbalance']
+      #features += ['BToPhiEE_l1_pfmvaId_lowPt', 'BToPhiEE_l2_pfmvaId_lowPt', 'BToPhiEE_l1_pfmvaId_highPt', 'BToPhiEE_l2_pfmvaId_highPt']
+      features += ['BToPhiEE_l1_mvaId', 'BToPhiEE_l2_mvaId']
 
     features = sorted(features)
-    branches = features + [channel + '_fit_massErr', channel + '_fit_pt', channel + '_fit_eta', channel + '_q2']
+    branches = features + [channel + '_fit_mass', channel + '_fit_massErr', channel + '_fit_pt', channel + '_fit_eta', channel + '_q2']
 
     ddf = {}
     ddf['sig'] = get_df(args.signal, branches)
@@ -320,10 +329,16 @@ if __name__ == '__main__':
     ddf['sig'].replace([np.inf, -np.inf], 0.0, inplace=True)
     ddf['bkg'].replace([np.inf, -np.inf], 0.0, inplace=True)
 
+    '''
+    selection = '(BToKEE_fit_l1_normpt*BToKEE_fit_mass > 2.0) and (BToKEE_fit_l2_normpt*BToKEE_fit_mass > 2.0)'
+    ddf['sig'].query(selection, inplace=True)
+    ddf['bkg'].query(selection, inplace=True)
+    '''
+
     #nSig = ddf['sig'].shape[0]
-    #nBkg = 300000
-    nSig = 300000
-    nBkg = 300000
+    #nBkg = 25000
+    nSig = 100000
+    nBkg = 100000
     ddf['sig'] = ddf['sig'].sample(frac=1)[:nSig]
     ddf['bkg'] = ddf['bkg'].sample(frac=1)[:nBkg]
 
@@ -342,12 +357,23 @@ if __name__ == '__main__':
     y = df['isSignal']
     W = df['weights']
 
-    n_boost_rounds = 1200
-    n_calls = 60
-    n_random_starts = 30
+    n_boost_rounds = 800
+    n_calls = 80
+    n_random_starts = 40
     do_bo = args.optimization
-    do_cv = True
-    best_params = {'colsample_bytree': 0.4048800845903312, 'min_child_weight': 4, 'subsample': 0.6625036039303215, 'eta': 0.0440179830884866, 'alpha': 4.393497894064571, 'max_depth': 9, 'gamma': 0.288003848166617, 'lambda': 8.195791858687405}
+    do_cv = False
+    #best_params = {'colsample_bytree': 0.2760659849098346, 'min_child_weight': 0.944529354511711, 'subsample': 0.9764088646687092, 'eta': 0.04902298276243091, 'alpha': 1.0439227678392995, 'max_depth': 10, 'gamma': 0.4349769306187239, 'lambda': 9.874654037131574}
+    #best_params = {'colsample_bytree': 0.49090035832528456, 'min_child_weight': 0.5554583843109246, 'subsample': 0.9256932381586518, 'eta': 0.03723487005901925, 'alpha': 8.766606138603317, 'max_depth': 7, 'gamma': 2.066453710120974, 'lambda': 6.425723447952634}
+    #best_params = {'colsample_bytree': 0.6417405650302768, 'min_child_weight': 0.7998463694760696, 'subsample': 0.5570470959335826, 'eta': 0.02867563834178777, 'alpha': 2.4126097151465116, 'max_depth': 9, 'gamma': 1.491648232476693, 'lambda': 5.956681761649099}
+    #best_params = {'colsample_bytree': 0.9295621195261661, 'min_child_weight': 0.3710190109106917, 'subsample': 0.9912111293660311, 'eta': 0.048442662159622944, 'alpha': 0.0759369509503527, 'max_depth': 7, 'gamma': 0.2778602620598743, 'lambda': 9.825211724249337}
+    #best_params = {'colsample_bytree': 0.5919288914524103, 'min_child_weight': 0.9945284088908286, 'subsample': 0.9875416061463642, 'eta': 0.047374548917525766, 'alpha': 2.118655912808472, 'max_depth': 6, 'gamma': 2.9389667354189695, 'lambda': 0.4832191215874776}
+    #best_params = {'colsample_bytree': 0.4420378878413682, 'min_child_weight': 0.36468969859982153, 'subsample': 0.5633485657980712, 'eta': 0.03932125940383663, 'alpha': 6.679185112942662, 'max_depth': 9, 'gamma': 1.5880279072266608, 'lambda': 2.616317205661882}
+    #best_params = {'colsample_bytree': 0.8439374034804369, 'min_child_weight': 0.07393372974797298, 'subsample': 0.9096806040352157, 'eta': 0.04838229746288072, 'alpha': 0.5468755049094866, 'max_depth': 7, 'gamma': 0.3244948261595203, 'lambda': 0.20932341450024372}
+    #best_params = {'colsample_bytree': 0.6985151799554887, 'min_child_weight': 0.1880992226152179, 'subsample': 0.5059776752154034, 'eta': 0.025091014670069068, 'alpha': 0.5825875179922492, 'max_depth': 8, 'gamma': 0.15761992682454778, 'lambda': 4.552028057728982}
+    #best_params = {'colsample_bytree': 0.5825650686239838, 'min_child_weight': 0.8004306182129557, 'subsample': 0.8363871434049193, 'eta': 0.03806335273785261, 'alpha': 6.813338261152275, 'max_depth': 7, 'gamma': 0.16767944414770025, 'lambda': 9.582893111434032}
+    #best_params = {'colsample_bytree': 0.9605790098637315, 'min_child_weight': 0.7027414302512944, 'subsample': 0.9354597406134866, 'eta': 0.04988900023005173, 'alpha': 2.6608747737179277, 'max_depth': 6, 'gamma': 2.5354784545772313, 'lambda': 1.8381210691625665}
+    #best_params = {'colsample_bytree': 0.49090035832528456, 'min_child_weight': 0.5554583843109246, 'subsample': 0.9256932381586518, 'eta': 0.03723487005901925, 'alpha': 8.766606138603317, 'max_depth': 7, 'gamma': 2.066453710120974, 'lambda': 6.425723447952634}
+    best_params = {'colsample_bytree': 0.6985151799554887, 'min_child_weight': 0.1880992226152179, 'subsample': 0.5059776752154034, 'eta': 0.025091014670069068, 'alpha': 0.5825875179922492, 'max_depth': 8, 'gamma': 0.15761992682454778, 'lambda': 4.552028057728982}
 
     # split X and y up in train and test samples
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.20)

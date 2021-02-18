@@ -8,10 +8,10 @@ parser = argparse.ArgumentParser(description="A simple ttree plotter")
 parser.add_argument("-i", "--inputfiles", dest="inputfiles", default="DoubleMuonNtu_Run2016B.list", help="List of input ggNtuplizer files")
 parser.add_argument("-o", "--outputfile", dest="outputfile", default="plots.root", help="Output file containing plots")
 parser.add_argument("-f", "--suffix", dest="suffix", default=None, help="Suffix of the output name")
-parser.add_argument("-s", "--hist", dest="hist", action='store_true', help="Store histograms or tree")
 parser.add_argument("-c", "--mc", dest="mc", action='store_true', help="MC or data")
 parser.add_argument("-m", "--maxevents", dest="maxevents", type=int, default=ROOT.TTree.kMaxEntries, help="Maximum number events to loop over")
 parser.add_argument("-v", "--mva", dest="mva", action='store_true', help="Evaluate MVA")
+parser.add_argument("--random", action='store_true', help="Randomly select one candidate per event")
 parser.add_argument("--model", dest="model", default='xgb', help="Type of classifier")
 parser.add_argument("--phi", action='store_true', help="Run R(phi) analyzer")
 parser.add_argument("--random", action='store_true', help="Randomize the files' order")
@@ -39,7 +39,9 @@ def write_condor(exe='runjob.sh', arguments = [], files = [],dryRun=True):
     out += 'Arguments = %s\n'%(' '.join(arguments))
     #out += '+JobFlavour = "espresso"\n'
     #out += '+JobFlavour = "longlunch"\n'
-    out += '+JobFlavour = "workday"\n'
+    #out += '+JobFlavour = "workday"\n'
+    out += '+JobFlavour = "tomorrow"\n'
+    #out += '+JobFlavour = "testmatch"\n'
     #out += '+MaxRuntime = 36000\n'
     out += 'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)\n'
     out += 'max_retries = 2\n'
@@ -77,21 +79,21 @@ def write_bash(temp = 'runjob.sh', command = '', outputdir = ''):
     out += 'scram b clean; scram b\n'
     out += 'cd BParkingNANOAnalyzer/test\n'
     out += command + '\n'
-    if args.hist:
-      out += 'echo "List all root files = "\n'
-      out += 'ls *.root\n'
+    #if args.hist:
+    #  out += 'echo "List all root files = "\n'
+    #  out += 'ls *.root\n'
     out += 'echo "List all files"\n'
     out += 'ls\n'
     out += 'echo "*******************************************"\n'
     out += 'OUTDIR='+outputdir+'\n'
     out += 'echo "xrdcp output for condor"\n'
-    out += 'for FILE in *.{}\n'.format('root' if args.hist else 'root')
+    out += 'for FILE in *.{}\n'.format('root')
     out += 'do\n'
     out += '  echo "xrdcp -f ${FILE} ${OUTDIR}/${FILE}"\n'
     out += '  xrdcp -f ${FILE} ${OUTDIR}/${FILE} 2>&1\n'
     out += '  XRDEXIT=$?\n'
     out += '  if [[ $XRDEXIT -ne 0 ]]; then\n'
-    out += '    rm *.{}\n'.format('root' if args.hist else 'root')
+    out += '    rm *.{}\n'.format('root')
     out += '    echo "exit code $XRDEXIT, failure in xrdcp"\n'
     out += '    exit $XRDEXIT\n'
     out += '  fi\n'
@@ -131,6 +133,7 @@ if __name__ == '__main__':
     dryRun  = False
     subdir  = os.path.expandvars("$PWD")
     group   = 150
+    #group   = 50
     #group = 30
 
     zipPath = 'zip'
@@ -151,7 +154,7 @@ if __name__ == '__main__':
     if args.random:
         print('Shuffling the input files...')
         #random.shuffle(fileList)
-        fileList = random.sample(fileList, k=150)
+        fileList = random.sample(fileList, k=20)
 
     # stplie files in to n(group) of chunks
     fChunks= list(chunks(fileList,group))
@@ -174,7 +177,7 @@ if __name__ == '__main__':
         inputfileList.close()
 
         args_list = []
-        if args.hist: args_list.append('-s')
+        if args.random: args_list.append('--random')
         if args.mc: args_list.append('-c')
         if args.mva: 
             args_list.append('-v')

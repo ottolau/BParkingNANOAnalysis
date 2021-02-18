@@ -15,7 +15,8 @@ def exec_me(command, dryRun=False):
         os.system(command)
 
 def missing_elements(L):
-  start, end = L[0], L[-1]
+  start, end = 0, L[-1]
+  #start, end = 0, 3
   return sorted(set(range(start, end + 1)).difference(L))
 
 if __name__ == '__main__':

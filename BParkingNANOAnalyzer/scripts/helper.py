@@ -1,6 +1,7 @@
 import numpy as np
 import uproot
 import pandas as pd
+import ROOT
 
 ELECTRON_MASS = 0.000511
 K_MASS = 0.493677
@@ -50,10 +51,12 @@ params_jpsitri_pf = {'mean': 5.2671, 'width': 0.0637, 'alpha1': 0.683, 'n1': 2.0
 params_jpsi_pf = {'mean': 5.2676, 'width': 0.06070, 'alpha1': 0.677, 'n1': 1.56, 'alpha2': 1.440, 'n2': 8.9}
 params_jpsi_mix = {'mean': 5.2660, 'width': 0.0636, 'alpha1': 0.60, 'n1': 2.20, 'alpha2': 1.387, 'n2': 20.0}
 params_jpsi_low = {'mean': 5.2654, 'width': 0.0638, 'alpha1': 0.655, 'n1': 1.75, 'alpha2': 1.509, 'n2': 9.85}
+params_jpsi_low_exc = {'mean': 5.2554, 'width': 0.081642, 'alpha1': 0.65116, 'n1': 2.093, 'alpha2': 2.445, 'n2': 3.0}
 params_psi2stri_pf = {'mean': 5.2628, 'width': 0.0753, 'alpha1': 0.642, 'n1': 10.0, 'alpha2': 4.6, 'n2': 6.4}
 params_psi2s_pf = {'mean': 5.2646, 'width': 0.0726, 'alpha1': 0.591, 'n1': 10.0, 'alpha2': 1.87, 'n2': 10.0}
 params_psi2s_mix = {'mean': 5.2544, 'width': 0.0838, 'alpha1': 0.577, 'n1': 20, 'alpha2': 9.93, 'n2': 9.7}
 params_psi2s_low = {'mean': 5.25464, 'width': 0.0822, 'alpha1': 0.642, 'n1': 9.76, 'alpha2': 6.0, 'n2': 2.94}
+params_psi2s_low_exc = {'mean': 5.2538, 'width': 0.0841, 'alpha1': 0.490, 'n1': 20.0, 'alpha2': 8.9, 'n2': 19.0}
 params_jpsi_cutbased_pf = {'mean': 5.2621, 'width': 0.0658, 'alpha1': 0.945, 'n1': 1.065, 'alpha2': 1.59704, 'n2': 9.962}
 
 params_rphi_jpsi_pf = {'mean': 5.35897, 'width': 0.05558, 'alpha1': 0.5363, 'n1': 2.76, 'alpha2': 1.269, 'n2': 20}
@@ -99,4 +102,25 @@ def get_diagonalCut_var(branches, mll_mean, fit_mass_mean, diagCut_lower_bound, 
   eigVecs_jpsi = triCut_jpsi_rotMatrix_pf 
   data_decorr = data_centered.dot(eigVecs)
   return data_decorr[:,0], data_decorr[:,1]
+
+def CMS_lumi(isMC):
+    mark = ROOT.TLatex()
+    mark.SetNDC()
+    lumistamp = '2018 (13 TeV)'
+    fontScale = 1.0
+    cmsTextSize = 0.042 * fontScale * 1.25
+    extraOverCmsTextSize  = 0.76
+    extraTextSize = extraOverCmsTextSize*cmsTextSize
+
+    mark.SetTextAlign(11)
+    mark.SetTextSize(cmsTextSize)
+    mark.SetTextFont(61)
+    mark.DrawLatex(ROOT.gPad.GetLeftMargin(), 1 - (ROOT.gPad.GetTopMargin() - 0.017), "CMS")
+    mark.SetTextSize(0.042 * fontScale)
+    mark.SetTextFont(52)
+    mark.DrawLatex(ROOT.gPad.GetLeftMargin() + 0.09, 1 - (ROOT.gPad.GetTopMargin() - 0.017), "Simulation Preliminary" if isMC else "Preliminary")
+    mark.SetTextSize(extraTextSize)
+    mark.SetTextFont(42)
+    mark.SetTextAlign(31)
+    mark.DrawLatex(1 - ROOT.gPad.GetRightMargin(), 1 - (ROOT.gPad.GetTopMargin() - 0.017), lumistamp)
 
