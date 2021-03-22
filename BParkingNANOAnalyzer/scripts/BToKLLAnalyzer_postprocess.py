@@ -26,45 +26,47 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
     outputbranches += ['BToKEE_l2_convOpen', 'BToKEE_l2_convLoose', 'BToKEE_l2_convTight']
     outputbranches += ['BToKEE_fit_k_pt', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi']
     outputbranches += ['BToKEE_k_DCASig', 'BToKEE_k_nValidHits']
-    outputbranches += ['BToKEE_k_svip2d', 'BToKEE_k_svip3d']
+    outputbranches += ['BToKEE_k_svip2d', 'BToKEE_k_dzTrg', 'BToKEE_k_svip3d']
     outputbranches += ['BToKEE_fit_pt', 'BToKEE_fit_normpt', 'BToKEE_fit_eta', 'BToKEE_fit_phi']
     outputbranches += ['BToKEE_l_xy_sig', 'BToKEE_svprob', 'BToKEE_fit_cos2D']
     outputbranches += ['BToKEE_ptAsym', 'BToKEE_ptImbalance', 'BToKEE_Dmass', 'BToKEE_Dmass_flip']
     outputbranches += ['BToKEE_eleDR', 'BToKEE_llkDR']
     outputbranches += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
+    outputbranches += ['BToKEE_l1_n_isotrk', 'BToKEE_l2_n_isotrk', 'BToKEE_k_n_isotrk', 'BToKEE_b_n_isotrk']
     outputbranches += ['BToKEE_eleEtaCats', 'BToKEE_event']
+    outputbranches += ['BToKEE_fold',]
 
     outputbranches_mva = ['BToKEE_mva',]
 
     if evalMVA:
       outputbranches += outputbranches_mva
 
-    super(BToKLLAnalyzer_postprocess, self).__init__(inputfiles, outputfile, inputbranches, outputbranches, hist)
+    super(BToKLLAnalyzer_postprocess, self).__init__(inputfiles, outputfile, inputbranches, outputbranches)
 
   def run(self):
     print('[BToKLLAnalyzer_postprocess::run] INFO: Running the analyzer...')
     self.print_timestamp()
     self.init_output()
     if self._evalMVA:
-      #features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l2_normpt',
-      features = ['BToKEE_fit_l1_pt', 'BToKEE_fit_l2_pt',
+      features = []
+      features += ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l2_normpt',
                   'BToKEE_l1_dxy_sig', 'BToKEE_l2_dxy_sig',
                   'BToKEE_fit_k_normpt', 'BToKEE_k_DCASig',
-                  'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig',
+                  'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig', #'BToKEE_dz'
                   ]
-      features += ['BToKEE_dz']
       features += ['BToKEE_eleDR', 'BToKEE_llkDR']
       features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
       features += ['BToKEE_ptAsym']
       features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
-      #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
-      features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
+      features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+      features += ['BToKEE_l1_dzTrg', 'BToKEE_l2_dzTrg', 'BToKEE_k_dzTrg']
+      features += ['BToKEE_k_svip2d', 'BToKEE_k_svip3d']
 
       training_branches = sorted(features)
-      mvaCut = -99
-      ntree_limit = 799
+      mvaCut = 10.0
+      ntree_limit = 800
       model = xgb.Booster({'nthread': 6})
-      model.load_model('../models/xgb_fulldata_09Oct2020_allq2_isoEleIDNewDRptAsymDmass_rawElePt_weighted_pauc2_pf.model')
+      model.load_model('../models/xgb_fulldata_13March2021_lowq2_onePerEvent_pauc2_mix.model')
 
     for (self._ifile, filename) in enumerate(self._file_in_name):
       print('[BToKLLAnalyzer_postprocess::run] INFO: FILE: {}/{}. Loading file...'.format(self._ifile+1, self._num_files))
@@ -94,13 +96,11 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         #low_notpf_selection = low_selection & np.logical_not(self._branches['BToKEE_l1_isPFoverlap'] & self._branches['BToKEE_l2_isPFoverlap'])
       
         # general selection
-        mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) #& (self._branches['BToKEE_mll_fullfit'] < NR_UP) # all q2
-        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) & (self._branches['BToKEE_mll_fullfit'] < PSI2S_UP) # full q2
-        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_LOW) #low q2
+        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > LOWQ2_LOW) #& (self._branches['BToKEE_mll_fullfit'] < NR_UP) # all q2
+        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > LOWQ2_LOW) & (self._branches['BToKEE_mll_fullfit'] < LOWQ2_UP) #low q2
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_UP) # Jpsi
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > JPSI_UP) & (self._branches['BToKEE_mll_fullfit'] < PSI2S_UP) # psi(2S)
-        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > PSI2S_UP) # high q2
-        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > 0.6) & (self._branches['BToKEE_mll_fullfit'] < 2.8) # george q2
+        mll_selection = (self._branches['BToKEE_mll_fullfit'] > PSI2S_UP) #high q2
         b_upsb_selection = (self._branches['BToKEE_fit_mass'] > B_UP)
         b_bothsb_selection = ((self._branches['BToKEE_fit_mass'] > B_SB_LOW) & (self._branches['BToKEE_fit_mass'] < B_LOW)) | ((self._branches['BToKEE_fit_mass'] > B_UP) & (self._branches['BToKEE_fit_mass'] < B_SB_UP))
         d_veto_selection = self._branches['BToKEE_Dmass'] > D_MASS_CUT
@@ -120,16 +120,14 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         general_selection = l1_selection & l2_selection
         general_selection &= mll_selection
         #general_selection &= pf_selection
-        general_selection &= low_selection
-        #general_selection &= low_notpf_selection
-        #general_selection &= mix_net_selection
+        general_selection &= mix_net_selection
         #general_selection &= low_pfveto_selection
         #general_selection &= b_upsb_selection
         #general_selection &= b_bothsb_selection
-        general_selection &= (self._branches['BToKEE_fit_l1_pt'] > 2.0) & (self._branches['BToKEE_fit_l2_pt'] > 2.0)
+        #general_selection &= (self._branches['BToKEE_fit_l1_pt'] > 2.0) & (self._branches['BToKEE_fit_l2_pt'] > 2.0)
         #general_selection &= (self._branches['BToKEE_fit_l1_pt'] > 2.0)
         #general_selection &= (self._branches['BToKEE_HLT_Mu9_IP6'])
-        general_selection &= (abs(self._branches['BToKEE_k_svip3d']) < 0.06)
+        #general_selection &= (abs(self._branches['BToKEE_k_svip3d']) < 0.06)
 
         self._branches = self._branches[general_selection]
         #self._branches = self._branches.sort_values('BToKEE_mva', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')

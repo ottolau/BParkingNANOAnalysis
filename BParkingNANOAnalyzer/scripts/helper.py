@@ -1,21 +1,21 @@
 import numpy as np
 import uproot
 import pandas as pd
-import ROOT
+#import ROOT
 
 ELECTRON_MASS = 0.000511
 K_MASS = 0.493677
 PI_MASS = 0.139570
 #NR_LOW = np.sqrt(1.1)
-NR_LOW = np.sqrt(0.045)
-#NR_LOW = np.sqrt(0.6)
+LOWQ2_LOW = np.sqrt(0.045)
+LOWQ2_UP = 2.5
 JPSI_MC = 3.08991
 JPSI_SIGMA_MC = 0.04205
-JPSI_LOW = np.sqrt(6.5)
+JPSI_LOW = 2.8
 #JPSI_UP = JPSI_MC + 3.0*JPSI_SIGMA_MC
 JPSI_UP = 3.25
 PSI2S_UP = 3.85
-NR_UP = np.sqrt(25.0)
+HIGHQ2_UP = np.sqrt(25.0)
 PHI_SIGMA_MC = 0.0026836
 PHI_LOW = 1.01957 - 4.0*PHI_SIGMA_MC
 PHI_UP = 1.01957 + 4.0*PHI_SIGMA_MC
@@ -35,7 +35,7 @@ B_FOM_LOW = 5.05
 B_FOM_UP = 5.45
 #B_FOM_LOW = 5.183
 #B_FOM_UP = 5.353
-B_MIN = 4.5
+B_MIN = 4.7
 B_MAX = 6.0
 FIT_LOW = 4.7
 FIT_UP = 6.0
@@ -103,6 +103,7 @@ def get_diagonalCut_var(branches, mll_mean, fit_mass_mean, diagCut_lower_bound, 
   data_decorr = data_centered.dot(eigVecs)
   return data_decorr[:,0], data_decorr[:,1]
 
+'''
 def CMS_lumi(isMC):
     mark = ROOT.TLatex()
     mark.SetNDC()
@@ -123,4 +124,4 @@ def CMS_lumi(isMC):
     mark.SetTextFont(42)
     mark.SetTextAlign(31)
     mark.DrawLatex(1 - ROOT.gPad.GetRightMargin(), 1 - (ROOT.gPad.GetTopMargin() - 0.017), lumistamp)
-
+'''

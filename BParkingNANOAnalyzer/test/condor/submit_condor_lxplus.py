@@ -11,7 +11,7 @@ parser.add_argument("-f", "--suffix", dest="suffix", default=None, help="Suffix 
 parser.add_argument("-c", "--mc", dest="mc", action='store_true', help="MC or data")
 parser.add_argument("-m", "--maxevents", dest="maxevents", type=int, default=ROOT.TTree.kMaxEntries, help="Maximum number events to loop over")
 parser.add_argument("-v", "--mva", dest="mva", action='store_true', help="Evaluate MVA")
-parser.add_argument("--random", action='store_true', help="Randomly select one candidate per event")
+parser.add_argument("--fold", dest="fold", type=int, default=-1, help="Fold number")
 parser.add_argument("--model", dest="model", default='xgb', help="Type of classifier")
 parser.add_argument("--phi", action='store_true', help="Run R(phi) analyzer")
 parser.add_argument("--random", action='store_true', help="Randomize the files' order")
@@ -39,13 +39,13 @@ def write_condor(exe='runjob.sh', arguments = [], files = [],dryRun=True):
     out += 'Arguments = %s\n'%(' '.join(arguments))
     #out += '+JobFlavour = "espresso"\n'
     #out += '+JobFlavour = "longlunch"\n'
-    #out += '+JobFlavour = "workday"\n'
-    out += '+JobFlavour = "tomorrow"\n'
+    out += '+JobFlavour = "workday"\n'
+    #out += '+JobFlavour = "tomorrow"\n'
     #out += '+JobFlavour = "testmatch"\n'
     #out += '+MaxRuntime = 36000\n'
-    out += 'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)\n'
-    out += 'max_retries = 2\n'
-    out += 'requirements = Machine =!= LastRemoteHost\n'
+    #out += 'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)\n'
+    #out += 'max_retries = 2\n'
+    #out += 'requirements = Machine =!= LastRemoteHost\n'
     out += 'Queue 1\n'
     with open(job_name, 'w') as f:
         f.write(out)
@@ -64,11 +64,13 @@ def write_bash(temp = 'runjob.sh', command = '', outputdir = ''):
     out += 'export PATH=${PATH}:/cvmfs/cms.cern.ch/common\n'
     out += 'export CMS_PATH=/cvmfs/cms.cern.ch\n'
     out += 'export SCRAM_ARCH=slc7_amd64_gcc700\n'
+    out += 'source /cvmfs/cms.cern.ch/cmsset_default.sh\n'
     out += 'scramv1 project CMSSW CMSSW_10_2_15\n'
     out += 'cd CMSSW_10_2_15/src\n'
+    out += 'eval `scramv1 runtime -sh` # cmsenv\n'
     out += 'virtualenv myenv\n'
     out += 'source myenv/bin/activate\n'
-    out += 'eval `scramv1 runtime -sh` # cmsenv\n'
+    #out += 'eval `scramv1 runtime -sh` # cmsenv\n'
     #out += 'git clone git@github.com:ottolau/BParkingNANOAnalysis.git\n'
     out += 'mv ${MAINDIR}/BParkingNANOAnalysis.tgz .\n'
     out += 'tar -xf BParkingNANOAnalysis.tgz\n'
@@ -76,6 +78,7 @@ def write_bash(temp = 'runjob.sh', command = '', outputdir = ''):
     out += 'cd BParkingNANOAnalysis\n'
     out += 'cp ${MAINDIR}/setup_condor.sh BParkingNANOAnalyzer/setup_condor.sh\n'
     out += '. BParkingNANOAnalyzer/setup_condor.sh\n'
+    #out += 'eval `scramv1 runtime -sh` # cmsenv\n'
     out += 'scram b clean; scram b\n'
     out += 'cd BParkingNANOAnalyzer/test\n'
     out += command + '\n'
@@ -125,7 +128,8 @@ if __name__ == '__main__':
     if args.mc: inputfiles += '_mc'
     if args.mva: inputfiles += '_mva'
     if args.random: inputfiles += '_random'
-    
+    if args.fold != -1: inputfiles += '_fold{}'.format(args.fold)
+
     outputBase = "output_{}".format(inputfiles)
     outputDir = 'root://eosuser.cern.ch//eos/user/k/klau/BParkingNANO_forCondor/output/{}'.format(inputfiles)
     outputName = inputfiles
@@ -142,7 +146,7 @@ if __name__ == '__main__':
     exec_me("git clone https://github.com/ottolau/BParkingNANOAnalysis.git {}".format(os.path.join(zipPath, "BParkingNANOAnalysis")), False)
     exec_me("tar -zcvf BParkingNANOAnalysis.tgz -C {} {}".format(zipPath, "BParkingNANOAnalysis"), False)
 
-    files = ['../../setup_condor.sh', '../../scripts/BToKLLAnalyzer.py', '../../scripts/BToPhiLLAnalyzer.py', '../runAnalyzer.py', 'BParkingNANOAnalysis.tgz']
+    files = ['../../setup_condor.sh', '../../scripts/helper.py', '../../scripts/BToKLLAnalyzer.py', '../../scripts/BToPhiLLAnalyzer.py', '../runAnalyzer.py', 'BParkingNANOAnalysis.tgz']
     if args.mva:
         files += ['../../models/mva.model']
     files_condor = [f.split('/')[-1] for f in files]
@@ -154,7 +158,7 @@ if __name__ == '__main__':
     if args.random:
         print('Shuffling the input files...')
         #random.shuffle(fileList)
-        fileList = random.sample(fileList, k=20)
+        fileList = random.sample(fileList, k=600)
 
     # stplie files in to n(group) of chunks
     fChunks= list(chunks(fileList,group))
@@ -183,12 +187,15 @@ if __name__ == '__main__':
             args_list.append('-v')
             args_list.append('--model {}'.format(args.model))
         if args.phi: args_list.append('--phi')
+        if args.fold != -1:
+            args_list.append('-f {}'.format(args.fold))
         args_str = " ".join(args_list)
 
         cmd = ""
         cmd += "cp ${{MAINDIR}}/inputfile_{0}.list .;".format(i)
         cmd += "cp ${MAINDIR}/BToKLLAnalyzer.py ${MAINDIR}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/;"
         cmd += "cp ${MAINDIR}/BToPhiLLAnalyzer.py ${MAINDIR}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/;"
+        cmd += "cp ${MAINDIR}/helper.py ${MAINDIR}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/scripts/;"
         if args.mva:
             cmd += "cp ${MAINDIR}/mva.model ${MAINDIR}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/models/;"
         cmd += "cp ${MAINDIR}/runAnalyzer.py ${MAINDIR}/CMSSW_10_2_15/src/BParkingNANOAnalysis/BParkingNANOAnalyzer/test/;"

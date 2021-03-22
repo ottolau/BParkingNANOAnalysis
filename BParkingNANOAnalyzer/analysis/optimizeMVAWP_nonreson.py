@@ -11,7 +11,8 @@ import ROOT
 from ROOT import RooFit
 import itertools
 import PyPDF2
-import makePlot_fitPeak_unbinned as fit_unbinned
+#import makePlot_fitPeak_unbinned as fit_unbinned
+from fitter import fitter
 import os, sys, copy
 import xgboost as xgb
 sys.path.append('../')
@@ -283,7 +284,11 @@ def fit(name, selected_branches, fit_params, results, outputfile):
   tree = array2tree(branches)
   outputname = outputfile + '_{0}_mva_{1:.3f}'.format(name, fit_params['mvaCut']).replace('.','-') + '.pdf'
   #Stot, StotErr, S, SErr, B, BErr= fit_unbinned.fit(tree, outputname, **fit_params)
-  output = fit_unbinned.fit(tree, outputname, **fit_params)
+  #output = fit_unbinned.fit(tree, outputname, **fit_params)
+  #output = fit_unbinned.fit(tree, outputname, **fit_params)
+  b_fitter = fitter()
+  b_fitter.init_fit_data(**fit_params)
+  output = b_fitter.fit(tree, outputname)
 
   results['Stot_{}'.format(name)].append(output['Stot'])
   results['StotErr_{}'.format(name)].append(output['StotErr'])
@@ -368,16 +373,18 @@ if __name__ == "__main__":
   features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
   features += ['BToKEE_ptAsym']
   #features += ['BToKEE_ptImbalance']
-  features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
-  #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+  #features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
+  features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
   features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
   #features += ['BToKEE_svprob_rank', 'BToKEE_fit_pt_rank', 'BToKEE_fit_cos2D_rank', 'BToKEE_l_xy_rank']
 
   training_branches = sorted(features)
   #ntree_limit = 798
   ntree_limit = 878
+  #ntree_limit = 769
   #modelfile = '../models/xgb_fulldata_05Jul2020_allq2_isoPFMVANewDRptAsymDmass_weighted_pauc2_mix.model'
   modelfile = '../models/xgb_fulldata_11May2020_allq2_isoPFMVANewDRptAsymDmass_weighted_pauc02_pf.model'
+  #modelfile = '../models/xgb_fulldata_30Jul2020_allq2_isoPFMVANewDRptAsymDmass_weighted_pauc2_low_exc.model'
   model = xgb.Booster({'nthread': 6})
   model.load_model(modelfile)
 
@@ -385,6 +392,7 @@ if __name__ == "__main__":
   mc_eleType_selection['pf'] = '(BToKEE_l1_isPF == True) and (BToKEE_l2_isPF == True)'
   mc_eleType_selection['mix'] = '(not (BToKEE_l1_isPFoverlap)) and (not (BToKEE_l2_isPFoverlap)) and (not (((BToKEE_l1_isPF == True) and (BToKEE_l2_isPF == True)) or ((BToKEE_l1_isPF == False) and (BToKEE_l2_isPF == False))))'
   mc_eleType_selection['low'] = '(BToKEE_l1_isPF == False) and (BToKEE_l2_isPF == False)'
+  mc_eleType_selection['low_exc'] = '(BToKEE_l1_isPF == False) and (BToKEE_l2_isPF == False) and (not (BToKEE_l1_isPFoverlap)) and (not (BToKEE_l2_isPFoverlap))'
 
   #preselection = '(BToKEE_Dmass > 2.0) and (BToKEE_Dmass_flip > 2.0)'
   #preselection = '(BToKEE_l1_pfmvaId_lowPt > -0.555556) and (BToKEE_l2_pfmvaId_lowPt > -1.666667) and (BToKEE_l1_pfmvaId_highPt > -2.777778) and (BToKEE_l2_pfmvaId_highPt > -4.444444)'
@@ -395,7 +403,9 @@ if __name__ == "__main__":
 
   drawSNR = True
 
-  branches = get_df(inputfile, branches=data_branches)
+  #branches = get_df(inputfile, branches=data_branches)
+  branches = get_df(inputfile, branches=data_branches+['BToKEE_ll_charge',])
+  branches.query('BToKEE_ll_charge == 0', inplace=True)
 
   mll_mean_jpsi = triCut_jpsi_mll_mean_pf
   fit_mass_mean_jpsi = triCut_jpsi_mKee_mean_pf
@@ -446,8 +456,10 @@ if __name__ == "__main__":
                  }
 
   #mvaCutList = np.linspace(8.0, 14.0, 40)
-  mvaCutList = np.linspace(6.0, 12.0, 40)
+  #mvaCutList = np.linspace(6.0, 12.0, 40)
   #mvaCutList = np.linspace(10.0, 16.0, 40)
+  #mvaCutList = np.linspace(12.0, 16.0, 30)
+  mvaCutList = np.linspace(7.0, 12.0, 30)
   #mvaCutList = np.array([10.0,])
   for mvaCut in mvaCutList:
     # mva selection
@@ -457,8 +469,8 @@ if __name__ == "__main__":
     mc_mva_selection = mva_selection
     if preselection.strip():
       mc_mva_selection += ' and ' + preselection
-    #selected_branches = branches.query(mva_selection).sort_values('BToKEE_mva', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')
-    selected_branches = branches.query(mva_selection)
+    selected_branches = branches.query(mva_selection).sort_values('BToKEE_mva', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')
+    #selected_branches = branches.query(mva_selection)
 
     # j/psi selection with triangular cut on q2
     fit_params_jpsitri = {'drawSNR': drawSNR,

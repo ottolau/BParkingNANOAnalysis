@@ -1,33 +1,6 @@
 import matplotlib as mpl
 mpl.use('pdf')
 from matplotlib import pyplot as plt
-from matplotlib import rc
-#.Allow for using TeX mode in matplotlib Figures
-rc('font',**{'family':'sans-serif','sans-serif':['Computer Modern Roman']})
-rc('text', usetex=True)
-plt.rcParams['text.latex.preamble']=[r"\usepackage{lmodern}"]
-
-ratio=5.0/7.0
-fig_width_pt = 3*246.0  # Get this from LaTeX using \showthe\columnwidth
-inches_per_pt = 1.0/72.27               # Convert pt to inch
-golden_mean = ratio if ratio != 0.0 else (np.sqrt(5)-1.0)/2.0         # Aesthetic ratio
-fig_width = fig_width_pt*inches_per_pt  # width in inches
-fig_height = fig_width*golden_mean      # height in inches
-fig_size =  [fig_width,fig_height]
-
-params = {'text.usetex' : True,
-        'axes.labelsize': 24,
-        'font.size': 24,
-        'legend.fontsize': 10,
-        'xtick.labelsize': 20,
-        'ytick.labelsize': 20,
-        'font.family' : 'lmodern',
-        'text.latex.unicode': True,
-        'axes.grid' : True,
-        'text.usetex': True,
-        'figure.figsize': fig_size}
-plt.rcParams.update(params)
-
 import uproot
 import glob
 import pandas as pd
@@ -281,46 +254,28 @@ if __name__ == '__main__':
 
     
     suffix = args.suffix
-
-    channel = 'BToKEE'
-    #channel = 'BToPhiEE'
-    max_fpr = 1.0e-2 if channel == 'BToKEE' else 1.0
-
-    if channel == 'BToKEE':
-      features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l2_normpt',
-      #features = ['BToKEE_fit_l1_pt', 'BToKEE_fit_l2_pt',
-                  'BToKEE_l1_dxy_sig', 'BToKEE_l2_dxy_sig',
-                  'BToKEE_fit_k_normpt', 'BToKEE_k_DCASig',
-                  'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig', 'BToKEE_dz',
-                  ]
-      features += ['BToKEE_eleDR', 'BToKEE_llkDR']
-      features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
-      features += ['BToKEE_ptAsym']
-      #features += ['BToKEE_ptImbalance']
-      #features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
-      features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
-      features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
-      features += ['BToKEE_l1_iso04_dca_rel', 'BToKEE_l2_iso04_dca_rel', 'BToKEE_k_iso04_dca_rel', 'BToKEE_b_iso04_dca_rel']
-      #features += ['BToKEE_l1_iso04_dca_tight_rel', 'BToKEE_l2_iso04_dca_tight_rel', 'BToKEE_k_iso04_dca_tight_rel', 'BToKEE_b_iso04_dca_tight_rel']
-      #features += ['BToKEE_l1_n_isotrk', 'BToKEE_l2_n_isotrk', 'BToKEE_k_n_isotrk', 'BToKEE_b_n_isotrk']
-      #features += ['BToKEE_l1_n_isotrk_dca', 'BToKEE_l2_n_isotrk_dca', 'BToKEE_k_n_isotrk_dca', 'BToKEE_b_n_isotrk_dca']
-      #features += ['BToKEE_l1_n_isotrk_dca_tight', 'BToKEE_l2_n_isotrk_dca_tight', 'BToKEE_k_n_isotrk_dca_tight', 'BToKEE_b_n_isotrk_dca_tight']
-
-    elif channel == 'BToPhiEE': 
-      features = ['BToPhiEE_fit_l1_normpt', 'BToPhiEE_l1_dxy_sig',
-                  'BToPhiEE_fit_l2_normpt', 'BToPhiEE_l2_dxy_sig',
-                  'BToPhiEE_fit_trk1_normpt', 'BToPhiEE_trk1_DCASig', 'BToPhiEE_fit_trk2_normpt', 'BToPhiEE_trk2_DCASig',
-                  'BToPhiEE_fit_normpt', 'BToPhiEE_svprob', 'BToPhiEE_fit_cos2D', 'BToPhiEE_l_xy_sig', 'BToPhiEE_dz',
-                  'BToPhiEE_fit_phi_normpt',
-                  ]
-      features += ['BToPhiEE_eleDR', 'BToPhiEE_llkkDR', 'BToPhiEE_trkDR']
-      features += ['BToPhiEE_l1_iso04_rel', 'BToPhiEE_l2_iso04_rel', 'BToPhiEE_trk1_iso04_rel', 'BToPhiEE_trk2_iso04_rel', 'BToPhiEE_b_iso04_rel']
-      features += ['BToPhiEE_ptImbalance']
-      #features += ['BToPhiEE_l1_pfmvaId_lowPt', 'BToPhiEE_l2_pfmvaId_lowPt', 'BToPhiEE_l1_pfmvaId_highPt', 'BToPhiEE_l2_pfmvaId_highPt']
-      features += ['BToPhiEE_l1_mvaId', 'BToPhiEE_l2_mvaId']
+    max_fpr = 1.0e-2
+    features = ['BToKEE_fit_l1_normpt', 'BToKEE_fit_l2_normpt',
+                'BToKEE_l1_dxy_sig', 'BToKEE_l2_dxy_sig',
+                'BToKEE_fit_k_normpt', 'BToKEE_k_DCASig',
+                'BToKEE_fit_normpt', 'BToKEE_svprob', 'BToKEE_fit_cos2D', 'BToKEE_l_xy_sig',
+                ]
+    features += ['BToKEE_eleDR', 'BToKEE_llkDR']
+    features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
+    features += ['BToKEE_ptAsym']
+    #features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
+    features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
+    features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+    features += ['BToKEE_l1_dzTrg', 'BToKEE_l2_dzTrg', 'BToKEE_k_dzTrg']
+    features += ['BToKEE_k_svip2d', 'BToKEE_k_svip3d']
+    #features += ['BToKEE_l1_iso04_dca_rel', 'BToKEE_l2_iso04_dca_rel', 'BToKEE_k_iso04_dca_rel', 'BToKEE_b_iso04_dca_rel']
+    #features += ['BToKEE_l1_iso04_dca_tight_rel', 'BToKEE_l2_iso04_dca_tight_rel', 'BToKEE_k_iso04_dca_tight_rel', 'BToKEE_b_iso04_dca_tight_rel']
+    #features += ['BToKEE_l1_n_isotrk', 'BToKEE_l2_n_isotrk', 'BToKEE_k_n_isotrk', 'BToKEE_b_n_isotrk']
+    #features += ['BToKEE_l1_n_isotrk_dca', 'BToKEE_l2_n_isotrk_dca', 'BToKEE_k_n_isotrk_dca', 'BToKEE_b_n_isotrk_dca']
+    #features += ['BToKEE_l1_n_isotrk_dca_tight', 'BToKEE_l2_n_isotrk_dca_tight', 'BToKEE_k_n_isotrk_dca_tight', 'BToKEE_b_n_isotrk_dca_tight']
 
     features = sorted(features)
-    branches = features + [channel + '_fit_mass', channel + '_fit_massErr', channel + '_fit_pt', channel + '_fit_eta', channel + '_q2']
+    branches = features + ['BToKEE_fit_mass', 'BToKEE_fit_massErr', 'BToKEE_fit_pt', 'BToKEE_fit_eta', 'BToKEE_q2']
 
     ddf = {}
     ddf['sig'] = get_df(args.signal, branches)
@@ -347,7 +302,7 @@ if __name__ == '__main__':
     ddf['bkg']['isSignal'] = 0
 
     # add weights
-    ddf['sig']['weights'] = 1.0/ddf['sig'][channel + '_fit_massErr'].replace(np.nan, 1.0)
+    ddf['sig']['weights'] = 1.0/ddf['sig']['BToKEE_fit_massErr'].replace(np.nan, 1.0)
     #ddf['bkg']['weights'] = get_weights(ddf['sig']['BToKEE_q2'], ddf['bkg']['BToKEE_q2'], suffix)
     ddf['bkg']['weights'] = 1.0
 
@@ -357,22 +312,11 @@ if __name__ == '__main__':
     y = df['isSignal']
     W = df['weights']
 
-    n_boost_rounds = 800
+    n_boost_rounds = 1200
     n_calls = 80
     n_random_starts = 40
     do_bo = args.optimization
-    do_cv = False
-    #best_params = {'colsample_bytree': 0.2760659849098346, 'min_child_weight': 0.944529354511711, 'subsample': 0.9764088646687092, 'eta': 0.04902298276243091, 'alpha': 1.0439227678392995, 'max_depth': 10, 'gamma': 0.4349769306187239, 'lambda': 9.874654037131574}
-    #best_params = {'colsample_bytree': 0.49090035832528456, 'min_child_weight': 0.5554583843109246, 'subsample': 0.9256932381586518, 'eta': 0.03723487005901925, 'alpha': 8.766606138603317, 'max_depth': 7, 'gamma': 2.066453710120974, 'lambda': 6.425723447952634}
-    #best_params = {'colsample_bytree': 0.6417405650302768, 'min_child_weight': 0.7998463694760696, 'subsample': 0.5570470959335826, 'eta': 0.02867563834178777, 'alpha': 2.4126097151465116, 'max_depth': 9, 'gamma': 1.491648232476693, 'lambda': 5.956681761649099}
-    #best_params = {'colsample_bytree': 0.9295621195261661, 'min_child_weight': 0.3710190109106917, 'subsample': 0.9912111293660311, 'eta': 0.048442662159622944, 'alpha': 0.0759369509503527, 'max_depth': 7, 'gamma': 0.2778602620598743, 'lambda': 9.825211724249337}
-    #best_params = {'colsample_bytree': 0.5919288914524103, 'min_child_weight': 0.9945284088908286, 'subsample': 0.9875416061463642, 'eta': 0.047374548917525766, 'alpha': 2.118655912808472, 'max_depth': 6, 'gamma': 2.9389667354189695, 'lambda': 0.4832191215874776}
-    #best_params = {'colsample_bytree': 0.4420378878413682, 'min_child_weight': 0.36468969859982153, 'subsample': 0.5633485657980712, 'eta': 0.03932125940383663, 'alpha': 6.679185112942662, 'max_depth': 9, 'gamma': 1.5880279072266608, 'lambda': 2.616317205661882}
-    #best_params = {'colsample_bytree': 0.8439374034804369, 'min_child_weight': 0.07393372974797298, 'subsample': 0.9096806040352157, 'eta': 0.04838229746288072, 'alpha': 0.5468755049094866, 'max_depth': 7, 'gamma': 0.3244948261595203, 'lambda': 0.20932341450024372}
-    #best_params = {'colsample_bytree': 0.6985151799554887, 'min_child_weight': 0.1880992226152179, 'subsample': 0.5059776752154034, 'eta': 0.025091014670069068, 'alpha': 0.5825875179922492, 'max_depth': 8, 'gamma': 0.15761992682454778, 'lambda': 4.552028057728982}
-    #best_params = {'colsample_bytree': 0.5825650686239838, 'min_child_weight': 0.8004306182129557, 'subsample': 0.8363871434049193, 'eta': 0.03806335273785261, 'alpha': 6.813338261152275, 'max_depth': 7, 'gamma': 0.16767944414770025, 'lambda': 9.582893111434032}
-    #best_params = {'colsample_bytree': 0.9605790098637315, 'min_child_weight': 0.7027414302512944, 'subsample': 0.9354597406134866, 'eta': 0.04988900023005173, 'alpha': 2.6608747737179277, 'max_depth': 6, 'gamma': 2.5354784545772313, 'lambda': 1.8381210691625665}
-    #best_params = {'colsample_bytree': 0.49090035832528456, 'min_child_weight': 0.5554583843109246, 'subsample': 0.9256932381586518, 'eta': 0.03723487005901925, 'alpha': 8.766606138603317, 'max_depth': 7, 'gamma': 2.066453710120974, 'lambda': 6.425723447952634}
+    do_cv = True
     best_params = {'colsample_bytree': 0.6985151799554887, 'min_child_weight': 0.1880992226152179, 'subsample': 0.5059776752154034, 'eta': 0.025091014670069068, 'alpha': 0.5825875179922492, 'max_depth': 8, 'gamma': 0.15761992682454778, 'lambda': 4.552028057728982}
 
     # split X and y up in train and test samples
@@ -402,15 +346,6 @@ if __name__ == '__main__':
         best_params = {}
         res_gp = gp_minimize(objective, space, n_calls=n_calls, n_random_starts=n_random_starts, verbose=True, random_state=36)
         print("Finish optimization in {}s".format(time.time()-begt))
-        #plt.figure()
-        #plot_convergence(res_gp)
-        #plt.savefig('training_resultis_bo_convergencePlot_xgb_{}.pdf'.format(suffix))
-        #plt.figure()
-        #plot_evaluations(res_gp)
-        #plt.savefig('training_resultis_bo_evaluationsPlot_xgb_{}.pdf'.format(suffix))
-        #plt.figure()
-        #plot_objective(res_gp)
-        #plt.savefig('training_resultis_bo_objectivePlot_xgb_{}.pdf'.format(suffix))
 
     # Get the cv plots with the best hyper-parameters
     if do_bo or do_cv:
@@ -541,15 +476,15 @@ if __name__ == '__main__':
     n_pt_bins = 100
     pt_bins = np.linspace(3, 60, n_pt_bins)
     #pt_bins = np.concatenate((np.linspace(2, 5, n_pt_bins/2, endpoint=False), np.linspace(5, 20, n_pt_bins/2)))
-    df["pt_binned"] = get_bins_center(df[channel + "_fit_pt"], pt_bins)
+    df["pt_binned"] = get_bins_center(df["BToKEE_fit_pt"], pt_bins)
 
     n_eta_bins = 100
     eta_bins = np.linspace(-2.5, 2.5, n_eta_bins)
-    df["eta_binned"] = get_bins_center(df[channel + "_fit_eta"], eta_bins)
+    df["eta_binned"] = get_bins_center(df["BToKEE_fit_eta"], eta_bins)
 
     n_q2_bins = 100
     q2_bins = np.linspace(0.045, 25.0, n_q2_bins)
-    df["q2_binned"] = get_bins_center(df[channel + "_q2"], q2_bins)
+    df["q2_binned"] = get_bins_center(df["BToKEE_q2"], q2_bins)
 
 
     df_test = df[df["test"]]
@@ -576,10 +511,10 @@ if __name__ == '__main__':
     df = df.drop("eta_binned", axis=1)
     df = df.drop("q2_binned", axis=1)
    
-    if channel + '_l2_mvaId' in features:
+    if 'BToKEE_l2_mvaId' in features:
       n_mvaId_bins = 100
       mvaId_bins = np.linspace(0.0, 10.0, n_mvaId_bins)
-      df["mvaId_binned"] = get_bins_center(df[channel + "_l2_mvaId"], mvaId_bins)
+      df["mvaId_binned"] = get_bins_center(df["BToKEE_l2_mvaId"], mvaId_bins)
       df_test = df[df["test"]]
 
       fig_mvaId, axes_mvaId = plt.subplots(2, 1)

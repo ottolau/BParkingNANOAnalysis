@@ -12,8 +12,9 @@ import xgboost as xgb
 from BParkingNANOAnalysis.BParkingNANOAnalyzer.BaseAnalyzer import BParkingNANOAnalyzer
 
 class BToKLLAnalyzer(BParkingNANOAnalyzer):
-  def __init__(self, inputfiles, outputfile, random=False, isMC=False, evalMVA=False, model='xgb', modelfile='mva.model'):
+  def __init__(self, inputfiles, outputfile, fold=-1, random=False, isMC=False, evalMVA=False, model='xgb', modelfile='mva.model'):
     self._isMC = isMC
+    self._fold = fold
     self._random = random
     self._evalMVA = evalMVA
     self._model = model
@@ -28,6 +29,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
     inputbranches += ['BToKEE_l_xy', 'BToKEE_l_xy_unc', 'BToKEE_svprob', 'BToKEE_fit_cos2D']
     inputbranches += ['BToKEE_vtx_x', 'BToKEE_vtx_y', 'BToKEE_vtx_z']
     inputbranches += ['BToKEE_l1_iso04', 'BToKEE_l2_iso04', 'BToKEE_k_iso04', 'BToKEE_b_iso04']
+    inputbranches += ['BToKEE_l1_n_isotrk', 'BToKEE_l2_n_isotrk', 'BToKEE_k_n_isotrk', 'BToKEE_b_n_isotrk']
     inputbranches += ['Electron_pt', 'Electron_charge', 'Electron_dxy', 'Electron_dxyErr', 'Electron_dzTrg', 'Electron_convVeto', 'Electron_isPF']
     inputbranches += ['Electron_isPFoverlap', 'Electron_mvaId', 'Electron_pfmvaId']
     inputbranches += ['Electron_convOpen', 'Electron_convLoose', 'Electron_convTight']
@@ -50,14 +52,16 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
     outputbranches += ['BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_highPt']
     outputbranches += ['BToKEE_l2_convOpen', 'BToKEE_l2_convLoose', 'BToKEE_l2_convTight']
     outputbranches += ['BToKEE_fit_k_pt', 'BToKEE_fit_k_normpt', 'BToKEE_fit_k_eta', 'BToKEE_fit_k_phi']
-    outputbranches += ['BToKEE_k_DCASig', 'BToKEE_k_nValidHits']
+    outputbranches += ['BToKEE_k_DCASig', 'BToKEE_k_dzTrg', 'BToKEE_k_nValidHits']
     outputbranches += ['BToKEE_k_svip2d', 'BToKEE_k_svip3d']
     outputbranches += ['BToKEE_fit_pt', 'BToKEE_fit_normpt', 'BToKEE_fit_eta', 'BToKEE_fit_phi']
     outputbranches += ['BToKEE_l_xy_sig', 'BToKEE_svprob', 'BToKEE_fit_cos2D']
     outputbranches += ['BToKEE_ptAsym', 'BToKEE_ptImbalance', 'BToKEE_Dmass', 'BToKEE_Dmass_flip']
     outputbranches += ['BToKEE_eleDR', 'BToKEE_llkDR']
     outputbranches += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
+    outputbranches += ['BToKEE_l1_n_isotrk', 'BToKEE_l2_n_isotrk', 'BToKEE_k_n_isotrk', 'BToKEE_b_n_isotrk']
     outputbranches += ['BToKEE_eleEtaCats', 'BToKEE_event']
+    outputbranches += ['BToKEE_fold',]
 
     outputbranches_mc = []
     outputbranches_mc += ['BToKEE_l1_isGen', 'BToKEE_l2_isGen', 'BToKEE_k_isGen', 'BToKEE_l1_genPdgId', 'BToKEE_l2_genPdgId', 'BToKEE_k_genPdgId']
@@ -98,8 +102,8 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       #features += ['BToKEE_svprob_rank', 'BToKEE_fit_pt_rank', 'BToKEE_fit_cos2D_rank', 'BToKEE_l_xy_rank']
 
       training_branches = sorted(features)
-      mvaCut = 6.0
-      ntree_limit = 712
+      mvaCut = 8.0
+      ntree_limit = 774
       model = xgb.Booster({'nthread': 6})
       model.load_model(self._modelfile)
 
@@ -224,8 +228,8 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
         #self._branches.loc[idx_low, 'BToKEE_fit_cos2D_rank'] = fit_cos2D_rank_low
         #self._branches.loc[idx_low, 'BToKEE_fit_pt_rank'] = fit_pt_rank_low
 
-        #eleType_selection = pf_selection
-        eleType_selection = low_selection
+        eleType_selection = pf_selection
+        #eleType_selection = low_selection
         #eleType_selection = mix_net_selection
         #eleType_selection = low_pfveto_selection
         self._branches = self._branches[eleType_selection]
@@ -240,14 +244,13 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
         #self._branches = self._branches.sort_values('BToKEE_fit_pt', ascending=False).groupby('BToKEE_event').head(2)
 
         # general selection
-        mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) #& (self._branches['BToKEE_mll_fullfit'] < NR_UP)# all q2
-        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > np.sqrt(1.1)) 
-        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) & (self._branches['BToKEE_mll_fullfit'] < PSI2S_UP) # full q2
-        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_LOW) #low q2
+        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > LOWQ2_LOW) #& (self._branches['BToKEE_mll_fullfit'] < HIGHQ2_UP)# all q2
+        mll_selection = (self._branches['BToKEE_mll_fullfit'] > LOWQ2_LOW) & (self._branches['BToKEE_mll_fullfit'] < LOWQ2_UP) #low q2
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_UP) # Jpsi
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > JPSI_UP) & (self._branches['BToKEE_mll_fullfit'] < PSI2S_UP) # psi(2S)
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_UP)
         b_upsb_selection = (self._branches['BToKEE_fit_mass'] > B_UP)
+        b_bothsb_selection = ( (self._branches['BToKEE_fit_mass'] > 4.75) & (self._branches['BToKEE_fit_mass'] < 5.0) ) | ( (self._branches['BToKEE_fit_mass'] > 5.45) & (self._branches['BToKEE_fit_mass'] < 5.7) )
 
         l1_selection = (self._branches['BToKEE_l1_convVeto']) #& (self._branches['BToKEE_l1_mvaId'] > 2.0) #& (self._branches['BToKEE_l1_mvaId'] > 2.0)
         l2_selection = (self._branches['BToKEE_l2_convVeto']) #& (self._branches['BToKEE_l2_mvaId'] > -1.0) #& (self._branches['BToKEE_l2_mvaId'] > -3.0) 
@@ -256,12 +259,14 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
         selection = l1_selection & l2_selection
         selection &= mll_selection
         selection &= additional_selection
-        selection &= b_upsb_selection
+        #selection &= b_upsb_selection
+        selection &= b_bothsb_selection
         #selection &= (self._branches['BToKEE_fit_l1_pt'] > 2.0) & (self._branches['BToKEE_fit_l2_pt'] > 2.0)
         #selection &= (abs(self._branches['BToKEE_k_svip3d']) < 0.06)
+        #selection &= (self._branches['BToKEE_l1_mvaId'] > 2.0)
 
         if self._isMC:
-          #selection &= (self._branches['BToKEE_HLT_Mu9_IP6'])
+          selection &= (self._branches['BToKEE_HLT_Mu9_IP6'])
           selection &= (self._branches['BToKEE_l1_genPartIdx'] > -0.5) & (self._branches['BToKEE_l2_genPartIdx'] > -0.5) & (self._branches['BToKEE_k_genPartIdx'] > -0.5)
 
         self._branches = self._branches[selection]
@@ -287,6 +292,7 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
           self._branches['BToKEE_k_iso04_rel'] = self._branches['BToKEE_k_iso04'] / self._branches['BToKEE_fit_k_pt']
           self._branches['BToKEE_eleEtaCats'] = map(self.EleEtaCats, self._branches['BToKEE_fit_l1_eta'], self._branches['BToKEE_fit_l2_eta'])
           self._branches['BToKEE_ll_charge'] = self._branches['BToKEE_l1_charge'] + self._branches['BToKEE_l2_charge']
+          self._branches['BToKEE_fold'] = np.repeat(self._fold, self._branches.shape[0])
 
           if self._isMC:
             self._branches['BToKEE_k_isKaon'] = np.where(abs(self._branches['BToKEE_k_genPdgId']) == 321, True, False)
