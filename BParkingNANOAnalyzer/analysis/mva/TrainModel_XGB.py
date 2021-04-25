@@ -224,7 +224,7 @@ def train(xgtrain, xgtest, hyper_params=None):
     params['objective'] = 'binary:logitraw'
     params['tree_method'] = 'hist'
     #params['eval_metric'] = 'auc'
-    params['nthread'] = 10
+    #params['nthread'] = 10
     params['silent'] = 1
     results = {}
     model = xgb.train(params, xgtrain, num_boost_round=n_boost_rounds, evals=watchlist, evals_result=results, maximize=True, early_stopping_rounds=100, verbose_eval=False, feval=pauc)
@@ -263,7 +263,7 @@ if __name__ == '__main__':
     features += ['BToKEE_eleDR', 'BToKEE_llkDR']
     features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
     features += ['BToKEE_ptAsym']
-    #features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
+    features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
     features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
     features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
     features += ['BToKEE_l1_dzTrg', 'BToKEE_l2_dzTrg', 'BToKEE_k_dzTrg']
@@ -293,7 +293,7 @@ if __name__ == '__main__':
     #nSig = ddf['sig'].shape[0]
     #nBkg = 25000
     nSig = 100000
-    nBkg = 100000
+    nBkg = 200000
     ddf['sig'] = ddf['sig'].sample(frac=1)[:nSig]
     ddf['bkg'] = ddf['bkg'].sample(frac=1)[:nBkg]
 
@@ -302,8 +302,9 @@ if __name__ == '__main__':
     ddf['bkg']['isSignal'] = 0
 
     # add weights
-    ddf['sig']['weights'] = 1.0/ddf['sig']['BToKEE_fit_massErr'].replace(np.nan, 1.0)
+    #ddf['sig']['weights'] = 1.0/ddf['sig']['BToKEE_fit_massErr'].replace(np.nan, 1.0)
     #ddf['bkg']['weights'] = get_weights(ddf['sig']['BToKEE_q2'], ddf['bkg']['BToKEE_q2'], suffix)
+    ddf['sig']['weights'] = 1.0
     ddf['bkg']['weights'] = 1.0
 
     df = pd.concat([ddf['sig'],ddf['bkg']]).sort_index(axis=1).sample(frac=1).reset_index(drop=True)
@@ -312,12 +313,23 @@ if __name__ == '__main__':
     y = df['isSignal']
     W = df['weights']
 
-    n_boost_rounds = 1200
+    n_boost_rounds = 800
     n_calls = 80
     n_random_starts = 40
     do_bo = args.optimization
-    do_cv = True
-    best_params = {'colsample_bytree': 0.6985151799554887, 'min_child_weight': 0.1880992226152179, 'subsample': 0.5059776752154034, 'eta': 0.025091014670069068, 'alpha': 0.5825875179922492, 'max_depth': 8, 'gamma': 0.15761992682454778, 'lambda': 4.552028057728982}
+    do_cv = False
+    #best_params = {'colsample_bytree': 0.5825650686239838, 'min_child_weight': 0.8004306182129557, 'subsample': 0.8363871434049193, 'eta': 0.03806335273785261, 'alpha': 6.813338261152275, 'max_depth': 9, 'gamma': 0.16767944414770025, 'lambda': 9.582893111434032}
+    #best_params = {'colsample_bytree': 0.49090035832528456, 'min_child_weight': 0.5554583843109246, 'subsample': 0.9256932381586518, 'eta': 0.03723487005901925, 'alpha': 8.766606138603317, 'max_depth': 9, 'gamma': 2.066453710120974, 'lambda': 6.425723447952634}
+    #best_params = {'colsample_bytree': 0.3983963024147342, 'min_child_weight': 0.9649953160358865, 'subsample': 0.9960147806640621, 'eta': 0.04736950401062728, 'alpha': 0.18133633301551935, 'max_depth': 9, 'gamma': 2.099735486419789, 'lambda': 9.6853903960718}
+    #best_params = {'colsample_bytree': 0.49090035832528456, 'min_child_weight': 0.5554583843109246, 'subsample': 0.9256932381586518, 'eta': 0.03723487005901925, 'alpha': 8.766606138603317, 'max_depth': 9, 'gamma': 2.066453710120974, 'lambda': 6.425723447952634}
+    #best_params = {'colsample_bytree': 0.33494788911748086, 'min_child_weight': 0.9401647699443538, 'subsample': 0.582774071495416, 'eta': 0.04972190783672264, 'alpha': 0.5463715009170179, 'max_depth': 8, 'gamma': 2.9111764103158935, 'lambda': 0.5566585617286808}
+    #best_params = {'colsample_bytree': 0.45134538658651024, 'min_child_weight': 0.944927618484819, 'subsample': 0.5121326042318723, 'eta': 0.03226800105641119, 'alpha': 0.06607299498327614, 'max_depth': 8, 'gamma': 2.734455156885833, 'lambda': 0.6026281920548624}
+    #best_params = {'colsample_bytree': 0.907543878419449, 'min_child_weight': 0.012247747026221115, 'subsample': 0.9720367108801046, 'eta': 0.034584090868681104, 'alpha': 0.4992270733917138, 'max_depth': 9, 'gamma': 2.969479938139431, 'lambda': 0.13158392260368543}
+    #best_params = {'subsample': 0.7964473633389513, 'eta': 0.04324038245866539, 'colsample_bytree': 0.9997097256893213, 'gamma': 0.41930662741996866, 'alpha': 0.3595590194583754, 'max_depth': 10, 'min_child_weight': 10, 'lambda': 9.137209334601707}
+    #best_params = {'subsample': 0.7964473633389513, 'eta': 0.04324038245866539, 'colsample_bytree': 0.9997097256893213, 'gamma': 0.41930662741996866, 'alpha': 0.3595590194583754, 'max_depth': 10, 'min_child_weight': 10, 'lambda': 9.137209334601707}
+    #best_params = {'colsample_bytree': 0.6985151799554887, 'min_child_weight': 0.1880992226152179, 'subsample': 0.5059776752154034, 'eta': 0.025091014670069068, 'alpha': 0.5825875179922492, 'max_depth': 10, 'gamma': 0.15761992682454778, 'lambda': 4.552028057728982}
+    #best_params = {'colsample_bytree': 0.6417405650302768, 'min_child_weight': 0.7998463694760696, 'subsample': 0.5570470959335826, 'eta': 0.02867563834178777, 'alpha': 2.4126097151465116, 'max_depth': 11, 'gamma': 1.491648232476693, 'lambda': 5.956681761649099}
+    best_params = {'colsample_bytree': 0.45134538658651024, 'min_child_weight': 0.944927618484819, 'subsample': 0.5121326042318723, 'eta': 0.03226800105641119, 'alpha': 0.06607299498327614, 'max_depth': 8, 'gamma': 2.734455156885833, 'lambda': 0.6026281920548624}
 
     # split X and y up in train and test samples
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.20)

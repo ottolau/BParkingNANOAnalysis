@@ -39,13 +39,13 @@ def write_condor(exe='runjob.sh', arguments = [], files = [],dryRun=True):
     out += 'Arguments = %s\n'%(' '.join(arguments))
     #out += '+JobFlavour = "espresso"\n'
     #out += '+JobFlavour = "longlunch"\n'
-    out += '+JobFlavour = "workday"\n'
-    #out += '+JobFlavour = "tomorrow"\n'
+    #out += '+JobFlavour = "workday"\n'
+    out += '+JobFlavour = "tomorrow"\n'
     #out += '+JobFlavour = "testmatch"\n'
     #out += '+MaxRuntime = 36000\n'
-    #out += 'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)\n'
-    #out += 'max_retries = 2\n'
-    #out += 'requirements = Machine =!= LastRemoteHost\n'
+    out += 'on_exit_remove = (ExitBySignal == False) && (ExitCode == 0)\n'
+    out += 'max_retries = 2\n'
+    out += 'requirements = Machine =!= LastRemoteHost\n'
     out += 'Queue 1\n'
     with open(job_name, 'w') as f:
         f.write(out)
@@ -136,7 +136,7 @@ if __name__ == '__main__':
 
     dryRun  = False
     subdir  = os.path.expandvars("$PWD")
-    group   = 150
+    group   = 600
     #group   = 50
     #group = 30
 
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     if args.random:
         print('Shuffling the input files...')
         #random.shuffle(fileList)
-        fileList = random.sample(fileList, k=600)
+        fileList = random.sample(fileList, k=500)
 
     # stplie files in to n(group) of chunks
     fChunks= list(chunks(fileList,group))
