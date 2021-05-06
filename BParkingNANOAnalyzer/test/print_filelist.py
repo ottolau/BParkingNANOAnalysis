@@ -16,7 +16,38 @@ mypath = []
 #mypath += ['/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/mc_noSkim/BParkingNANO_2021Mar23/BuToKJpsi_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKJpsi_Toee_v2/210323_222415/0000/']
 #mypath += ['/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/BParkingNANO_2021Mar07/BuToKPsi2S_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKPsi2S_Toee/210307_022211/0000/']
 #mypath += ['/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/BParkingNANO_2021Mar07/BdToKstarJpsi_ToKPiee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BdToKstarJpsi_Toee/210307_021655/0000/']
-mypath += ['/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/BParkingNANO_2021Mar07/BuToKJpsi_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKJpsi_Toee/210307_020712/0000/']
+#mypath += ['/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/BParkingNANO_2021Mar07/BuToKJpsi_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKJpsi_Toee/210307_020712/0000/']
+
+#mypath += ['/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/same_sign/BParkingNANO_2021Apr14/ParkingBPH3/crab_data_Run2018A_part3/210414_194243/0000/',
+#           '/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/same_sign/BParkingNANO_2021Apr14/ParkingBPH3/crab_data_Run2018A_part3/210414_194243/0001/',
+#           '/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/same_sign/BParkingNANO_2021Apr14/ParkingBPH3/crab_data_Run2018B_part3/210414_194457/0000/',
+#           '/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/same_sign/BParkingNANO_2021Apr14/ParkingBPH3/crab_data_Run2018B_part3/210414_194457/0001/',
+#           '/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/same_sign/BParkingNANO_2021Apr14/ParkingBPH3/crab_data_Run2018C_part3/210414_194602/0000/',
+#           '/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/same_sign/BParkingNANO_2021Apr14/ParkingBPH3/crab_data_Run2018C_part3/210414_194602/0001/',
+#           '/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/same_sign/BParkingNANO_2021Apr14/ParkingBPH3/crab_data_Run2018D_part3/210414_194714/0000/',
+#           '/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/same_sign/BParkingNANO_2021Apr14/ParkingBPH3/crab_data_Run2018D_part3/210414_194714/0001/',
+#           '/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/same_sign/BParkingNANO_2021Apr14/ParkingBPH3/crab_data_Run2018D_part3/210414_194714/0002/',
+#           '/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/same_sign/BParkingNANO_2021Apr14/ParkingBPH3/crab_data_Run2018D_part3/210414_194714/0003/',
+#           '/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/same_sign/BParkingNANO_2021Apr14/ParkingBPH3/crab_data_Run2018D_part3/210414_194714/0004/',
+#           '/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/same_sign/BParkingNANO_2021Apr14/ParkingBPH3/crab_data_Run2018D_part3/210414_194714/0005/',
+#           ]
+
+#mypath += ['/eos/cms/store/group/phys_bphys/cavalari/nano_noreg/BParkingNANO_2021Mar08/ParkingBPH5/crab_data_noreg_Run2018B_part5/210308_143910/0000/',
+#           '/eos/cms/store/group/phys_bphys/cavalari/nano_noreg/BParkingNANO_2021Mar08/ParkingBPH5/crab_data_noreg_Run2018B_part5/210308_143910/0001/',
+#           '/eos/cms/store/group/phys_bphys/cavalari/nano_noreg/BParkingNANO_2021Apr27/ParkingBPH5/crab_data_Run2018A_part5/210427_080330/0000/',
+#           '/eos/cms/store/group/phys_bphys/cavalari/nano_noreg/BParkingNANO_2021Apr27/ParkingBPH5/crab_data_Run2018A_part5/210427_080330/0001/',
+#           '/eos/cms/store/group/phys_bphys/cavalari/nano_noreg/BParkingNANO_2021Apr27/ParkingBPH5/crab_data_Run2018C_part5/210427_080843/0000/',
+#           '/eos/cms/store/group/phys_bphys/cavalari/nano_noreg/BParkingNANO_2021Apr27/ParkingBPH5/crab_data_Run2018C_part5/210427_080843/0001/',
+#           '/eos/cms/store/group/phys_bphys/cavalari/nano_noreg/BParkingNANO_2021Apr27/ParkingBPH5/crab_data_Run2018D_part5/210427_075945/0000/',
+#           '/eos/cms/store/group/phys_bphys/cavalari/nano_noreg/BParkingNANO_2021Apr27/ParkingBPH5/crab_data_Run2018D_part5/210427_075945/0001/',
+#           '/eos/cms/store/group/phys_bphys/cavalari/nano_noreg/BParkingNANO_2021Apr27/ParkingBPH5/crab_data_Run2018D_part5/210427_075945/0002/',
+#           '/eos/cms/store/group/phys_bphys/cavalari/nano_noreg/BParkingNANO_2021Apr27/ParkingBPH5/crab_data_Run2018D_part5/210427_075945/0003/',
+#           '/eos/cms/store/group/phys_bphys/cavalari/nano_noreg/BParkingNANO_2021Apr27/ParkingBPH5/crab_data_Run2018D_part5/210427_075945/0004/',
+#           '/eos/cms/store/group/phys_bphys/cavalari/nano_noreg/BParkingNANO_2021Apr27/ParkingBPH5/crab_data_Run2018D_part5/210427_075945/0005/',
+#           ]
+
+#mypath += ['/eos/cms/store/group/phys_bphys/cavalari/nano_noreg/BParkingNANO_2021Mar8/BuToKJpsi_Toee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BuToKJpsi_Toee/210309_114756/0000/']
+mypath += ['/eos/cms/store/group/phys_bphys/cavalari/nano_noreg/BParkingNANO_2021Mar8/BdToKstarJpsi_ToKPiee_Mufilter_SoftQCDnonD_TuneCP5_13TeV-pythia8-evtgen/crab_BdToKstarJpsi_Toee/210427_071949/0000/']
 
 '''
 mypath += ['/eos/cms/store/group/phys_bphys/bpark/nanoaod_RK2021/BParkingNANO_2021Mar05/ParkingBPH1/crab_data_Run2018A_part1/210305_221032/0000/',
@@ -187,9 +218,11 @@ for path in mypath:
 filelist = ['{}{}'.format(redirector, f.replace('/eos/cms/','')) for f in filelist if ".root" in f]
 
 #outputFile = open('BParkingNANO_2021Mar05_Run2018ABCD.list', 'w+')
-outputFile = open('BParkingNANO_2021Mar05_BuToKJpsi_Toee.list', 'w+')
+outputFile = open('BParkingNANO_2021Mar05_BdToKstarJpsi_Toee_noreg.list', 'w+')
 #outputFile = open('BParkingNANO_2021Mar05_BuToKee_trg_noSkim.list', 'w+')
 #outputFile = open('BParkingNANO_2020Jan16_Run2018ABCD.list', 'w+')
+#outputFile = open('BParkingNANO_2021Mar05_Run2018ABCD3_samesign.list', 'w+')
+#outputFile = open('BParkingNANO_2021Mar05_Run2018ABCD5_nonreg.list', 'w+')
 
 
 for f in filelist:

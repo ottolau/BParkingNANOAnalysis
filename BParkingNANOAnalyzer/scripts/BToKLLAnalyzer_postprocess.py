@@ -58,16 +58,16 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
       features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
       features += ['BToKEE_ptAsym']
       features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
-      features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+      #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
       features += ['BToKEE_l1_dzTrg', 'BToKEE_l2_dzTrg', 'BToKEE_k_dzTrg']
       features += ['BToKEE_k_svip2d', 'BToKEE_k_svip3d']
-      features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
+      #features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
 
       training_branches = sorted(features)
-      mvaCut = 11.0
+      mvaCut = 9.0
       ntree_limit = 800
       model = xgb.Booster({'nthread': 6})
-      model.load_model('../models/xgb_fulldata_18April2021_lowq2RK1_bothSB_Dmass_tightPreselection_onePerEvent_pauc2_mix.model')
+      model.load_model('../models/xgb_fulldata_02May2021_lowq2RK1_bothSB_tightPreselectionWODmass_onePerEvent_pauc2_pf.model')
 
     for (self._ifile, filename) in enumerate(self._file_in_name):
       print('[BToKLLAnalyzer_postprocess::run] INFO: FILE: {}/{}. Loading file...'.format(self._ifile+1, self._num_files))
@@ -103,6 +103,7 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > PSI2S_LOW) & (self._branches['BToKEE_mll_fullfit'] < PSI2S_UP) # psi(2S)
         mll_selection = (self._branches['BToKEE_mll_fullfit'] > PSI2S_UP) #high q2
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > np.sqrt(1.1)) & (self._branches['BToKEE_mll_fullfit'] < LOWQ2_UP) #low q2, RK = 1
+        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > np.sqrt(1.1)) & (self._branches['BToKEE_mll_fullfit'] < JPSI_UP) #low q2, RK = 1, Jpsi
 
         b_upsb_selection = (self._branches['BToKEE_fit_mass'] > B_UP)
         b_bothsb_selection = ((self._branches['BToKEE_fit_mass'] > B_SB_LOW) & (self._branches['BToKEE_fit_mass'] < B_LOW)) | ((self._branches['BToKEE_fit_mass'] > B_UP) & (self._branches['BToKEE_fit_mass'] < B_SB_UP))
@@ -111,27 +112,26 @@ class BToKLLAnalyzer_postprocess(BParkingNANOAnalyzer):
         l1_selection = (self._branches['BToKEE_l1_mvaId'] > -99.0) 
         l2_selection = (self._branches['BToKEE_l2_mvaId'] > -99.0)
 
-        mll_mean_jpsi = triCut_jpsi_mll_mean_pf
-        fit_mass_mean_jpsi = triCut_jpsi_mKee_mean_pf
-        triCut_jpsi_lower_bound = triCut_jpsi_lower_bound_pf
-        triCut_jpsi_upper_bound = triCut_jpsi_upper_bound_pf
-        eigVecs_jpsi = triCut_jpsi_rotMatrix_pf 
-        self._branches['BToKEE_fit_mass_decorr_jpsi'], self._branches['BToKEE_mll_fullfit_decorr_jpsi'] = get_diagonalCut_var(self._branches, mll_mean_jpsi, fit_mass_mean_jpsi, triCut_jpsi_lower_bound, triCut_jpsi_upper_bound, eigVecs_jpsi)
+        mll_mean_psi2s = triCut_psi2s_mll_mean_pf
+        fit_mass_mean_psi2s = triCut_psi2s_mKee_mean_pf
+        triCut_psi2s_lower_bound = triCut_psi2s_lower_bound_pf
+        triCut_psi2s_upper_bound = triCut_psi2s_upper_bound_pf
+        eigVecs_psi2s = triCut_psi2s_rotMatrix_pf 
+        self._branches['BToKEE_fit_mass_decorr_psi2s'], self._branches['BToKEE_mll_fullfit_decorr_psi2s'] = get_diagonalCut_var(self._branches, mll_mean_psi2s, fit_mass_mean_psi2s, triCut_psi2s_lower_bound, triCut_psi2s_upper_bound, eigVecs_psi2s)
 
         #ll_charge_selection = (abs(self._branches['BToKEE_ll_charge']) != 0)
 
         general_selection = l1_selection & l2_selection
         general_selection &= mll_selection
-        #general_selection &= pf_selection
-        general_selection &= mix_net_selection
+        general_selection &= pf_selection
+        #general_selection &= mix_net_selection
         #general_selection &= low_pfveto_selection
         #general_selection &= b_upsb_selection
         #general_selection &= b_bothsb_selection
-        #general_selection &= (self._branches['BToKEE_fit_l1_pt'] > 2.0) & (self._branches['BToKEE_fit_l2_pt'] > 2.0)
-        #general_selection &= (self._branches['BToKEE_fit_l1_pt'] > 2.0)
-        #general_selection &= (self._branches['BToKEE_HLT_Mu9_IP6'])
-        #general_selection &= (abs(self._branches['BToKEE_k_svip3d']) < 0.06)
-        general_selection &= (abs(self._branches['BToKEE_k_svip3d']) < 0.06) & (self._branches['BToKEE_fit_cos2D'] > 0.95) & (self._branches['BToKEE_Dmass'] > 2.0) & (self._branches['BToKEE_Dmass_flip'] > 2.0)
+        #general_selection &= (abs(self._branches['BToKEE_k_svip3d']) < 0.06) & (self._branches['BToKEE_fit_cos2D'] > 0.95) & (self._branches['BToKEE_Dmass'] > 2.0) & (self._branches['BToKEE_Dmass_flip'] > 2.0)
+        general_selection &= (abs(self._branches['BToKEE_k_svip3d']) < 0.06) & (self._branches['BToKEE_fit_cos2D'] > 0.95) 
+        #general_selection &= (self._branches['BToKEE_mll_fullfit_decorr_psi2s'] < triCut_psi2s_upper_bound)
+        #general_selection &= (self._branches['BToKEE_mll_fullfit_decorr_psi2s'] < triCut_psi2s_upper_bound) & (self._branches['BToKEE_mll_fullfit_decorr_psi2s'] > triCut_psi2s_lower_bound)
 
         self._branches = self._branches[general_selection]
         #self._branches = self._branches.sort_values('BToKEE_mva', ascending=False).drop_duplicates(['BToKEE_event'], keep='first')

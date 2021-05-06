@@ -159,6 +159,7 @@ if __name__ == '__main__':
         print('Shuffling the input files...')
         #random.shuffle(fileList)
         fileList = random.sample(fileList, k=500)
+        #fileList = random.sample(fileList, k=8000)
 
     # stplie files in to n(group) of chunks
     fChunks= list(chunks(fileList,group))

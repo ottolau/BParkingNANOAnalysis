@@ -263,9 +263,9 @@ if __name__ == '__main__':
     features += ['BToKEE_eleDR', 'BToKEE_llkDR']
     features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
     features += ['BToKEE_ptAsym']
-    features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
+    #features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
     features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
-    features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+    #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
     features += ['BToKEE_l1_dzTrg', 'BToKEE_l2_dzTrg', 'BToKEE_k_dzTrg']
     features += ['BToKEE_k_svip2d', 'BToKEE_k_svip3d']
     #features += ['BToKEE_l1_iso04_dca_rel', 'BToKEE_l2_iso04_dca_rel', 'BToKEE_k_iso04_dca_rel', 'BToKEE_b_iso04_dca_rel']
@@ -292,8 +292,8 @@ if __name__ == '__main__':
 
     #nSig = ddf['sig'].shape[0]
     #nBkg = 25000
-    nSig = 100000
-    nBkg = 200000
+    nSig = 300000
+    nBkg = 300000
     ddf['sig'] = ddf['sig'].sample(frac=1)[:nSig]
     ddf['bkg'] = ddf['bkg'].sample(frac=1)[:nBkg]
 
@@ -329,7 +329,9 @@ if __name__ == '__main__':
     #best_params = {'subsample': 0.7964473633389513, 'eta': 0.04324038245866539, 'colsample_bytree': 0.9997097256893213, 'gamma': 0.41930662741996866, 'alpha': 0.3595590194583754, 'max_depth': 10, 'min_child_weight': 10, 'lambda': 9.137209334601707}
     #best_params = {'colsample_bytree': 0.6985151799554887, 'min_child_weight': 0.1880992226152179, 'subsample': 0.5059776752154034, 'eta': 0.025091014670069068, 'alpha': 0.5825875179922492, 'max_depth': 10, 'gamma': 0.15761992682454778, 'lambda': 4.552028057728982}
     #best_params = {'colsample_bytree': 0.6417405650302768, 'min_child_weight': 0.7998463694760696, 'subsample': 0.5570470959335826, 'eta': 0.02867563834178777, 'alpha': 2.4126097151465116, 'max_depth': 11, 'gamma': 1.491648232476693, 'lambda': 5.956681761649099}
-    best_params = {'colsample_bytree': 0.45134538658651024, 'min_child_weight': 0.944927618484819, 'subsample': 0.5121326042318723, 'eta': 0.03226800105641119, 'alpha': 0.06607299498327614, 'max_depth': 8, 'gamma': 2.734455156885833, 'lambda': 0.6026281920548624}
+    #best_params = {'colsample_bytree': 0.45134538658651024, 'min_child_weight': 0.944927618484819, 'subsample': 0.5121326042318723, 'eta': 0.03226800105641119, 'alpha': 0.06607299498327614, 'max_depth': 8, 'gamma': 2.734455156885833, 'lambda': 0.6026281920548624}
+    #best_params = {'colsample_bytree': 0.7878804118099031, 'min_child_weight': 0.04738616608180214, 'subsample': 0.7959243848808419, 'eta': 0.04561652677069882, 'alpha': 4.648974389014093, 'max_depth': 11, 'gamma': 2.2517449536394687, 'lambda': 7.969893573507295}
+    best_params = {'colsample_bytree': 0.37983170319692516, 'min_child_weight': 0.9657673185693753, 'subsample': 0.9896553723307563, 'eta': 0.04914400734945899, 'alpha': 0.7246914042028753, 'max_depth': 12, 'gamma': 2.866440307554156, 'lambda': 3.7932151643303103}
 
     # split X and y up in train and test samples
     X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.20)

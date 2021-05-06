@@ -98,13 +98,13 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
       features += ['BToKEE_l1_iso04_rel', 'BToKEE_l2_iso04_rel', 'BToKEE_k_iso04_rel', 'BToKEE_b_iso04_rel']
       features += ['BToKEE_ptAsym']
       features += ['BToKEE_l1_pfmvaId_lowPt', 'BToKEE_l2_pfmvaId_lowPt', 'BToKEE_l1_pfmvaId_highPt', 'BToKEE_l2_pfmvaId_highPt']
-      features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
+      #features += ['BToKEE_l1_mvaId', 'BToKEE_l2_mvaId']
       features += ['BToKEE_l1_dzTrg', 'BToKEE_l2_dzTrg', 'BToKEE_k_dzTrg']
       features += ['BToKEE_k_svip2d', 'BToKEE_k_svip3d']
-      features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
+      #features += ['BToKEE_Dmass', 'BToKEE_Dmass_flip']
 
       training_branches = sorted(features)
-      mvaCut = 4.0
+      mvaCut = 5.0
       ntree_limit = 774
       model = xgb.Booster({'nthread': 6})
       model.load_model(self._modelfile)
@@ -262,12 +262,13 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
         #self._branches = self._branches.sort_values('BToKEE_fit_pt', ascending=False).groupby('BToKEE_event').head(2)
 
         # general selection
-        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > LOWQ2_LOW) #& (self._branches['BToKEE_mll_fullfit'] < HIGHQ2_UP)# all q2
+        mll_selection = (self._branches['BToKEE_mll_fullfit'] > LOWQ2_LOW) #& (self._branches['BToKEE_mll_fullfit'] < HIGHQ2_UP)# all q2
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > LOWQ2_LOW) & (self._branches['BToKEE_mll_fullfit'] < LOWQ2_UP) #low q2
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > JPSI_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_UP) # Jpsi
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > JPSI_UP) & (self._branches['BToKEE_mll_fullfit'] < PSI2S_UP) # psi(2S)
         #mll_selection = (self._branches['BToKEE_mll_fullfit'] > NR_LOW) & (self._branches['BToKEE_mll_fullfit'] < JPSI_UP)
-        mll_selection = (self._branches['BToKEE_mll_fullfit'] > np.sqrt(1.1)) & (self._branches['BToKEE_mll_fullfit'] < LOWQ2_UP) #low q2, RK = 1
+        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > np.sqrt(1.1)) & (self._branches['BToKEE_mll_fullfit'] < LOWQ2_UP) #low q2, RK = 1
+        #mll_selection = (self._branches['BToKEE_mll_fullfit'] > np.sqrt(1.1)) & (self._branches['BToKEE_mll_fullfit'] < JPSI_UP) #low q2, RK = 1 and Jpsi
 
         b_upsb_selection = (self._branches['BToKEE_fit_mass'] > B_UP)
         b_bothsb_selection = ( (self._branches['BToKEE_fit_mass'] > 4.75) & (self._branches['BToKEE_fit_mass'] < 5.0) ) | ( (self._branches['BToKEE_fit_mass'] > 5.45) & (self._branches['BToKEE_fit_mass'] < 5.7) )
@@ -281,10 +282,9 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
         selection &= additional_selection
         #selection &= b_upsb_selection
         #selection &= b_bothsb_selection
-        #selection &= (self._branches['BToKEE_fit_l1_pt'] > 2.0) & (self._branches['BToKEE_fit_l2_pt'] > 2.0)
         #selection &= (self._branches['BToKEE_Dmass'] > 2.0) & (self._branches['BToKEE_Dmass_flip'] > 2.0)
-        selection &= (abs(self._branches['BToKEE_k_svip3d']) < 0.06) & (self._branches['BToKEE_fit_cos2D'] > 0.95) & (self._branches['BToKEE_Dmass'] > 2.0) & (self._branches['BToKEE_Dmass_flip'] > 2.0)
-        #selection &= (self._branches['BToKEE_pt'] > 3.0) & (self._branches['BToKEE_fit_cos2D'] > 0.0) & (self._branches['BToKEE_svprob'] > 0.001) & (self._branches['BToKEE_k_pt'] > 0.7)
+        #selection &= (abs(self._branches['BToKEE_k_svip3d']) < 0.06) & (self._branches['BToKEE_fit_cos2D'] > 0.95) & (self._branches['BToKEE_Dmass'] > 2.0) & (self._branches['BToKEE_Dmass_flip'] > 2.0)
+        selection &= (abs(self._branches['BToKEE_k_svip3d']) < 0.06) & (self._branches['BToKEE_fit_cos2D'] > 0.95) 
 
         if self._isMC:
           selection &= (self._branches['BToKEE_HLT_Mu9_IP6'])
@@ -301,8 +301,8 @@ class BToKLLAnalyzer(BParkingNANOAnalyzer):
                                                  self._branches['BToKEE_l1Mother_genMotherPdgId'], self._branches['BToKEE_l2Mother_genMotherPdgId'], self._branches['BToKEE_kMother_genMotherPdgId'])
             #self._branches['BToKEE_decay'] = self._branches.apply(self.DecayCats, axis=1, prefix='BToKEE')
 
-            self._branches.query('BToKEE_decay == 0', inplace=True) # B->K ll
-            #self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
+            #self._branches.query('BToKEE_decay == 0', inplace=True) # B->K ll
+            self._branches.query('BToKEE_decay == 1', inplace=True) # B->K J/psi(ll)
             #self._branches.query('BToKEE_decay == 2', inplace=True) # B->K*(K pi) ll
             #self._branches.query('BToKEE_decay == 3', inplace=True) # B->K*(K pi) J/psi(ll)
             self._branches['BToKEE_l1_isGen'] = np.where((self._branches['BToKEE_l1_genPartIdx'] > -0.5) & (abs(self._branches['BToKEE_l1_genMotherPdgId']) == 521), True, False)
